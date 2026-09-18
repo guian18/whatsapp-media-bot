@@ -251,7 +251,9 @@ async function start() {
     auth: state,
     markOnlineOnConnect: false,
     syncFullHistory: false,
-    browser: Browsers.ubuntu("Chrome"),
+    // WhatsApp valida estrictamente este identificador durante companion_hello.
+    // Chrome (Mac OS) es un descriptor canónico compatible con pairing code.
+    browser: Browsers.macOS("Chrome"),
   });
   sockActual = sock;
 

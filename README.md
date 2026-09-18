@@ -2,7 +2,7 @@
 
 > Consulta desde WhatsApp quién está jugando Left 4 Dead 2, en qué servidor está y qué jugadores hay conectados.
 
-InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/WhiskeySockets/Baileys) que consulta perfiles de Steam, servidores públicos de Left 4 Dead 2 y jugadores conectados. Funciona en Termux, Railway, Render y VPS con Node.js.
+InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/WhiskeySockets/Baileys) que consulta perfiles de Steam, servidores públicos de Left 4 Dead 2 y jugadores conectados. Funciona en Termux, Railway, Render y VPS con Node.js. Usa Baileys `7.0.0-rc14` para el flujo de vinculación por código.
 
 El bot responde únicamente a mensajes que comienzan con `!`, funciona en grupos y chats privados, y no necesita una base de datos externa. La sesión de WhatsApp se guarda en disco para evitar repetir la vinculación después de cada reinicio.
 
@@ -105,7 +105,7 @@ Esta opción es recomendable en Termux y hosting sin terminal interactiva.
 3. En WhatsApp, abre **Dispositivos vinculados → Vincular un dispositivo → Vincular con el número de teléfono**.
 4. Introduce el código mostrado por el bot.
 
-El código lo entrega WhatsApp mediante `requestPairingCode`; el bot no genera códigos localmente. Es un código real de 8 caracteres y puede contener letras y números, por ejemplo `BXCN-KFNJ`. Debe introducirse inmediatamente porque caduca aproximadamente en un minuto.
+El código lo entrega WhatsApp mediante `requestPairingCode`; el bot no genera códigos localmente. Es un código real de 8 caracteres y puede contener letras y números, por ejemplo `BXCN-KFNJ`. Debe introducirse inmediatamente porque caduca aproximadamente en un minuto. El bot usa un descriptor de plataforma canónico (`Chrome (Mac OS)`) para evitar rechazos de WhatsApp durante `companion_hello`.
 
 Si quieres escribir el número al arrancar en una terminal, deja `WHATSAPP_NUMBER` vacío y usa:
 
