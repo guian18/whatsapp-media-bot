@@ -82,8 +82,8 @@ async function start() {
         console.log("Sesión cerrada. Borra la carpeta auth_info y vuelve a generar el código.");
         process.exit(1);
       }
-      console.log("Conexión perdida, reconectando...");
-      start();
+      console.log("Conexión perdida, reconectando en 10 segundos...");
+setTimeout(() => start(), 10000);
     }
   });
 
