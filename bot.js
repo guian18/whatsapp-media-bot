@@ -26,6 +26,7 @@ import readline from "node:readline/promises";
 import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
+import { ensureSteamApiKey } from "./src/steamkey.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
@@ -85,6 +86,9 @@ async function start() {
     yaReseteado = true;
     borrarSesion();
   }
+  // Pide la Steam API key en la terminal si no está configurada.
+  await ensureSteamApiKey();
+
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
   const { version } = await fetchLatestBaileysVersion();
 
@@ -93,7 +97,7 @@ async function start() {
   let usePairingCode = WANTS_PAIRING_CODE && !alreadyRegistered;
 
   if (usePairingCode && !phoneNumber) {
-    console.log("\nPara vincular con CÓDIGO escribe tu número de celular.");
+    console.log("\nPara vincular con CÓDIGG escribe tu número de celular.");
     console.log("Si prefieres el código QR, pulsa Enter sin escribir nada.");
     phoneNumber = await askPhoneNumber();
     if (!phoneNumber) {
@@ -184,7 +188,7 @@ async function start() {
       if (msg.key.fromMe && !ALLOW_SELF) continue;
 
       console.log(
-        `[${isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
+        `['{isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
       );
 
       try {
@@ -204,6 +208,6 @@ async function start() {
 }
 
 start().catch((err) => {
-  console.error("No se pudo iniciar el bot:", err);
+  console.error("No se pude iniciar el bot:", err);
   process.exit(1);
 });
