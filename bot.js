@@ -62,6 +62,7 @@ let reiniciando = false;
 let sockActual = null;
 let cerrandoManual = false;
 let pairingPendiente = null;
+let pairingEnCurso = false;
 
 function borrarSesion() {
   if (existsSync(AUTH_DIR)) {
@@ -176,6 +177,7 @@ async function solicitarCodigo(numeroCrudo) {
 
   setPairingCode("");
   setQr("");
+  pairingEnCurso = false;
   cerrarSocket();
   borrarSesion();
 
@@ -206,6 +208,7 @@ async function atenderPairing(sock) {
     console.log("Vincular un dispositivo > Vincular con número de teléfono.");
     console.log("El código dura ~1 minuto; si expira, pide otro.\n");
     setPairingCode(code);
+    pairingEnCurso = true;
     solicitud.resolve(code);
   } catch (err) {
     console.error("No se pudo generar el código de vinculación:", err?.message || err);
@@ -276,6 +279,7 @@ async function start() {
 
     if (connection === "open") {
       console.log("Conectado a WhatsApp ✅");
+      pairingEnCurso = false;
       setConectado(true);
     }
 
@@ -292,6 +296,18 @@ async function start() {
         code === DisconnectReason.badSession ||
         code === 401 ||
         code === 403;
+
+      // Mientras el teléfono está aceptando el código, reconectar crea otro
+      // socket y puede invalidar el código que el usuario acaba de introducir.
+      // Dejamos ese intento quieto; el botón /pair podrá iniciar uno nuevo.
+      if (pairingEnCurso) {
+        pairingEnCurso = false;
+        setPairingCode("");
+        console.error(
+          `La vinculación no terminó (WhatsApp cerró la conexión${code ? `, código ${code}` : ""}). Pide un código nuevo.`,
+        );
+        return;
+      }
 
       if (sesionInvalida) {
         if (AUTO_RESET) {
