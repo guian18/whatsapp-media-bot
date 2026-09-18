@@ -6,10 +6,11 @@
   "description": "Bot de WhatsApp que consulta jugadores y servidores de Left 4 Dead 2 (Steam Web API + A2S)",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "start:termux": "termux-wake-lock 2>/dev/null; node bot.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=18"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
