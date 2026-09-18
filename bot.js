@@ -63,10 +63,6 @@ let sockActual = null;
 let cerrandoManual = false;
 let pairingPendiente = null;
 
-function esperar(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function borrarSesion() {
   if (existsSync(AUTH_DIR)) {
     rmSync(AUTH_DIR, { recursive: true, force: true });
@@ -100,6 +96,12 @@ function normalizarNumero(value) {
   let numero = (value || "").replace(/\D/g, "");
   if (numero.startsWith("00")) numero = numero.slice(2);
   return numero;
+}
+
+// Baileys usa el alfabeto Crockford para los códigos reales de WhatsApp.
+// No se debe sustituir por un código generado localmente.
+function esCodigoPairingValido(code) {
+  return typeof code === "string" && /^[123456789ABCDEFGHJKLMNPQRSTVWXYZ]{8}$/.test(code);
 }
 
 const ENV_NUMBER = normalizarNumero(process.env.WHATSAPP_NUMBER);
@@ -173,6 +175,7 @@ async function solicitarCodigo(numeroCrudo) {
   }
 
   setPairingCode("");
+  setQr("");
   cerrarSocket();
   borrarSesion();
 
@@ -191,12 +194,11 @@ async function atenderPairing(sock) {
   try {
     const listo = await esperarSocketListo(sock);
     if (!listo) throw new Error("WhatsApp no respondió a tiempo. Vuelve a pedir el código.");
-    await esperar(1500);
     const code = await sock.requestPairingCode(solicitud.numero);
-    if (typeof code !== "string" || !/^\d{8}$/.test(code)) {
+    if (!esCodigoPairingValido(code)) {
       throw new Error("WhatsApp devolvió un código de vinculación inválido. Pide uno nuevo.");
     }
-    const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
+    const pretty = code.match(/.{1,4}/g).join("-");
     console.log("\n==============================================");
     console.log(` Código de vinculación: ${pretty}`);
     console.log("==============================================");

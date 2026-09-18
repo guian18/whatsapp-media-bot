@@ -90,12 +90,12 @@ Pon tu número con código de país (solo dígitos, sin `+` ni `00`) en `.env`:
 WHATSAPP_NUMBER=51987654321
 ```
 
-Al arrancar, la terminal muestra un **código de 8 dígitos**. En el celular:
+Al arrancar, la terminal muestra un **código de vinculación de 8 caracteres**. En el celular:
 WhatsApp → **Dispositivos vinculados** → *Vincular un dispositivo* →
 **Vincular con número de teléfono** → escribe el código.
 
-El código se forma en dos grupos de 4 dígitos para leerlo más fácil, por ejemplo
-`1234-5678`.
+El código se forma en dos grupos de 4 caracteres para leerlo más fácil, por ejemplo
+`ABCD-1234`. WhatsApp puede mezclar letras y números.
 
 Si prefieres escribir el número al arrancar en vez de guardarlo, usa
 `PAIRING_CODE=true` y el bot lo preguntará por consola.

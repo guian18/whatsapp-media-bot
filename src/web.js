@@ -17,6 +17,10 @@ const estado = {
   error: "",
 };
 
+function esCodigoPairingValido(code) {
+  return typeof code === "string" && /^[123456789ABCDEFGHJKLMNPQRSTVWXYZ]{8}$/.test(code);
+}
+
 let pairingRequester = null;
 
 export function setPairingRequester(fn) {
@@ -103,7 +107,7 @@ const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
       <p class="muted">WhatsApp &gt; Dispositivos vinculados &gt; Vincular un dispositivo.</p>
     </div>
     <div class="card">
-      <h2>Opción 2 · Código de 8 dígitos</h2>
+      <h2>Opción 2 · Código de vinculación</h2>
       <form id="f">
         <input name="numero" inputmode="numeric" placeholder="51987654321" required>
         <button type="submit">Pedir código</button>
@@ -190,7 +194,7 @@ export function startWebServer(portValue = process.env.PORT) {
           }
           try {
             const code = await pairingRequester(numero);
-            if (typeof code !== "string" || !/^\d{8}$/.test(code)) {
+            if (!esCodigoPairingValido(code)) {
               return json(res, 502, {
                 ok: false,
                 error: "WhatsApp no devolvió un código real de 8 dígitos. Vuelve a intentarlo.",
