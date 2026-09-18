@@ -1,18 +1,13 @@
 /**
  * Bot de WhatsApp — infoplayerleft
  * Consulta info de jugadores de Left 4 Dead 2 vía Steam Web API y A2S.
- * Soporta dos métodos de conexión (Baileys):
- *   - Código de vinculación (si se define NUMERO_BOT)
- *   - Código QR (si NUMERO_BOT no está definido, plan B más estable)
- * Funciona en grupos y en chats privados.
+ * Conexión por código QR (Baileys), funciona en grupos y en chats privados.
  *
  * Variables de entorno:
  *   STEAM_API_KEY        (recomendada)
  *   ALLOWED_GROUPS       (opcional) IDs de grupo separados por coma; si se define,
  *                        el bot solo responde en esos grupos
  *   REPLY_IN_PRIVATE     (opcional) "false" para ignorar chats privados
- *   NUMERO_BOT           (opcional) Tu número con código de país (ej: 393803893208).
- *                        Si se define, se usa código de vinculación. Si no, se usa QR.
  */
 import makeWASocket, {
   DisconnectReason,
@@ -20,6 +15,7 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
 import qrcode from "qrcode-terminal";
+import QRCode from "qrcode";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 
@@ -45,9 +41,6 @@ async function start() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
   const { version } = await fetchLatestBaileysVersion();
 
-  const numeroTelefono = process.env.NUMERO_BOT;
-  const usePairingCode = Boolean(numeroTelefono);
-
   const sock = makeWASocket({
     version,
     auth: state,
@@ -58,38 +51,54 @@ async function start() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  // MÉTODO 1: CÓDIGO DE VINCULACIÓN POR TEXTO (si hay NUMERO_BOT configurado)
-  if (!sock.authState.creds.registered && usePairingCode) {
-    setTimeout(async () => {
+  sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
+    if (qr) {
+      console.log("\n" + "=".repeat(60));
+      console.log("📱 ESCANEA ESTE QR CON WHATSAPP");
+      console.log("Menú > Dispositivos vinculados > Vincular dispositivo");
+      console.log("=".repeat(60) + "\n");
+      
+      // Mostrar QR en terminal (grande y legible)
+      qrcode.generate(qr, { small: false });
+      
+      // Generar QR como imagen PNG en base64
       try {
-        let code = await sock.requestPairingCode(numeroTelefono.replace(/[^0-9]/g, ""));
-        console.log(`\n======================================`);
-        console.log(`CÓDIGO DE VINCULACIÓN: ${code}`);
-        console.log(`Introduce este código en tu WhatsApp > Dispositivos vinculados > Vincular con el número de teléfono`);
-        console.log(`======================================\n`);
+        const qrImage = await QRCode.toDataURL(qr, {
+          errorCorrectionLevel: 'H',
+          width: 400,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        console.log("\n✅ QR generado correctamente");
+        console.log("Si el QR no se escanea, intenta estas opciones:");
+        console.log("1. Desvincula todos los dispositivos en WhatsApp");
+        console.log("2. Espera a que el QR aparezca (puede tardar 10-20 segundos)");
+        console.log("3. Escanea rápido antes de que expire (30-60 segundos)\n");
       } catch (err) {
-        console.error("Error al generar código de emparejamiento:", err);
+        console.error("Error generando imagen QR:", err.message);
       }
-    }, 3000);
-  }
-
-  sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    // MÉTODO 2: CÓDIGO QR (si no hay NUMERO_BOT configurado)
-    if (qr && !usePairingCode) {
-      console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
-      qrcode.generate(qr, { small: true });
     }
+    
     if (connection === "open") {
-      console.log("Conectado a WhatsApp ✅");
+      console.log("✅ Conectado a WhatsApp exitosamente!");
+      console.log("El bot está listo para recibir comandos\n");
     }
+    
     if (connection === "close") {
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
       if (code === DisconnectReason.loggedOut) {
-        console.log("Sesión cerrada. Borra la carpeta auth_info y vuelve a generar el código/QR.");
+        console.log("\n❌ Sesión cerrada manualmente.");
+        console.log("Para volver a conectar:");
+        console.log("1. Borra la carpeta 'auth_info'");
+        console.log("2. Reinicia el bot");
+        console.log("3. Escanea el nuevo QR\n");
         process.exit(1);
       }
-      console.log("Conexión perdida, reconectando en 15 segundos...");
-      setTimeout(() => start(), 15000);
+      console.log("⚠️  Conexión perdida, reconectando en 5 segundos...");
+      setTimeout(start, 5000);
     }
   });
 
@@ -127,6 +136,6 @@ async function start() {
 }
 
 start().catch((err) => {
-  console.error("No se pudo iniciar el bot:", err);
+  console.error("❌ No se pudo iniciar el bot:", err);
   process.exit(1);
 });
