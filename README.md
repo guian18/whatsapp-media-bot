@@ -19,7 +19,7 @@ Portado desde la versión original de Discord. Funciona dentro de grupos de What
 
 ## Instalación
 
-Requiere Node.js 20 o superior.
+Requiere Node.js 18 o superior.
 
 ```bash
 npm install
@@ -51,6 +51,34 @@ Escanéalo desde WhatsApp → **Dispositivos vinculados** → *Vincular un dispo
 
 La sesión queda guardada en la carpeta `auth_info/`, así que no hace falta
 volver a vincular en los siguientes arranques.
+
+## Instalación en Termux (Android)
+
+El bot funciona en un celular con [Termux](https://termux.dev) (instálalo desde
+F-Droid, no desde Play Store):
+
+```bash
+pkg update && pkg upgrade
+pkg install nodejs-lts git
+git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft
+cd infoplayerleft
+npm install
+cp .env.example .env    # edita con: nano .env
+npm start
+```
+
+Consejos para Termux:
+
+- Vincula con **tu número de celular** (`WHATSAPP_NUMBER`): copiar el código de
+  8 dígitos es mucho más cómodo que escanear un QR en la misma pantalla.
+- Para que Android no mate el proceso: `pkg install termux-api` y arranca con
+  `npm run start:termux` (activa el wake lock). También conviene desactivar la
+  optimización de batería para Termux.
+- Para dejarlo corriendo aunque cierres la terminal: `pkg install tmux`, luego
+  `tmux new -s bot` y dentro `npm start`. Se sale con `Ctrl+B` y `D`, y se vuelve
+  con `tmux attach -t bot`.
+- No hace falta compilar nada nativo: `.npmrc` ya omite las dependencias
+  opcionales que fallan en Android.
 
 ## Usarlo en un grupo
 
