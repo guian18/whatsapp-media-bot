@@ -1,5 +1,5 @@
-// Gestión de la Steam Web API key: variable de entorno, archivo local o
-// pregunta en la terminal al arrancar.
+// Gestión de la Steam Web API key: variable de entorno, archivo local,
+// pregunta en la terminal al arrancar o formulario de la página web.
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import readline from "node:readline/promises";
 
@@ -18,8 +18,10 @@ function saveKeyFile(key) {
   try {
     writeFileSync(KEY_FILE, `${key}\n`, { mode: 0o600 });
     console.log(`Clave guardada en ${KEY_FILE} (no se volverá a pedir).`);
+    return true;
   } catch (err) {
     console.warn("No se pudo guardar la clave:", err?.message || err);
+    return false;
   }
 }
 
@@ -32,56 +34,76 @@ export function setSteamApiKey(key) {
   process.env.STEAM_API_KEY = apiKey;
 }
 
-function looksValid(key) {
-  return /^[A-Fa-f0-9]{32}$/.test(key);
+export function looksValidSteamKey(key) {
+  return /^[A-Fa-f0-9]{32}$/.test((key || "").trim());
+}
+
+/** Guarda la clave (usado por el formulario de la web). Devuelve true si es válida. */
+export function guardarSteamApiKey(key, persistir = true) {
+  const limpia = (key || "").trim();
+  if (!looksValidSteamKey(limpia)) return false;
+  setSteamApiKey(limpia);
+  if (persistir) saveKeyFile(limpia);
+  return true;
 }
 
 /**
- * Asegura que haya una Steam API key.
- * En una terminal interactiva SIEMPRE se pregunta aquí (no se lee del .env),
- * salvo que ya esté guardada en el archivo .steam_key.
- * En servidores sin terminal (Railway, etc.) se usa STEAM_API_KEY del entorno
- * o el archivo .steam_key. Con STEAM_ASK_ALWAYS=true siempre pregunta.
+ * Asegura que haya una Steam API key antes de arrancar el bot.
+ *
+ * Orden: archivo .steam_key → variable STEAM_API_KEY → preguntar en la terminal.
+ * En una terminal (Termux, PC) SIEMPRE se pregunta si no hay una clave válida.
+ * Con STEAM_ASK_ALWAYS=true pregunta aunque ya haya una guardada.
+ * Sin terminal (Railway, Docker) se usa la variable/el archivo, o se puede
+ * escribir la clave en la página web.
  */
 export async function ensureSteamApiKey() {
   const askAlways = process.env.STEAM_ASK_ALWAYS === "true";
-  const interactivo = Boolean(process.stdin.isTTY) && !askAlways;
+  const interactivo = Boolean(process.stdin.isTTY);
 
-  if (interactivo) {
-    const fromFile = readKeyFile();
-    if (fromFile) {
-      setSteamApiKey(fromFile);
-      console.log(`Usando la clave guardada en ${KEY_FILE}. Bórralo si quieres que se vuelva a pedir.`);
-      return apiKey;
-    }
-  }
+  // 1) Clave guardada en el archivo
+  const fromFile = readKeyFile();
+  if (fromFile && looksValidSteamKey(fromFile)) setSteamApiKey(fromFile);
 
-  // Servidor sin terminal (Railway, Docker, etc.): usar variable de entorno o archivo.
-  if (!process.stdin.isTTY) {
-    if (!apiKey) {
-      const fromFile = readKeyFile();
-      if (fromFile) setSteamApiKey(fromFile);
-    }
-    if (!apiKey) {
-      console.warn(
-        "No hay STEAM_API_KEY y la terminal no es interactiva: las consultas a Steam fallarán.",
-      );
-    }
+  // 2) Clave ya válida (archivo o variable de entorno / .env)
+  if (looksValidSteamKey(apiKey) && !askAlways) {
+    const origen = fromFile && fromFile === apiKey ? KEY_FILE : "STEAM_API_KEY";
+    console.log(
+      `Steam API key cargada desde ${origen}. ` +
+        `Para cambiarla: borra ${KEY_FILE} (o arranca con STEAM_ASK_ALWAYS=true).`,
+    );
     return apiKey;
   }
 
+  if (apiKey && !looksValidSteamKey(apiKey)) {
+    console.warn("La STEAM_API_KEY configurada no parece válida (32 caracteres hexadecimales).");
+    setSteamApiKey("");
+  }
+
+  // 3) Sin terminal: no se puede preguntar
+  if (!interactivo) {
+    console.warn(
+      "No hay Steam API key y la terminal no es interactiva.\n" +
+        "Configura STEAM_API_KEY o escríbela en la página web (/qr).",
+    );
+    return apiKey;
+  }
+
+  // 4) Preguntar en la terminal
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
-    console.log("\nNecesito tu clave de la Steam Web API.");
-    console.log("Consíguela gratis en: https://steamcommunity.com/dev/apikey\n");
+    console.log("\n==============================================");
+    console.log(" Necesito tu clave personal de la Steam Web API");
+    console.log(" Consíguela gratis en: https://steamcommunity.com/dev/apikey");
+    console.log(" (32 caracteres, letras y números. Enter para omitir.)");
+    console.log("==============================================");
     for (let intento = 0; intento < 3; intento++) {
       const answer = (await rl.question("Steam API key: ")).trim();
       if (!answer) {
-        console.log("No escribiste nada. Puedes pulsar Ctrl+C para salir.");
-        continue;
+        console.log("Sin clave: los comandos de Steam no funcionarán (puedes añadirla luego).");
+        return apiKey;
       }
-      if (!looksValid(answer)) {
-        console.log("Eso no parece una clave válida (32 caracteres hexadecimales). Inténtalo de nuevo.");
+      if (!looksValidSteamKey(answer)) {
+        console.log("Eso no parece una clave válida (32 caracteres hexadecimales). Inténtalo otra vez.");
         continue;
       }
       setSteamApiKey(answer);
