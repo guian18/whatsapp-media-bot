@@ -1,20 +1,25 @@
 /**
  * Bot de WhatsApp — infoplayerleft
  * Consulta info de jugadores de Left 4 Dead 2 vía Steam Web API y A2S.
- * Conexión por código QR (Baileys), funciona en grupos y en chats privados.
+ * Vinculación por código QR o por CÓDIGO DE 8 DÍGITOS con tu número de celular.
  *
  * Variables de entorno:
- *   STEAM_API_KEY        (recomendada)
- *   ALLOWED_GROUPS       (opcional) IDs de grupo separados por coma; si se define,
- *                        el bot solo responde en esos grupos
- *   REPLY_IN_PRIVATE     (opcional) "false" para ignorar chats privados
+ *   STEAM_API_KEY         (recomendada)
+ *   WHATSAPP_NUMBER       (opcional) número de celular con código de país, solo dígitos.
+ *                         Si se define, la vinculación se hace por código en vez de QR.
+ *   PAIRING_CODE          (opcional) "true" para pedir el número por consola al arrancar
+ *   ALLOWED_GROUPS        (opcional) IDs de grupo separados por coma; si se define,
+ *                         el bot solo responde en esos grupos
+ *   REPLY_IN_PRIVATE      (opcional) "false" para ignorar chats privados
  */
 import makeWASocket, {
+  Browsers,
   DisconnectReason,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
 import qrcode from "qrcode-terminal";
+import readline from "node:readline/promises";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 
@@ -23,6 +28,26 @@ const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .map((s) => s.trim())
   .filter(Boolean);
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
+
+function onlyDigits(value) {
+  return (value || "").replace(/\D/g, "");
+}
+
+const ENV_NUMBER = onlyDigits(process.env.WHATSAPP_NUMBER);
+const WANTS_PAIRING_CODE = Boolean(ENV_NUMBER) || process.env.PAIRING_CODE === "true";
+
+async function askPhoneNumber() {
+  if (!process.stdin.isTTY) return "";
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question(
+      "\nEscribe tu número de WhatsApp con código de país (ej. 51987654321): ",
+    );
+    return onlyDigits(answer);
+  } finally {
+    rl.close();
+  }
+}
 
 function textFromMessage(msg) {
   const m = msg.message;
@@ -40,18 +65,50 @@ async function start() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
   const { version } = await fetchLatestBaileysVersion();
 
+  const alreadyRegistered = Boolean(state.creds?.registered);
+  let phoneNumber = ENV_NUMBER;
+  let usePairingCode = WANTS_PAIRING_CODE && !alreadyRegistered;
+
+  if (usePairingCode && !phoneNumber) {
+    phoneNumber = await askPhoneNumber();
+    if (!phoneNumber) {
+      console.log("No se recibió número; se usará el código QR.");
+      usePairingCode = false;
+    }
+  }
+
   const sock = makeWASocket({
     version,
     auth: state,
     printQRInTerminal: false,
     markOnlineOnConnect: false,
     syncFullHistory: false,
+    browser: Browsers.ubuntu("Chrome"),
   });
+
+  if (usePairingCode && phoneNumber) {
+    // Pequeña espera para que el socket esté listo antes de pedir el código.
+    setTimeout(async () => {
+      try {
+        const code = await sock.requestPairingCode(phoneNumber);
+        const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
+        console.log("\n==============================================");
+        console.log(` Código de vinculación: ${pretty}`);
+        console.log("==============================================");
+        console.log("En el celular: WhatsApp > Dispositivos vinculados >");
+        console.log("Vincular un dispositivo > Vincular con número de teléfono.");
+        console.log("Escribe ese código antes de que expire.\n");
+      } catch (err) {
+        console.error("No se pudo generar el código de vinculación:", err?.message || err);
+        console.error("Revisa el número (código de país incluido) o usa el QR.");
+      }
+    }, 3000);
+  }
 
   sock.ev.on("creds.update", saveCreds);
 
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr) {
+    if (qr && !usePairingCode) {
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
       qrcode.generate(qr, { small: true });
     }
@@ -61,7 +118,9 @@ async function start() {
     if (connection === "close") {
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
       if (code === DisconnectReason.loggedOut) {
-        console.log("Sesión cerrada. Borra la carpeta auth_info y vuelve a escanear el QR.");
+        console.log(
+          "Sesión cerrada. Borra la carpeta auth_info y vuelve a vincular (QR o código).",
+        );
         process.exit(1);
       }
       console.log("Conexión perdida, reconectando...");
