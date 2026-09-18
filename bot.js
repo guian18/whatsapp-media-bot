@@ -50,6 +50,27 @@ async function start() {
 
   sock.ev.on("creds.update", saveCreds);
 
+  if (!sock.authState.creds.registered) {
+    const numeroTelefono = process.env.NUMERO_BOT; 
+    
+    if (!numeroTelefono) {
+      console.error("❌ ERROR: No se ha configurado la variable de entorno 'NUMERO_BOT' en Railway.");
+      process.exit(1);
+    }
+
+    setTimeout(async () => {
+      try {
+        let code = await sock.requestPairingCode(numeroTelefono.replace(/[^0-9]/g, ""));
+        console.log(`\n======================================`);
+        console.log(`CÓDIGO DE VINCULACIÓN: ${code}`);
+        console.log(`Introduce este código en tu WhatsApp > Dispositivos vinculados > Vincular con el número de teléfono`);
+        console.log(`======================================\n`);
+      } catch (err) {
+        console.error("Error al generar código de emparejamiento:", err);
+      }
+    }, 3000);
+  }
+
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
     if (qr) {
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
