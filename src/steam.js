@@ -1,5 +1,5 @@
 // Steam Web API: resolver identificadores y obtener el perfil del jugador.
-const STEAM_API_KEY = (process.env.STEAM_API_KEY || "").trim();
+import { getSteamApiKey } from "./steamkey.js";
 
 async function getJson(url, params) {
   const qs = new URLSearchParams(params).toString();
@@ -8,6 +8,7 @@ async function getJson(url, params) {
 }
 
 export async function resolveVanity(vanity) {
+  const STEAM_API_KEY = getSteamApiKey();
   if (!STEAM_API_KEY) return null;
   try {
     const { body } = await getJson(
@@ -33,8 +34,9 @@ export async function extractIdentifier(input) {
 
 /** Devuelve { player, error }. */
 export async function getPlayerInfo(steamId) {
+  const STEAM_API_KEY = getSteamApiKey();
   if (!STEAM_API_KEY) {
-    return { player: null, error: "Falta STEAM_API_KEY en las variables de entorno." };
+    return { player: null, error: "Falta la Steam API key. Reinicia el bot y escríbela cuando te la pida." };
   }
   try {
     const { status, body } = await getJson(
