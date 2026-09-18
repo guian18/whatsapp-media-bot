@@ -123,32 +123,6 @@ function textFromMessage(msg) {
   );
 }
 
-// Espera a que el socket termine el handshake con WhatsApp.
-// Pedir el código antes de eso devuelve un código que el celular rechaza.
-function esperarSocketListo(sock, timeoutMs = 25000) {
-  return new Promise((resolve) => {
-    let terminado = false;
-    const finalizar = (ok) => {
-      if (terminado) return;
-      terminado = true;
-      clearTimeout(temporizador);
-      try {
-        sock.ev.off("connection.update", handler);
-      } catch {
-        /* ignorar */
-      }
-      resolve(ok);
-    };
-    const handler = ({ qr, connection }) => {
-      // El primer QR (o la conexión abierta) significa que el socket ya está operativo.
-      if (qr || connection === "open") finalizar(true);
-      if (connection === "close") finalizar(false);
-    };
-    const temporizador = setTimeout(() => finalizar(false), timeoutMs);
-    sock.ev.on("connection.update", handler);
-  });
-}
-
 /**
  * Pide un código de 8 dígitos SIEMPRE con una sesión nueva.
  * Reutilizar credenciales a medio vincular es la causa típica de
@@ -183,9 +157,11 @@ async function atenderPairing(sock) {
   const solicitud = pairingPendiente;
   if (!solicitud) return;
   try {
-    const listo = await esperarSocketListo(sock);
-    if (!listo) throw new Error("WhatsApp no respondió a tiempo. Vuelve a pedir el código.");
-    await esperar(1500);
+    // Baileys debe pedir el código durante el registro inicial. Esperar a que llegue
+    // un QR primero inicia otro método de vinculación y WhatsApp puede rechazar
+    // después el código como inválido. Damos tiempo solo al arranque del socket.
+    await esperar(3000);
+    if (sock !== sockActual) throw new Error("La conexión se reinició. Vuelve a pedir el código.");
     const code = await sock.requestPairingCode(solicitud.numero);
     const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
     console.log("\n==============================================");
@@ -257,7 +233,9 @@ async function start() {
   }
 
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr && !pairingPendiente && !usePairingCode) {
+    if (qr) {
+      // Guardar siempre el QR para que la web lo muestre aunque también se haya
+      // solicitado un código por número. Ambos métodos quedan disponibles.
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
       qrcode.generate(qr, { small: true });
       setQr(qr);
