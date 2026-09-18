@@ -6,7 +6,6 @@
 import http from "node:http";
 import qrcodeTerminal from "qrcode-terminal";
 import QRCode from "qrcode";
-import { guardarSteamApiKey, getSteamApiKey, looksValidSteamKey } from "./steamkey.js";
 
 const estado = {
   conectado: false,
@@ -113,22 +112,10 @@ const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
       <p class="muted">WhatsApp &gt; Dispositivos vinculados &gt; Vincular con número de teléfono. El código dura ~1 minuto.</p>
     </div>
   </div>
-  <div class="card" style="margin-top:16px">
-    <h2>Steam API key</h2>
-    <p class="muted" id="keyestado">Comprobando…</p>
-    <form id="fk">
-      <input name="key" placeholder="32 caracteres (ej. A1B2C3...)" minlength="32" maxlength="32" required>
-      <button type="submit">Guardar clave</button>
-    </form>
-    <p class="muted">Consíguela gratis en <a href="https://steamcommunity.com/dev/apikey" target="_blank" style="color:#7ab8ff">steamcommunity.com/dev/apikey</a>. Se guarda en el servidor y se usa para los comandos de jugadores.</p>
-  </div>
 </div>
 <script>
   const $ = (id) => document.getElementById(id);
   function pintar(s) {
-    $("keyestado").innerHTML = s.steamKey
-      ? '<span class="ok">Clave de Steam configurada \u2705 (' + s.steamKey + ') \u2014 puedes cambiarla abajo.</span>'
-      : '<span class="err">Falta la clave de Steam: los comandos de jugadores no funcionar\u00e1n. P\u00e9gala aqu\u00ed abajo.</span>';
     if (s.conectado) {
       $("estado").innerHTML = '<span class="ok">Bot conectado ✅ Ya puedes usar los comandos en WhatsApp.</span>';
       $("qrbox").innerHTML = '<p class="muted">Vinculado.</p>';
@@ -170,24 +157,6 @@ const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
     }
     btn.disabled = false;
   });
-  $("fk").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    $("keyestado").textContent = "Guardando…";
-    try {
-      const r = await fetch("/steamkey", {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ key: e.target.key.value }),
-      });
-      const d = await r.json();
-      $("keyestado").innerHTML = d.ok
-        ? '<span class="ok">Clave guardada ✅</span>'
-        : '<span class="err">' + d.error + '</span>';
-      if (d.ok) { e.target.reset(); tick(); }
-    } catch {
-      $("keyestado").innerHTML = '<span class="err">Error de red.</span>';
-    }
-  });
   tick();
   setInterval(tick, 3000);
 </script>
@@ -228,50 +197,32 @@ export function startWebServer() {
       return;
     }
 
-    if (req.method === "POST" && url === "/steamkey") {
-      leerCuerpo(req)
-        .then((body) => {
-          const key = (new URLSearchParams(body).get("key") || "").trim();
-          if (!guardarSteamApiKey(key)) {
-            return json(res, 200, { ok: false, error: "Clave inválida: deben ser 32 caracteres hexadecimales." });
-          }
-          return json(res, 200, { ok: true });
-        })
-        .catch(() => json(res, 400, { ok: false, error: "bad request" }));
-      return;
-    }
-
     if (url === "/status") {
       json(res, 200, {
         conectado: estado.conectado,
         qrImagen: estado.qrImagen,
         pairingCode: estado.pairingCode,
-        steamKey: (() => {
-          const k = getSteamApiKey();
-          return looksValidSteamKey(k) ? k.slice(0, 4) + "…" + k.slice(-4) : "";
-        })(),
       });
       return;
     }
 
-    if (url === "/health") {
-      res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
-      res.end(estado.conectado ? "ok" : "starting");
-      return;
-    }
-
     if (url === "/" || url === "/qr") {
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       res.end(PAGINA);
       return;
     }
 
-    res.writeHead(404, { "content-type": "text/plain" });
+    if (url === "/health") {
+      json(res, 200, { ok: true });
+      return;
+    }
+
+    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
     res.end("not found");
   });
 
-  server.listen(port, "0.0.0.0", () => {
-    console.log(`Servidor HTTP escuchando en el puerto ${port} (/qr para vincular).`);
+  server.listen(port, () => {
+    console.log(`[web] página de vinculación lista en el puerto ${port} (/qr)`);
   });
   return server;
 }
