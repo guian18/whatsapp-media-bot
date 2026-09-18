@@ -63,6 +63,7 @@ let sockActual = null;
 let cerrandoManual = false;
 let pairingPendiente = null;
 let pairingEnCurso = false;
+let pairingReconnecting = false;
 
 function borrarSesion() {
   if (existsSync(AUTH_DIR)) {
@@ -232,7 +233,8 @@ async function start() {
   const alreadyRegistered = Boolean(state.creds?.registered);
 
   let phoneNumber = ENV_NUMBER;
-  let usePairingCode = WANTS_PAIRING_CODE && !alreadyRegistered && !pairingPendiente;
+  let usePairingCode =
+    WANTS_PAIRING_CODE && !alreadyRegistered && !pairingPendiente && !pairingReconnecting;
 
   if (usePairingCode && !phoneNumber) {
     if (process.stdin.isTTY) {
@@ -256,6 +258,7 @@ async function start() {
     browser: Browsers.macOS("Chrome"),
   });
   sockActual = sock;
+  pairingReconnecting = false;
 
   sock.ev.on("creds.update", saveCreds);
 
@@ -299,9 +302,20 @@ async function start() {
         code === 401 ||
         code === 403;
 
+      // WhatsApp cierra con 515 después de aceptar el código para que el
+      // cliente reinicie y complete el registro con las credenciales nuevas.
+      // Este cierre es esperado, no es un error de vinculación.
+      if (pairingEnCurso && code === DisconnectReason.restartRequired) {
+        pairingEnCurso = false;
+        pairingReconnecting = true;
+        console.log("Código aceptado; reiniciando para completar la vinculación...");
+        reiniciar(500);
+        return;
+      }
+
       // Mientras el teléfono está aceptando el código, reconectar crea otro
       // socket y puede invalidar el código que el usuario acaba de introducir.
-      // Dejamos ese intento quieto; el botón /pair podrá iniciar uno nuevo.
+      // Solo detenemos el intento si WhatsApp cerró por otra razón.
       if (pairingEnCurso) {
         pairingEnCurso = false;
         setPairingCode("");
