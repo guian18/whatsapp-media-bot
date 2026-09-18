@@ -167,9 +167,12 @@ function json(res, code, data) {
   res.end(JSON.stringify(data));
 }
 
-export function startWebServer() {
-  const port = Number(process.env.PORT) || 0;
-  if (!port) return null; // sin PORT (p. ej. en Termux) no hace falta servidor
+export function startWebServer(portValue = process.env.PORT) {
+  if (portValue === undefined || portValue === null || portValue === "") return null;
+  const port = Number(portValue);
+  // Sin PORT (p. ej. en Termux) no hace falta servidor. El valor numérico 0
+  // se admite explícitamente para pruebas y deja que el sistema elija un puerto.
+  if (!Number.isInteger(port) || port < 0 || port > 65535) return null;
 
   const server = http.createServer((req, res) => {
     const url = (req.url || "/").split("?")[0];
@@ -222,7 +225,9 @@ export function startWebServer() {
   });
 
   server.listen(port, () => {
-    console.log(`[web] página de vinculación lista en el puerto ${port} (/qr)`);
+    const address = server.address();
+    const listeningPort = typeof address === "object" && address ? address.port : port;
+    console.log(`[web] página de vinculación lista en el puerto ${listeningPort} (/qr)`);
   });
   return server;
 }

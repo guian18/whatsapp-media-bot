@@ -36,6 +36,17 @@ npm install
 npm start
 ```
 
+### Comprobar la instalación
+
+Antes de vincular una cuenta, puedes ejecutar las pruebas locales del bot:
+
+```bash
+npm test
+```
+
+Estas verifican el procesamiento de comandos, la carga de `.env`, las validaciones
+y las rutas web de estado y vinculación.
+
 ### Scripts útiles
 
 | Script | Para qué sirve |

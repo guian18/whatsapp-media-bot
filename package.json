@@ -9,7 +9,8 @@
     "start": "node bot.js",
     "start:termux": "termux-wake-lock 2>/dev/null; node bot.js",
     "reset": "node scripts/reset.js",
-    "relink": "node scripts/reset.js && node bot.js"
+    "relink": "node scripts/reset.js && node bot.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20"

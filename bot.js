@@ -1,28 +1,122 @@
 /**
  * Bot de WhatsApp — infoplayerleft
  * Consulta info de jugadores de Left 4 Dead 2 vía Steam Web API y A2S.
- * Conexión por código QR (Baileys), funciona en grupos y en chats privados.
+ * Vinculación por código QR o por código de 8 dígitos con un número de celular.
  *
- * Variables de entorno:
- *   STEAM_API_KEY        (recomendada)
- *   ALLOWED_GROUPS       (opcional) IDs de grupo separados por coma; si se define,
- *                        el bot solo responde en esos grupos
- *   REPLY_IN_PRIVATE     (opcional) "false" para ignorar chats privados
+ * Variables de entorno (se leen de .env o del entorno del sistema):
+ *   STEAM_API_KEY         opcional; en una terminal se solicita si no existe.
+ *   WHATSAPP_NUMBER       opcional; número internacional, solo dígitos.
+ *   PAIRING_CODE          "true" para solicitar un número por consola.
+ *   ALLOWED_GROUPS        opcional; IDs de grupo separados por comas.
+ *   REPLY_IN_PRIVATE      "false" para ignorar chats privados.
+ *   AUTH_DIR              opcional; directorio de la sesión de WhatsApp.
+ *   ALLOW_SELF            "false" para ignorar comandos enviados por la propia cuenta.
+ *   AUTO_RESET            "false" para no borrar automáticamente una sesión inválida.
  */
+import "./src/env.js";
+
 import makeWASocket, {
+  Browsers,
   DisconnectReason,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
 import qrcode from "qrcode-terminal";
+import readline from "node:readline/promises";
+import { rmSync, existsSync, accessSync, constants } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
+import { ensureSteamApiKey } from "./src/steamkey.js";
+import {
+  startWebServer,
+  setQr,
+  setConectado,
+  setPairingCode,
+  setPairingRequester,
+} from "./src/web.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
+const ALLOW_SELF = process.env.ALLOW_SELF !== "false";
+const AUTO_RESET = process.env.AUTO_RESET !== "false";
+
+function dataEscribible() {
+  try {
+    accessSync("/data", constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Railway monta normalmente el volumen persistente en /data. En otros entornos
+// (incluido Termux) se conserva la carpeta local para no fallar por permisos.
+const AUTH_DIR =
+  process.env.AUTH_DIR || (dataEscribible() ? "/data/auth_info" : "auth_info");
+
+let yaReseteado = false;
+let reiniciando = false;
+let sockActual = null;
+let cerrandoManual = false;
+let pairingPendiente = null;
+
+function esperar(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function borrarSesion() {
+  if (existsSync(AUTH_DIR)) {
+    rmSync(AUTH_DIR, { recursive: true, force: true });
+    console.log(`Sesión borrada (${AUTH_DIR}).`);
+  }
+}
+
+function cerrarSocket() {
+  if (!sockActual) return;
+  cerrandoManual = true;
+  try {
+    sockActual.end(new Error("reinicio para pedir un código nuevo"));
+  } catch {
+    // El socket ya estaba cerrado.
+  }
+  sockActual = null;
+}
+
+function reiniciar(delayMs = 2000) {
+  if (reiniciando) return;
+  reiniciando = true;
+  setTimeout(() => {
+    reiniciando = false;
+    start().catch((err) => {
+      console.error("No se pudo reconectar:", err?.message || err);
+    });
+  }, delayMs);
+}
+
+function normalizarNumero(value) {
+  let numero = (value || "").replace(/\D/g, "");
+  if (numero.startsWith("00")) numero = numero.slice(2);
+  return numero;
+}
+
+const ENV_NUMBER = normalizarNumero(process.env.WHATSAPP_NUMBER);
+// El QR es el comportamiento predeterminado. Un número configurado solicita
+// directamente el código; PAIRING_CODE=true permite escribirlo por consola.
+const WANTS_PAIRING_CODE = Boolean(ENV_NUMBER) || process.env.PAIRING_CODE === "true";
+
+async function askPhoneNumber() {
+  if (!process.stdin.isTTY) return "";
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question("Número con código de país (ej. 51987654321): ");
+    return normalizarNumero(answer);
+  } finally {
+    rl.close();
+  }
+}
 
 function textFromMessage(msg) {
   const m = msg.message;
@@ -36,36 +130,180 @@ function textFromMessage(msg) {
   );
 }
 
+// Solicitar el código antes de completar el handshake genera códigos que el
+// cliente de WhatsApp puede rechazar.
+function esperarSocketListo(sock, timeoutMs = 25000) {
+  return new Promise((resolve) => {
+    let terminado = false;
+    const finalizar = (ok) => {
+      if (terminado) return;
+      terminado = true;
+      clearTimeout(temporizador);
+      try {
+        sock.ev.off("connection.update", handler);
+      } catch {
+        // Compatibilidad con versiones de Baileys que no exponen off().
+      }
+      resolve(ok);
+    };
+    const handler = ({ qr, connection }) => {
+      if (qr || connection === "open") finalizar(true);
+      if (connection === "close") finalizar(false);
+    };
+    const temporizador = setTimeout(() => finalizar(false), timeoutMs);
+    sock.ev.on("connection.update", handler);
+  });
+}
+
+/**
+ * Pide un código de vinculación siempre con credenciales nuevas. Reutilizar
+ * credenciales que quedaron a medio vincular provoca rechazos de WhatsApp.
+ */
+async function solicitarCodigo(numeroCrudo) {
+  const numero = normalizarNumero(numeroCrudo);
+  if (!/^\d{8,15}$/.test(numero)) {
+    throw new Error(
+      "Número inválido. Escribe el código de país + tu número, solo dígitos (ej. 51987654321).",
+    );
+  }
+
+  if (pairingPendiente) {
+    pairingPendiente.reject(new Error("Se pidió otro código."));
+    pairingPendiente = null;
+  }
+
+  setPairingCode("");
+  cerrarSocket();
+  borrarSesion();
+
+  const promesa = new Promise((resolve, reject) => {
+    pairingPendiente = { numero, resolve, reject };
+  });
+
+  reiniciar(500);
+  return promesa;
+}
+
+async function atenderPairing(sock) {
+  const solicitud = pairingPendiente;
+  if (!solicitud) return;
+
+  try {
+    const listo = await esperarSocketListo(sock);
+    if (!listo) throw new Error("WhatsApp no respondió a tiempo. Vuelve a pedir el código.");
+    await esperar(1500);
+    const code = await sock.requestPairingCode(solicitud.numero);
+    const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
+    console.log("\n==============================================");
+    console.log(` Código de vinculación: ${pretty}`);
+    console.log("==============================================");
+    console.log("En el celular: WhatsApp > Dispositivos vinculados >");
+    console.log("Vincular un dispositivo > Vincular con número de teléfono.");
+    console.log("El código dura ~1 minuto; si expira, pide otro.\n");
+    setPairingCode(code);
+    solicitud.resolve(code);
+  } catch (err) {
+    console.error("No se pudo generar el código de vinculación:", err?.message || err);
+    solicitud.reject(err instanceof Error ? err : new Error(String(err)));
+  } finally {
+    if (pairingPendiente === solicitud) pairingPendiente = null;
+  }
+}
+
 async function start() {
-  const { state, saveCreds } = await useMultiFileAuthState("auth_info");
+  // npm start -- --reset borra la sesión antes de iniciar, una sola vez.
+  if (!yaReseteado && process.argv.includes("--reset")) {
+    yaReseteado = true;
+    borrarSesion();
+  }
+
+  await ensureSteamApiKey();
+
+  const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
   const { version } = await fetchLatestBaileysVersion();
+  const alreadyRegistered = Boolean(state.creds?.registered);
+
+  let phoneNumber = ENV_NUMBER;
+  let usePairingCode = WANTS_PAIRING_CODE && !alreadyRegistered && !pairingPendiente;
+
+  if (usePairingCode && !phoneNumber) {
+    if (process.stdin.isTTY) {
+      console.log("\nPara vincular con código escribe tu número de celular.");
+      console.log("Si prefieres el código QR, pulsa Enter sin escribir nada.");
+      phoneNumber = await askPhoneNumber();
+    }
+    if (!phoneNumber) {
+      console.log("Sin número; se usará el código QR.");
+      usePairingCode = false;
+    }
+  }
 
   const sock = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: false,
     markOnlineOnConnect: false,
     syncFullHistory: false,
+    browser: Browsers.ubuntu("Chrome"),
   });
+  sockActual = sock;
 
   sock.ev.on("creds.update", saveCreds);
 
+  // Código pedido desde /qr o mediante WHATSAPP_NUMBER al arrancar.
+  if (!alreadyRegistered) {
+    if (!pairingPendiente && usePairingCode && phoneNumber) {
+      pairingPendiente = {
+        numero: phoneNumber,
+        resolve: () => {},
+        reject: (err) =>
+          console.error("Revisa el número (con código de país) o usa el QR:", err?.message || err),
+      };
+    }
+    if (pairingPendiente) void atenderPairing(sock);
+  }
+
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr) {
+    if (qr && !pairingPendiente && !usePairingCode) {
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
       qrcode.generate(qr, { small: true });
+      setQr(qr);
     }
+
     if (connection === "open") {
       console.log("Conectado a WhatsApp ✅");
+      setConectado(true);
     }
+
     if (connection === "close") {
+      setConectado(false);
+      if (cerrandoManual) {
+        cerrandoManual = false;
+        return;
+      }
+
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
-      if (code === DisconnectReason.loggedOut) {
-        console.log("Sesión cerrada. Borra la carpeta auth_info y vuelve a escanear el QR.");
+      const sesionInvalida =
+        code === DisconnectReason.loggedOut ||
+        code === DisconnectReason.badSession ||
+        code === 401 ||
+        code === 403;
+
+      if (sesionInvalida) {
+        if (AUTO_RESET) {
+          console.log("Sesión inválida: borrando la sesión automáticamente...");
+          borrarSesion();
+          console.log("Listo, vuelve a vincular ahora.\n");
+          reiniciar(1000);
+          return;
+        }
+        console.log(
+          `Sesión cerrada. Ejecuta "npm run reset" para borrar ${AUTH_DIR} y vincular de nuevo.`,
+        );
         process.exit(1);
       }
+
       console.log("Conexión perdida, reconectando...");
-      start();
+      reiniciar();
     }
   });
 
@@ -73,7 +311,6 @@ async function start() {
     if (type !== "notify") return;
 
     for (const msg of messages) {
-      if (msg.key.fromMe) continue;
       const jid = msg.key.remoteJid;
       if (!jid) continue;
 
@@ -83,8 +320,11 @@ async function start() {
 
       const text = textFromMessage(msg).trim();
       if (!text.startsWith("!")) continue;
+      if (msg.key.fromMe && !ALLOW_SELF) continue;
 
-      console.log(`[${isGroup ? "grupo" : "privado"} ${jid}] ${text}`);
+      console.log(
+        `[${isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
+      );
 
       try {
         await sock.sendPresenceUpdate("composing", jid);
@@ -101,6 +341,12 @@ async function start() {
     }
   });
 }
+
+// La página /qr puede solicitar un código en cualquier momento.
+setPairingRequester(solicitarCodigo);
+
+// Inicia el healthcheck y /qr cuando la plataforma proporciona PORT.
+startWebServer();
 
 start().catch((err) => {
   console.error("No se pudo iniciar el bot:", err);
