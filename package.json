@@ -12,11 +12,11 @@
     "relink": "node scripts/reset.js && node bot.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "^6.7.9",
+    "@whiskeysockets/baileys": "^6.7.24",
     "qrcode-terminal": "^0.12.0"
   }
 }
