@@ -126,6 +126,9 @@ const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
 <script>
   const $ = (id) => document.getElementById(id);
   function pintar(s) {
+    $("keyestado").innerHTML = s.steamKey
+      ? '<span class="ok">Clave de Steam configurada \u2705 (' + s.steamKey + ') \u2014 puedes cambiarla abajo.</span>'
+      : '<span class="err">Falta la clave de Steam: los comandos de jugadores no funcionar\u00e1n. P\u00e9gala aqu\u00ed abajo.</span>';
     if (s.conectado) {
       $("estado").innerHTML = '<span class="ok">Bot conectado ✅ Ya puedes usar los comandos en WhatsApp.</span>';
       $("qrbox").innerHTML = '<p class="muted">Vinculado.</p>';
@@ -136,9 +139,6 @@ const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
     $("qrbox").innerHTML = s.qrImagen
       ? '<img class="qr" alt="QR" src="' + s.qrImagen + '">'
       : '<p class="muted">Generando QR… (se renueva solo)</p>';
-    $("keyestado").innerHTML = s.steamKey
-      ? '<span class="ok">Clave de Steam configurada ✅ (' + s.steamKey + ')</span>'
-      : '<span class="err">Falta la clave de Steam: los comandos de jugadores no funcionarán.</span>';
     if (s.pairingCode) {
       const pretty = s.pairingCode.replace(/(.{4})(?=.)/g, "$1-");
       $("codebox").innerHTML = '<p class="code">' + pretty + '</p>';
@@ -183,7 +183,7 @@ const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
       $("keyestado").innerHTML = d.ok
         ? '<span class="ok">Clave guardada ✅</span>'
         : '<span class="err">' + d.error + '</span>';
-      if (d.ok) e.target.reset();
+      if (d.ok) { e.target.reset(); tick(); }
     } catch {
       $("keyestado").innerHTML = '<span class="err">Error de red.</span>';
     }
