@@ -29,7 +29,7 @@ import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 import { ensureSteamApiKey } from "./src/steamkey.js";
-import { startWebServer, setQr, setConectado, setPairingCode } from "./src/web.js";
+import { startWebServer, setQr, setConectado, setPairingCode, setPairingRequester } from "./src/web.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
@@ -131,6 +131,17 @@ async function start() {
     syncFullHistory: false,
     browser: Browsers.ubuntu("Chrome"),
   });
+
+  // Permite pedir el código de 8 dígitos desde la página web (/qr) de Railway.
+  if (!alreadyRegistered) {
+    setPairingRequester(async (numero) => {
+      const code = await sock.requestPairingCode(numero);
+      setPairingCode(code);
+      const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
+      console.log(`Código de vinculación pedido desde la web para ${numero}: ${pretty}`);
+      return code;
+    });
+  }
 
   if (usePairingCode && phoneNumber) {
     // Pequeña espera para que el socket esté listo antes de pedir el código.
