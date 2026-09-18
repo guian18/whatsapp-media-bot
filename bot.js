@@ -47,12 +47,31 @@ const AUTO_RESET = process.env.AUTO_RESET !== "false";
 
 let yaReseteado = false;
 let reiniciando = false; // evita abrir varios sockets a la vez
+let sockActual = null;
+let cerrandoManual = false;
+// Solicitud de código pendiente: { numero, resolve, reject }
+let pairingPendiente = null;
+
+function esperar(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function borrarSesion() {
   if (existsSync(AUTH_DIR)) {
     rmSync(AUTH_DIR, { recursive: true, force: true });
     console.log(`Sesión borrada (${AUTH_DIR}).`);
   }
+}
+
+function cerrarSocket() {
+  if (!sockActual) return;
+  cerrandoManual = true;
+  try {
+    sockActual.end(new Error("reinicio para pedir un código nuevo"));
+  } catch {
+    /* el socket ya estaba cerrado */
+  }
+  sockActual = null;
 }
 
 function reiniciar(delayMs = 2000) {
@@ -70,7 +89,14 @@ function onlyDigits(value) {
   return (value || "").replace(/\D/g, "");
 }
 
-const ENV_NUMBER = onlyDigits(process.env.WHATSAPP_NUMBER);
+// WhatsApp espera el número en formato internacional sin "+" ni "00" delante.
+function normalizarNumero(value) {
+  let numero = onlyDigits(value);
+  if (numero.startsWith("00")) numero = numero.slice(2);
+  return numero;
+}
+
+const ENV_NUMBER = normalizarNumero(process.env.WHATSAPP_NUMBER);
 // Por defecto se pregunta el número en la terminal al vincular; PAIRING_CODE=false lo desactiva.
 const WANTS_PAIRING_CODE = process.env.PAIRING_CODE !== "false";
 
@@ -79,7 +105,7 @@ async function askPhoneNumber() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
     const answer = await rl.question("Número con código de país (ej. 51987654321): ");
-    return onlyDigits(answer);
+    return normalizarNumero(answer);
   } finally {
     rl.close();
   }
@@ -97,6 +123,87 @@ function textFromMessage(msg) {
   );
 }
 
+// Espera a que el socket termine el handshake con WhatsApp.
+// Pedir el código antes de eso devuelve un código que el celular rechaza.
+function esperarSocketListo(sock, timeoutMs = 25000) {
+  return new Promise((resolve) => {
+    let terminado = false;
+    const finalizar = (ok) => {
+      if (terminado) return;
+      terminado = true;
+      clearTimeout(temporizador);
+      try {
+        sock.ev.off("connection.update", handler);
+      } catch {
+        /* ignorar */
+      }
+      resolve(ok);
+    };
+    const handler = ({ qr, connection }) => {
+      // El primer QR (o la conexión abierta) significa que el socket ya está operativo.
+      if (qr || connection === "open") finalizar(true);
+      if (connection === "close") finalizar(false);
+    };
+    const temporizador = setTimeout(() => finalizar(false), timeoutMs);
+    sock.ev.on("connection.update", handler);
+  });
+}
+
+/**
+ * Pide un código de 8 dígitos SIEMPRE con una sesión nueva.
+ * Reutilizar credenciales a medio vincular es la causa típica de
+ * "no se pudo vincular el dispositivo / revisa el número".
+ */
+async function solicitarCodigo(numeroCrudo) {
+  const numero = normalizarNumero(numeroCrudo);
+  if (!/^\d{8,15}$/.test(numero)) {
+    throw new Error(
+      "Número inválido. Escribe el código de país + tu número, solo dígitos (ej. 51987654321).",
+    );
+  }
+
+  if (pairingPendiente) {
+    pairingPendiente.reject(new Error("Se pidió otro código."));
+    pairingPendiente = null;
+  }
+
+  setPairingCode("");
+  cerrarSocket();
+  borrarSesion();
+
+  const promesa = new Promise((resolve, reject) => {
+    pairingPendiente = { numero, resolve, reject };
+  });
+
+  reiniciar(500);
+  return promesa;
+}
+
+async function atenderPairing(sock) {
+  const solicitud = pairingPendiente;
+  if (!solicitud) return;
+  try {
+    const listo = await esperarSocketListo(sock);
+    if (!listo) throw new Error("WhatsApp no respondió a tiempo. Vuelve a pedir el código.");
+    await esperar(1500);
+    const code = await sock.requestPairingCode(solicitud.numero);
+    const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
+    console.log("\n==============================================");
+    console.log(` Código de vinculación: ${pretty}`);
+    console.log("==============================================");
+    console.log("En el celular: WhatsApp > Dispositivos vinculados >");
+    console.log("Vincular un dispositivo > Vincular con número de teléfono.");
+    console.log("El código dura ~1 minuto; si expira, pide otro.\n");
+    setPairingCode(code);
+    solicitud.resolve(code);
+  } catch (err) {
+    console.error("No se pudo generar el código de vinculación:", err?.message || err);
+    solicitud.reject(err instanceof Error ? err : new Error(String(err)));
+  } finally {
+    if (pairingPendiente === solicitud) pairingPendiente = null;
+  }
+}
+
 async function start() {
   // "npm start -- --reset" borra la sesión antes de arrancar (solo la primera vez)
   if (!yaReseteado && process.argv.includes("--reset")) {
@@ -111,12 +218,14 @@ async function start() {
 
   const alreadyRegistered = Boolean(state.creds?.registered);
   let phoneNumber = ENV_NUMBER;
-  let usePairingCode = WANTS_PAIRING_CODE && !alreadyRegistered;
+  let usePairingCode = WANTS_PAIRING_CODE && !alreadyRegistered && !pairingPendiente;
 
   if (usePairingCode && !phoneNumber) {
-    console.log("\nPara vincular con CÓDIGO escribe tu número de celular.");
-    console.log("Si prefieres el código QR, pulsa Enter sin escribir nada.");
-    phoneNumber = await askPhoneNumber();
+    if (process.stdin.isTTY) {
+      console.log("\nPara vincular con CÓDIGO escribe tu número de celular.");
+      console.log("Si prefieres el código QR, pulsa Enter sin escribir nada.");
+      phoneNumber = await askPhoneNumber();
+    }
     if (!phoneNumber) {
       console.log("Sin número; se usará el código QR.");
       usePairingCode = false;
@@ -126,47 +235,29 @@ async function start() {
   const sock = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: false,
     markOnlineOnConnect: false,
     syncFullHistory: false,
     browser: Browsers.ubuntu("Chrome"),
   });
-
-  // Permite pedir el código de 8 dígitos desde la página web (/qr) de Railway.
-  if (!alreadyRegistered) {
-    setPairingRequester(async (numero) => {
-      const code = await sock.requestPairingCode(numero);
-      setPairingCode(code);
-      const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
-      console.log(`Código de vinculación pedido desde la web para ${numero}: ${pretty}`);
-      return code;
-    });
-  }
-
-  if (usePairingCode && phoneNumber) {
-    // Pequeña espera para que el socket esté listo antes de pedir el código.
-    setTimeout(async () => {
-      try {
-        const code = await sock.requestPairingCode(phoneNumber);
-        const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
-        console.log("\n==============================================");
-        console.log(` Código de vinculación: ${pretty}`);
-        console.log("==============================================");
-        console.log("En el celular: WhatsApp > Dispositivos vinculados >");
-        console.log("Vincular un dispositivo > Vincular con número de teléfono.");
-        console.log("Escribe ese código antes de que expire.\n");
-        setPairingCode(code);
-      } catch (err) {
-        console.error("No se pudo generar el código de vinculación:", err?.message || err);
-        console.error("Revisa el número (código de país incluido) o usa el QR.");
-      }
-    }, 3000);
-  }
+  sockActual = sock;
 
   sock.ev.on("creds.update", saveCreds);
 
+  // Código pedido desde la web (/qr) o por WHATSAPP_NUMBER en el arranque.
+  if (!alreadyRegistered) {
+    if (!pairingPendiente && usePairingCode && phoneNumber) {
+      pairingPendiente = {
+        numero: phoneNumber,
+        resolve: () => {},
+        reject: (err) =>
+          console.error("Revisa el número (con código de país) o usa el QR:", err?.message || err),
+      };
+    }
+    if (pairingPendiente) void atenderPairing(sock);
+  }
+
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr && !usePairingCode) {
+    if (qr && !pairingPendiente && !usePairingCode) {
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
       qrcode.generate(qr, { small: true });
       setQr(qr);
@@ -177,6 +268,10 @@ async function start() {
     }
     if (connection === "close") {
       setConectado(false);
+      if (cerrandoManual) {
+        cerrandoManual = false;
+        return; // cierre provocado por nosotros para pedir un código nuevo
+      }
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
       const sesionInvalida =
         code === DisconnectReason.loggedOut ||
@@ -238,6 +333,9 @@ async function start() {
     }
   });
 }
+
+// La página /qr puede pedir el código en cualquier momento.
+setPairingRequester(solicitarCodigo);
 
 // Healthcheck + página /qr cuando la plataforma define PORT (Railway, Render...).
 startWebServer();
