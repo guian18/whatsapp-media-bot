@@ -27,14 +27,34 @@ cp .env.example .env     # pon tu STEAM_API_KEY
 npm start
 ```
 
-La primera vez aparece un **código QR** en la terminal. Escanéalo desde
-WhatsApp → **Dispositivos vinculados** → *Vincular un dispositivo*.
+La primera vez hay que vincular el bot con una cuenta de WhatsApp. Hay dos formas:
+
+### Opción A — código con tu número de celular (sin QR)
+
+Pon tu número con código de país (solo dígitos) en `.env`:
+
+```
+WHATSAPP_NUMBER=51987654321
+```
+
+Al arrancar, la terminal muestra un **código de 8 dígitos**. En el celular:
+WhatsApp → **Dispositivos vinculados** → *Vincular un dispositivo* →
+**Vincular con número de teléfono** → escribe el código.
+
+Si prefieres escribir el número al arrancar en vez de guardarlo, usa
+`PAIRING_CODE=true` y el bot lo preguntará por consola.
+
+### Opción B — código QR
+
+Sin `WHATSAPP_NUMBER` ni `PAIRING_CODE`, aparece un **código QR** en la terminal.
+Escanéalo desde WhatsApp → **Dispositivos vinculados** → *Vincular un dispositivo*.
+
 La sesión queda guardada en la carpeta `auth_info/`, así que no hace falta
-volver a escanear en los siguientes arranques.
+volver a vincular en los siguientes arranques.
 
 ## Usarlo en un grupo
 
-1. Vincula el bot con el número de WhatsApp que quieras usar (paso del QR).
+1. Vincula el bot con el número de WhatsApp que quieras usar (código o QR).
 2. Añade ese número al grupo (o usa una cuenta que ya esté dentro).
 3. Escribe cualquier comando en el grupo, por ejemplo `!ayuda`.
 
@@ -56,16 +76,19 @@ Para ignorar los mensajes privados: `REPLY_IN_PRIVATE=false`.
 ## Despliegue (Render / Railway / VPS)
 
 Tipo de servicio: **Worker**. Comando de inicio: `node bot.js`.
-Configura `STEAM_API_KEY` como variable de entorno.
+Configura `STEAM_API_KEY` como variable de entorno (y `WHATSAPP_NUMBER` si
+quieres vincular por código en vez de QR).
 
 Importante: la carpeta `auth_info/` guarda la sesión de WhatsApp. En plataformas
 con disco efímero necesitas un **disco persistente**, o tendrás que escanear el
-QR en cada redespliegue.
+QR o el código en cada redespliegue.
 
 ## Notas
 
-- Ya no se usa `DISCORD_TOKEN` ni intents de Discord; la vinculación es por QR.
+- Ya no se usa `DISCORD_TOKEN` ni intents de Discord; la vinculación es por código
+  de celular o por QR.
 - `auth_info/` y `.env` están en `.gitignore`: nunca los subas al repositorio,
   la sesión de WhatsApp da acceso a tu cuenta.
 - Esta conexión usa la librería no oficial Baileys. Un uso abusivo (spam, muchos
   mensajes automáticos) puede provocar el bloqueo del número por parte de WhatsApp.
+
