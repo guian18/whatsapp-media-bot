@@ -32,6 +32,8 @@ const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .filter(Boolean);
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
 const AUTH_DIR = process.env.AUTH_DIR || "auth_info";
+// Responder también a los comandos que escribes con tu propio número (ALLOW_SELF=false lo desactiva)
+const ALLOW_SELF = process.env.ALLOW_SELF !== "false";
 
 function onlyDigits(value) {
   return (value || "").replace(/\D/g, "");
@@ -139,7 +141,6 @@ async function start() {
     if (type !== "notify") return;
 
     for (const msg of messages) {
-      if (msg.key.fromMe) continue;
       const jid = msg.key.remoteJid;
       if (!jid) continue;
 
@@ -150,7 +151,13 @@ async function start() {
       const text = textFromMessage(msg).trim();
       if (!text.startsWith("!")) continue;
 
-      console.log(`[${isGroup ? "grupo" : "privado"} ${jid}] ${text}`);
+      // Los comandos escritos desde tu propio número también funcionan
+      // (así puedes probar el bot en cualquier chat), salvo que ALLOW_SELF=false.
+      if (msg.key.fromMe && !ALLOW_SELF) continue;
+
+      console.log(
+        `[${isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
+      );
 
       try {
         await sock.sendPresenceUpdate("composing", jid);
