@@ -33,9 +33,13 @@ Requiere Node.js 18 o superior.
 
 ```bash
 npm install
-cp .env.example .env     # pon tu STEAM_API_KEY
 npm start
 ```
+
+**Steam API key:** al arrancar, el bot te la **pide en la terminal** (consíguela
+gratis en https://steamcommunity.com/dev/apikey). Verifica el formato, te pregunta
+si quieres guardarla para la próxima vez y no vuelve a pedirla. No hace falta
+ponerla en `.env` cuando usas la terminal.
 
 La primera vez hay que vincular el bot con una cuenta de WhatsApp. Hay dos formas:
 

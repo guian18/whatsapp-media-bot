@@ -38,25 +38,35 @@ function looksValid(key) {
 
 /**
  * Asegura que haya una Steam API key.
- * Orden: STEAM_API_KEY -> archivo .steam_key -> pregunta en la terminal.
- * Con STEAM_ASK_ALWAYS=true siempre pregunta.
+ * En una terminal interactiva SIEMPRE se pregunta aquí (no se lee del .env),
+ * salvo que ya esté guardada en el archivo .steam_key.
+ * En servidores sin terminal (Railway, etc.) se usa STEAM_API_KEY del entorno
+ * o el archivo .steam_key. Con STEAM_ASK_ALWAYS=true siempre pregunta.
  */
 export async function ensureSteamApiKey() {
   const askAlways = process.env.STEAM_ASK_ALWAYS === "true";
+  const interactivo = Boolean(process.stdin.isTTY) && !askAlways;
 
-  if (!askAlways) {
-    if (apiKey) return apiKey;
+  if (interactivo) {
     const fromFile = readKeyFile();
     if (fromFile) {
       setSteamApiKey(fromFile);
+      console.log(`Usando la clave guardada en ${KEY_FILE}. Bórralo si quieres que se vuelva a pedir.`);
       return apiKey;
     }
   }
 
+  // Servidor sin terminal (Railway, Docker, etc.): usar variable de entorno o archivo.
   if (!process.stdin.isTTY) {
-    console.warn(
-      "No hay STEAM_API_KEY y la terminal no es interactiva: las consultas a Steam fallarán.",
-    );
+    if (!apiKey) {
+      const fromFile = readKeyFile();
+      if (fromFile) setSteamApiKey(fromFile);
+    }
+    if (!apiKey) {
+      console.warn(
+        "No hay STEAM_API_KEY y la terminal no es interactiva: las consultas a Steam fallarán.",
+      );
+    }
     return apiKey;
   }
 

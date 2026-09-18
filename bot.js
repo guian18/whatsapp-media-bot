@@ -4,7 +4,7 @@
  * Vinculación por código QR o por CÓDIGO DE 8 DÍGITOS con tu número de celular.
  *
  * Variables de entorno (se leen de .env o del entorno del sistema):
- *   STEAM_API_KEY         (recomendada)
+ *   STEAM_API_KEY         (opcional; en terminal el bot la pide al arrancar)
  *   WHATSAPP_NUMBER       (opcional) número de celular con código de país, solo dígitos.
  *                         Si se define, la vinculación se hace por código en vez de QR.
  *   PAIRING_CODE          (opcional) "false" para no pedir el número por consola
