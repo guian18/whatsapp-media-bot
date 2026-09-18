@@ -1,7 +1,7 @@
 /**
  * Bot de WhatsApp — infoplayerleft
  * Consulta info de jugadores de Left 4 Dead 2 vía Steam Web API y A2S.
- * Conexión por código QR (Baileys), funciona en grupos y en chats privados.
+ * Conexión por código de vinculación (Baileys), funciona en grupos y en chats privados.
  *
  * Variables de entorno:
  *   STEAM_API_KEY        (recomendada)
@@ -52,8 +52,8 @@ async function start() {
 
   // CÓDIGO DE VINCULACIÓN POR TEXTO (Reemplaza al QR de forma segura)
   if (!sock.authState.creds.registered) {
-    const numeroTelefono = process.env.NUMERO_BOT; 
-    
+    const numeroTelefono = process.env.NUMERO_BOT;
+
     if (!numeroTelefono) {
       console.error("❌ ERROR: No se ha configurado la variable de entorno 'NUMERO_BOT' en Railway.");
       process.exit(1);
@@ -82,8 +82,8 @@ async function start() {
         console.log("Sesión cerrada. Borra la carpeta auth_info y vuelve a generar el código.");
         process.exit(1);
       }
-      console.log("Conexión perdida, reconectando en 10 segundos...");
-setTimeout(() => start(), 10000);
+      console.log("Conexión perdida, reconectando en 15 segundos...");
+      setTimeout(() => start(), 15000);
     }
   });
 
