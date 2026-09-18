@@ -190,6 +190,12 @@ export function startWebServer(portValue = process.env.PORT) {
           }
           try {
             const code = await pairingRequester(numero);
+            if (typeof code !== "string" || !/^\d{8}$/.test(code)) {
+              return json(res, 502, {
+                ok: false,
+                error: "WhatsApp no devolvió un código real de 8 dígitos. Vuelve a intentarlo.",
+              });
+            }
             setPairingCode(code);
             return json(res, 200, { ok: true, code });
           } catch (err) {

@@ -85,9 +85,10 @@ test("environment loader applies values from the configured .env file", (t) => {
 test("web server exposes health, status, QR page, and pairing requests", async (t) => {
   const { startWebServer, setConectado, setPairingRequester } = await import("../src/web.js");
   setConectado(false);
+  let realCode = false;
   setPairingRequester(async (number) => {
     assert.equal(number, "51987654321");
-    return "12345678";
+    return realCode ? "12345678" : "fake-code";
   });
 
   const server = startWebServer(0);
@@ -111,6 +112,14 @@ test("web server exposes health, status, QR page, and pairing requests", async (
   assert.equal(invalid.status, 200);
   assert.equal(JSON.parse(invalid.body).ok, false);
 
+  const fakePairing = await request(port, "/pair", {
+    method: "POST",
+    body: "numero=%2B51%20987654321",
+  });
+  assert.equal(fakePairing.status, 502);
+  assert.equal(JSON.parse(fakePairing.body).ok, false);
+
+  realCode = true;
   const pairing = await request(port, "/pair", {
     method: "POST",
     body: "numero=%2B51%20987654321",

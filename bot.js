@@ -193,6 +193,9 @@ async function atenderPairing(sock) {
     if (!listo) throw new Error("WhatsApp no respondió a tiempo. Vuelve a pedir el código.");
     await esperar(1500);
     const code = await sock.requestPairingCode(solicitud.numero);
+    if (typeof code !== "string" || !/^\d{8}$/.test(code)) {
+      throw new Error("WhatsApp devolvió un código de vinculación inválido. Pide uno nuevo.");
+    }
     const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
     console.log("\n==============================================");
     console.log(` Código de vinculación: ${pretty}`);
