@@ -38,14 +38,15 @@ function onlyDigits(value) {
 }
 
 const ENV_NUMBER = onlyDigits(process.env.WHATSAPP_NUMBER);
-const WANTS_PAIRING_CODE = Boolean(ENV_NUMBER) || process.env.PAIRING_CODE === "true";
+// Por defecto se pregunta el número en la terminal al vincular; PAIRING_CODE=false lo desactiva.
+const WANTS_PAIRING_CODE = process.env.PAIRING_CODE !== "false";
 
 async function askPhoneNumber() {
   if (!process.stdin.isTTY) return "";
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
     const answer = await rl.question(
-      "\nEscribe tu número de WhatsApp con código de país (ej. 51987654321): ",
+      "Número con código de país (ej. 51987654321): ",
     );
     return onlyDigits(answer);
   } finally {
@@ -74,9 +75,11 @@ async function start() {
   let usePairingCode = WANTS_PAIRING_CODE && !alreadyRegistered;
 
   if (usePairingCode && !phoneNumber) {
+    console.log("\nPara vincular con CÓDIGO escribe tu número de celular.");
+    console.log("Si prefieres el código QR, pulsa Enter sin escribir nada.");
     phoneNumber = await askPhoneNumber();
     if (!phoneNumber) {
-      console.log("No se recibió número; se usará el código QR.");
+      console.log("Sin número; se usará el código QR.");
       usePairingCode = false;
     }
   }
