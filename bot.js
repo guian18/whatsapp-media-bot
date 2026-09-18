@@ -3,11 +3,11 @@
  * Consulta info de jugadores de Left 4 Dead 2 vía Steam Web API y A2S.
  * Vinculación por código QR o por CÓDIGO DE 8 DÍGITOS con tu número de celular.
  *
- * Variables de entorno:
+ * Variables de entorno (se leen de .env o del entorno del sistema):
  *   STEAM_API_KEY         (recomendada)
  *   WHATSAPP_NUMBER       (opcional) número de celular con código de país, solo dígitos.
  *                         Si se define, la vinculación se hace por código en vez de QR.
- *   PAIRING_CODE          (opcional) "true" para pedir el número por consola al arrancar
+ *   PAIRING_CODE          (opcional) "false" para no pedir el número por consola
  *   ALLOWED_GROUPS        (opcional) IDs de grupo separados por coma; si se define,
  *                         el bot solo responde en esos grupos
  *   REPLY_IN_PRIVATE      (opcional) "false" para ignorar chats privados
@@ -15,6 +15,8 @@
  *
  * Funciona en Node.js 18+ (Linux, Windows, macOS y Termux en Android).
  */
+import "./src/env.js"; // carga .env antes de leer process.env
+
 import makeWASocket, {
   Browsers,
   DisconnectReason,
@@ -27,24 +29,41 @@ import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 import { ensureSteamApiKey } from "./src/steamkey.js";
+import { startWebServer, setQr, setConectado, setPairingCode } from "./src/web.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
-const AUTH_DIR = process.env.AUTH_DIR || "auth_info";
+// En Railway conviene montar un volumen en /data para no perder la sesión
+// en cada despliegue. Si existe, se usa automáticamente.
+const AUTH_DIR =
+  process.env.AUTH_DIR || (existsSync("/data") ? "/data/auth_info" : "auth_info");
 // Responder también a los comandos que escribes con tu propio número (ALLOW_SELF=false lo desactiva)
 const ALLOW_SELF = process.env.ALLOW_SELF !== "false";
 // Borrar la sesión automáticamente cuando queda inválida (AUTO_RESET=false lo desactiva)
 const AUTO_RESET = process.env.AUTO_RESET !== "false";
+
 let yaReseteado = false;
+let reiniciando = false; // evita abrir varios sockets a la vez
 
 function borrarSesion() {
   if (existsSync(AUTH_DIR)) {
     rmSync(AUTH_DIR, { recursive: true, force: true });
     console.log(`Sesión borrada (${AUTH_DIR}).`);
   }
+}
+
+function reiniciar(delayMs = 2000) {
+  if (reiniciando) return;
+  reiniciando = true;
+  setTimeout(() => {
+    reiniciando = false;
+    start().catch((err) => {
+      console.error("No se pudo reconectar:", err?.message || err);
+    });
+  }, delayMs);
 }
 
 function onlyDigits(value) {
@@ -59,9 +78,7 @@ async function askPhoneNumber() {
   if (!process.stdin.isTTY) return "";
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
-    const answer = await rl.question(
-      "Número con código de país (ej. 51987654321): ",
-    );
+    const answer = await rl.question("Número con código de país (ej. 51987654321): ");
     return onlyDigits(answer);
   } finally {
     rl.close();
@@ -97,7 +114,7 @@ async function start() {
   let usePairingCode = WANTS_PAIRING_CODE && !alreadyRegistered;
 
   if (usePairingCode && !phoneNumber) {
-    console.log("\nPara vincular con CÓDIGG escribe tu número de celular.");
+    console.log("\nPara vincular con CÓDIGO escribe tu número de celular.");
     console.log("Si prefieres el código QR, pulsa Enter sin escribir nada.");
     phoneNumber = await askPhoneNumber();
     if (!phoneNumber) {
@@ -127,6 +144,7 @@ async function start() {
         console.log("En el celular: WhatsApp > Dispositivos vinculados >");
         console.log("Vincular un dispositivo > Vincular con número de teléfono.");
         console.log("Escribe ese código antes de que expire.\n");
+        setPairingCode(code);
       } catch (err) {
         console.error("No se pudo generar el código de vinculación:", err?.message || err);
         console.error("Revisa el número (código de país incluido) o usa el QR.");
@@ -140,11 +158,14 @@ async function start() {
     if (qr && !usePairingCode) {
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
       qrcode.generate(qr, { small: true });
+      setQr(qr);
     }
     if (connection === "open") {
       console.log("Conectado a WhatsApp ✅");
+      setConectado(true);
     }
     if (connection === "close") {
+      setConectado(false);
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
       const sesionInvalida =
         code === DisconnectReason.loggedOut ||
@@ -156,7 +177,7 @@ async function start() {
           console.log("Sesión inválida: borrando la sesión automáticamente...");
           borrarSesion();
           console.log("Listo, vuelve a vincular ahora.\n");
-          start();
+          reiniciar(1000);
           return;
         }
         console.log(
@@ -165,7 +186,7 @@ async function start() {
         process.exit(1);
       }
       console.log("Conexión perdida, reconectando...");
-      start();
+      reiniciar();
     }
   });
 
@@ -188,7 +209,7 @@ async function start() {
       if (msg.key.fromMe && !ALLOW_SELF) continue;
 
       console.log(
-        `['{isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
+        `[${isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
       );
 
       try {
@@ -207,7 +228,10 @@ async function start() {
   });
 }
 
+// Healthcheck + página /qr cuando la plataforma define PORT (Railway, Render...).
+startWebServer();
+
 start().catch((err) => {
-  console.error("No se pude iniciar el bot:", err);
+  console.error("No se pudo iniciar el bot:", err);
   process.exit(1);
 });
