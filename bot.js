@@ -14,7 +14,6 @@ import makeWASocket, {
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
-import qrcode from "qrcode-terminal";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 
@@ -52,8 +51,8 @@ async function start() {
 
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
     if (qr) {
-      console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
-      qrcode.generate(qr, { small: true });
+      // 🔒 Ocultado por seguridad en Railway.
+      console.log("⚠️ Nuevo código QR generado. Vincula tu cuenta de forma local antes de desplegar.");
     }
     if (connection === "open") {
       console.log("Conectado a WhatsApp ✅");
