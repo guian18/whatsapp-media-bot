@@ -1,20 +1,25 @@
 /**
  * Bot de WhatsApp — infoplayerleft
  * Consulta info de jugadores de Left 4 Dead 2 vía Steam Web API y A2S.
- * Conexión por código de vinculación (Baileys), funciona en grupos y en chats privados.
+ * Soporta dos métodos de conexión (Baileys):
+ *   - Código de vinculación (si se define NUMERO_BOT)
+ *   - Código QR (si NUMERO_BOT no está definido, plan B más estable)
+ * Funciona en grupos y en chats privados.
  *
  * Variables de entorno:
  *   STEAM_API_KEY        (recomendada)
  *   ALLOWED_GROUPS       (opcional) IDs de grupo separados por coma; si se define,
  *                        el bot solo responde en esos grupos
  *   REPLY_IN_PRIVATE     (opcional) "false" para ignorar chats privados
- *   NUMERO_BOT           (obligatorio) Tu número con código de país (ej: 5491123456789)
+ *   NUMERO_BOT           (opcional) Tu número con código de país (ej: 393803893208).
+ *                        Si se define, se usa código de vinculación. Si no, se usa QR.
  */
 import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
+import qrcode from "qrcode-terminal";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 
@@ -40,6 +45,9 @@ async function start() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
   const { version } = await fetchLatestBaileysVersion();
 
+  const numeroTelefono = process.env.NUMERO_BOT;
+  const usePairingCode = Boolean(numeroTelefono);
+
   const sock = makeWASocket({
     version,
     auth: state,
@@ -50,15 +58,8 @@ async function start() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  // CÓDIGO DE VINCULACIÓN POR TEXTO (Reemplaza al QR de forma segura)
-  if (!sock.authState.creds.registered) {
-    const numeroTelefono = process.env.NUMERO_BOT;
-
-    if (!numeroTelefono) {
-      console.error("❌ ERROR: No se ha configurado la variable de entorno 'NUMERO_BOT' en Railway.");
-      process.exit(1);
-    }
-
+  // MÉTODO 1: CÓDIGO DE VINCULACIÓN POR TEXTO (si hay NUMERO_BOT configurado)
+  if (!sock.authState.creds.registered && usePairingCode) {
     setTimeout(async () => {
       try {
         let code = await sock.requestPairingCode(numeroTelefono.replace(/[^0-9]/g, ""));
@@ -72,14 +73,19 @@ async function start() {
     }, 3000);
   }
 
-  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
+  sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
+    // MÉTODO 2: CÓDIGO QR (si no hay NUMERO_BOT configurado)
+    if (qr && !usePairingCode) {
+      console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
+      qrcode.generate(qr, { small: true });
+    }
     if (connection === "open") {
       console.log("Conectado a WhatsApp ✅");
     }
     if (connection === "close") {
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
       if (code === DisconnectReason.loggedOut) {
-        console.log("Sesión cerrada. Borra la carpeta auth_info y vuelve a generar el código.");
+        console.log("Sesión cerrada. Borra la carpeta auth_info y vuelve a generar el código/QR.");
         process.exit(1);
       }
       console.log("Conexión perdida, reconectando en 15 segundos...");
