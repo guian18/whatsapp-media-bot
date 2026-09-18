@@ -11,6 +11,9 @@
  *   ALLOWED_GROUPS        (opcional) IDs de grupo separados por coma; si se define,
  *                         el bot solo responde en esos grupos
  *   REPLY_IN_PRIVATE      (opcional) "false" para ignorar chats privados
+ *   AUTH_DIR              (opcional) carpeta donde se guarda la sesión (por defecto auth_info)
+ *
+ * Funciona en Node.js 18+ (Linux, Windows, macOS y Termux en Android).
  */
 import makeWASocket, {
   Browsers,
@@ -28,6 +31,7 @@ const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .map((s) => s.trim())
   .filter(Boolean);
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
+const AUTH_DIR = process.env.AUTH_DIR || "auth_info";
 
 function onlyDigits(value) {
   return (value || "").replace(/\D/g, "");
@@ -62,7 +66,7 @@ function textFromMessage(msg) {
 }
 
 async function start() {
-  const { state, saveCreds } = await useMultiFileAuthState("auth_info");
+  const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
   const { version } = await fetchLatestBaileysVersion();
 
   const alreadyRegistered = Boolean(state.creds?.registered);
@@ -119,7 +123,7 @@ async function start() {
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
       if (code === DisconnectReason.loggedOut) {
         console.log(
-          "Sesión cerrada. Borra la carpeta auth_info y vuelve a vincular (QR o código).",
+          `Sesión cerrada. Borra la carpeta ${AUTH_DIR} y vuelve a vincular (QR o código).`,
         );
         process.exit(1);
       }
