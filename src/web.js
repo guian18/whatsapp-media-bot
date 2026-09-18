@@ -1,18 +1,22 @@
-// Pequeño servidor HTTP para plataformas tipo Railway:
-// - responde al healthcheck en "/"
-// - muestra el QR o el código de vinculación en "/qr" para escanearlo desde el navegador
-// - permite pedir el código de 8 dígitos escribiendo el número en el formulario (POST /pair)
+// Servidor HTTP para plataformas tipo Railway:
+// - healthcheck en "/"
+// - página de vinculación en "/qr": muestra el QR (imagen) y el código de 8 dígitos
+// - "/status" devuelve el estado en JSON (la página se actualiza sola)
+// - "POST /pair" pide el código de 8 dígitos para el número indicado
 import http from "node:http";
-import qrcode from "qrcode-terminal";
+import qrcodeTerminal from "qrcode-terminal";
+import QRCode from "qrcode";
 
 const estado = {
   conectado: false,
-  qr: "",          // texto del QR actual (si toca vincular por QR)
-  qrAscii: "",     // el mismo QR dibujado en texto
-  pairingCode: "", // código de 8 dígitos (si se vincula por número)
+  qr: "",          // texto crudo del QR
+  qrAscii: "",     // QR en texto (respaldo)
+  qrImagen: "",    // QR como imagen (data URL)
+  pairingCode: "", // código de 8 dígitos
+  codeAt: 0,       // cuándo se generó el código
+  error: "",
 };
 
-// bot.js registra aquí la función que pide el código a WhatsApp
 let pairingRequester = null;
 
 export function setPairingRequester(fn) {
@@ -24,49 +28,32 @@ export function setConectado(valor) {
   if (valor) {
     estado.qr = "";
     estado.qrAscii = "";
+    estado.qrImagen = "";
     estado.pairingCode = "";
+    estado.error = "";
   }
 }
 
 export function setPairingCode(code) {
   estado.pairingCode = code || "";
+  estado.codeAt = code ? Date.now() : 0;
 }
 
 export function setQr(qr) {
   estado.qr = qr || "";
   if (!qr) {
     estado.qrAscii = "";
+    estado.qrImagen = "";
     return;
   }
-  qrcode.generate(qr, { small: true }, (ascii) => {
+  qrcodeTerminal.generate(qr, { small: true }, (ascii) => {
     estado.qrAscii = ascii;
   });
-}
-
-const FORMULARIO = `
-  <h2>Vincular con tu número</h2>
-  <form method="post" action="/pair">
-    <input name="numero" inputmode="numeric" placeholder="51987654321"
-      style="font-size:1.2rem;padding:8px;width:220px" required>
-    <button type="submit" style="font-size:1.2rem;padding:8px 16px">Pedir código</button>
-  </form>
-  <p>Escribe tu número con código de país, solo dígitos (sin + ni espacios).</p>`;
-
-function pagina() {
-  if (estado.conectado) {
-    return "<h1>Bot conectado ✅</h1><p>Ya puedes usar los comandos en WhatsApp.</p>";
-  }
-  if (estado.pairingCode) {
-    const pretty = estado.pairingCode.match(/.{1,4}/g)?.join("-") || estado.pairingCode;
-    return `<h1>Código de vinculación</h1><p style="font-size:2rem;letter-spacing:.2rem">${pretty}</p>
-      <p>WhatsApp &gt; Dispositivos vinculados &gt; Vincular un dispositivo &gt; Vincular con número de teléfono.</p>
-      <hr>${FORMULARIO}`;
-  }
-  if (estado.qrAscii) {
-    return `<h1>Escanea este QR</h1><pre style="line-height:1;font-size:10px">${estado.qrAscii}</pre>
-      <hr>${FORMULARIO}`;
-  }
-  return `<h1>Esperando…</h1><p>Recarga en unos segundos.</p><hr>${FORMULARIO}`;
+  QRCode.toDataURL(qr, { margin: 1, width: 320, errorCorrectionLevel: "L" })
+    .then((url) => {
+      if (estado.qr === qr) estado.qrImagen = url;
+    })
+    .catch(() => {});
 }
 
 function leerCuerpo(req) {
@@ -74,16 +61,110 @@ function leerCuerpo(req) {
     let data = "";
     req.on("data", (chunk) => {
       data += chunk;
-      if (data.length > 10_000) req.destroy(); // límite de seguridad
+      if (data.length > 10_000) req.destroy();
     });
     req.on("end", () => resolve(data));
     req.on("error", reject);
   });
 }
 
-function html(contenido) {
-  return `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="10">
-    <body style="font-family:system-ui;background:#111;color:#eee;padding:24px">${contenido}</body>`;
+const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vincular bot de WhatsApp</title>
+<style>
+  :root { color-scheme: dark }
+  body { font-family: system-ui, sans-serif; background:#0f1115; color:#e8eaed; margin:0; padding:24px;
+         display:flex; justify-content:center }
+  .wrap { width:100%; max-width:760px }
+  h1 { font-size:1.35rem; margin:0 0 4px }
+  .sub { color:#9aa0a6; margin:0 0 20px; font-size:.95rem }
+  .cards { display:grid; gap:16px; grid-template-columns:1fr }
+  @media (min-width:680px) { .cards { grid-template-columns:1fr 1fr } }
+  .card { background:#171a21; border:1px solid #262b36; border-radius:14px; padding:18px }
+  .card h2 { font-size:1rem; margin:0 0 12px; color:#cfd4dc }
+  img.qr { width:100%; max-width:300px; background:#fff; padding:10px; border-radius:10px; display:block }
+  .code { font-size:2.2rem; font-weight:700; letter-spacing:.35rem; color:#7ee787; word-break:break-all }
+  input, button { font-size:1rem; padding:10px 12px; border-radius:10px; border:1px solid #333a47;
+                  background:#0f1115; color:#e8eaed }
+  button { background:#2f81f7; border-color:#2f81f7; color:#fff; font-weight:600; cursor:pointer }
+  button:disabled { opacity:.5; cursor:default }
+  .muted { color:#9aa0a6; font-size:.9rem; line-height:1.45 }
+  .ok { color:#7ee787; font-weight:600 }
+  .err { color:#ff7b72 }
+  form { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 10px }
+</style>
+<div class="wrap">
+  <h1>Vincular bot de WhatsApp</h1>
+  <p class="sub" id="estado">Cargando…</p>
+  <div class="cards">
+    <div class="card">
+      <h2>Opción 1 · Escanear QR</h2>
+      <div id="qrbox"><p class="muted">Generando QR…</p></div>
+      <p class="muted">WhatsApp &gt; Dispositivos vinculados &gt; Vincular un dispositivo.</p>
+    </div>
+    <div class="card">
+      <h2>Opción 2 · Código de 8 dígitos</h2>
+      <form id="f">
+        <input name="numero" inputmode="numeric" placeholder="51987654321" required>
+        <button type="submit">Pedir código</button>
+      </form>
+      <div id="codebox"><p class="muted">Escribe tu número con código de país, solo dígitos.</p></div>
+      <p class="muted">WhatsApp &gt; Dispositivos vinculados &gt; Vincular con número de teléfono. El código dura ~1 minuto.</p>
+    </div>
+  </div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  function pintar(s) {
+    if (s.conectado) {
+      $("estado").innerHTML = '<span class="ok">Bot conectado ✅ Ya puedes usar los comandos en WhatsApp.</span>';
+      $("qrbox").innerHTML = '<p class="muted">Vinculado.</p>';
+      $("codebox").innerHTML = '<p class="muted">Vinculado.</p>';
+      return;
+    }
+    $("estado").textContent = "Esperando vinculación. Usa cualquiera de las dos opciones.";
+    $("qrbox").innerHTML = s.qrImagen
+      ? '<img class="qr" alt="QR" src="' + s.qrImagen + '">'
+      : '<p class="muted">Generando QR… (se renueva solo)</p>';
+    if (s.pairingCode) {
+      const pretty = s.pairingCode.replace(/(.{4})(?=.)/g, "$1-");
+      $("codebox").innerHTML = '<p class="code">' + pretty + '</p>';
+    }
+  }
+  async function tick() {
+    try { pintar(await (await fetch("/status", { cache: "no-store" })).json()); } catch {}
+  }
+  $("f").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button");
+    btn.disabled = true;
+    $("codebox").innerHTML = '<p class="muted">Pidiendo código…</p>';
+    try {
+      const r = await fetch("/pair", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ numero: e.target.numero.value }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        const pretty = d.code.replace(/(.{4})(?=.)/g, "$1-");
+        $("codebox").innerHTML = '<p class="code">' + pretty + '</p>';
+      } else {
+        $("codebox").innerHTML = '<p class="err">' + d.error + '</p>';
+      }
+    } catch (err) {
+      $("codebox").innerHTML = '<p class="err">Error de red, inténtalo otra vez.</p>';
+    }
+    btn.disabled = false;
+  });
+  tick();
+  setInterval(tick, 3000);
+</script>
+</html>`;
+
+function json(res, code, data) {
+  res.writeHead(code, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+  res.end(JSON.stringify(data));
 }
 
 export function startWebServer() {
@@ -97,50 +178,46 @@ export function startWebServer() {
       leerCuerpo(req)
         .then(async (body) => {
           const numero = (new URLSearchParams(body).get("numero") || "").replace(/\D/g, "");
-          res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-          if (estado.conectado) {
-            res.end(html('<h1>El bot ya está vinculado ✅</h1><p><a href="/qr" style="color:#8cf">Volver</a></p>'));
-            return;
-          }
+          if (estado.conectado) return json(res, 200, { ok: false, error: "El bot ya está vinculado ✅" });
           if (!/^\d{8,15}$/.test(numero)) {
-            res.end(html(`<h1>Número inválido</h1><p>Usa solo dígitos con código de país (ej. 51987654321).</p>
-              <p><a href="/qr" style="color:#8cf">Volver</a></p>`));
-            return;
+            return json(res, 200, { ok: false, error: "Número inválido: usa solo dígitos con código de país (ej. 51987654321)." });
           }
           if (!pairingRequester) {
-            res.end(html(`<h1>El bot aún no está listo</h1><p>Inténtalo de nuevo en unos segundos.</p>
-              <p><a href="/qr" style="color:#8cf">Volver</a></p>`));
-            return;
+            return json(res, 200, { ok: false, error: "El bot aún no está listo, inténtalo en unos segundos." });
           }
           try {
             const code = await pairingRequester(numero);
-            const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
-            res.end(html(`<h1>Código de vinculación</h1>
-              <p style="font-size:2rem;letter-spacing:.2rem">${pretty}</p>
-              <p>WhatsApp &gt; Dispositivos vinculados &gt; Vincular un dispositivo &gt; Vincular con número de teléfono.</p>
-              <p>Escríbelo antes de que expire.</p>`));
+            setPairingCode(code);
+            return json(res, 200, { ok: true, code });
           } catch (err) {
-            res.end(html(`<h1>No se pudo generar el código</h1><p>${err?.message || err}</p>
-              <p>Revisa el número o usa el QR.</p><p><a href="/qr" style="color:#8cf">Volver</a></p>`));
+            return json(res, 200, { ok: false, error: String(err?.message || err) });
           }
         })
-        .catch(() => {
-          res.writeHead(400, { "content-type": "text/plain" });
-          res.end("bad request");
-        });
+        .catch(() => json(res, 400, { ok: false, error: "bad request" }));
       return;
     }
 
-    if (url === "/health" || url === "/") {
+    if (url === "/status") {
+      json(res, 200, {
+        conectado: estado.conectado,
+        qrImagen: estado.qrImagen,
+        pairingCode: estado.pairingCode,
+      });
+      return;
+    }
+
+    if (url === "/health") {
       res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
       res.end(estado.conectado ? "ok" : "starting");
       return;
     }
-    if (url === "/qr") {
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-      res.end(html(pagina()));
+
+    if (url === "/" || url === "/qr") {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      res.end(PAGINA);
       return;
     }
+
     res.writeHead(404, { "content-type": "text/plain" });
     res.end("not found");
   });
