@@ -55,6 +55,7 @@ export async function serverInfo(host, port, timeout = 2000) {
     ]);
 
   let res = await sendUdp(host, port, query(), timeout);
+  if (res.readInt32LE(0) === -2) throw new Error("respuesta fragmentada no soportada");
   if (res[4] === 0x41) {
     res = await sendUdp(host, port, query(res.subarray(5, 9)), timeout);
   }
@@ -79,6 +80,7 @@ export async function serverPlayers(host, port, timeout = 2000) {
     Buffer.concat([HEADER, Buffer.from("U"), challenge]);
 
   let res = await sendUdp(host, port, query(Buffer.from([0xff, 0xff, 0xff, 0xff])), timeout);
+  if (res.readInt32LE(0) === -2) throw new Error("respuesta fragmentada no soportada");
   if (res[4] === 0x41) {
     res = await sendUdp(host, port, query(res.subarray(5, 9)), timeout);
   }
