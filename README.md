@@ -1,12 +1,22 @@
-# whatsapp bot — infoplayerleft
+# 🧟 InfoPlayer Left — Bot de WhatsApp para Left 4 Dead 2
 
-Bot de **WhatsApp** que consulta información de jugadores de **Left 4 Dead 2**
-usando la Steam Web API y consultas A2S al Master Server de Steam.
+> Pregunta quién está jugando L4D2 ahora mismo, directamente desde WhatsApp.
 
-Portado desde la versión original de Discord. Funciona dentro de grupos de WhatsApp
-(y también en chats privados, si lo permites).
+**InfoPlayer Left** es un bot de WhatsApp que consulta información de jugadores y
+servidores de **Left 4 Dead 2**: perfiles de Steam, servidores donde está
+conectado un jugador, listas de jugadores en vivo y búsquedas por nickname en
+servidores públicos.
 
-## Comandos
+Todo funciona con la **Steam Web API** y con consultas **A2S** directas al
+Master Server de Steam, sin servidores intermedios ni bases de datos: si la
+terminal tiene internet y Node.js, el bot funciona.
+
+Es un portado de la versión original para Discord, adaptado para WhatsApp:
+funciona dentro de grupos (y también en chats privados, si lo permites) y
+responde solo a mensajes que empiezan por `!`, así que no molesta en la
+conversación normal.
+
+## ✨ Qué puede hacer
 
 | Comando | Descripción |
 |---|---|
@@ -17,7 +27,7 @@ Portado desde la versión original de Discord. Funciona dentro de grupos de What
 | `!ping` | Comprueba que el bot responde |
 | `!ayuda` | Lista de comandos |
 
-## Instalación
+## 🚀 Instalación
 
 Requiere Node.js 18 o superior.
 
@@ -52,10 +62,10 @@ Escanéalo desde WhatsApp → **Dispositivos vinculados** → *Vincular un dispo
 La sesión queda guardada en la carpeta `auth_info/`, así que no hace falta
 volver a vincular en los siguientes arranques.
 
-## Instalación en Termux (Android)
+## 📱 Instalación en Termux (Android)
 
-El bot funciona en un celular con [Termux](https://termux.dev) (instálalo desde
-F-Droid, no desde Play Store):
+¿No tienes PC a mano? El bot corre entero en un celular Android con
+[Termux](https://termux.dev) (instálalo desde F-Droid, no desde Play Store):
 
 ```bash
 pkg update && pkg upgrade
@@ -80,7 +90,9 @@ Consejos para Termux:
 - No hace falta compilar nada nativo: `.npmrc` ya omite las dependencias
   opcionales que fallan en Android.
 
-## Usarlo en un grupo
+## 👥 Usarlo en un grupo
+
+Poner el bot a trabajar en un grupo toma un minuto:
 
 1. Vincula el bot con el número de WhatsApp que quieras usar (código o QR).
 2. Añade ese número al grupo (o usa una cuenta que ya esté dentro).
@@ -101,7 +113,9 @@ ALLOWED_GROUPS=1203630xxxxxxxxx@g.us,1203631xxxxxxxxx@g.us
 
 Para ignorar los mensajes privados: `REPLY_IN_PRIVATE=false`.
 
-## Despliegue (Render / Railway / VPS)
+## ☁️ Despliegue (Render / Railway / VPS)
+
+Si prefieres tenerlo encendido 24/7, cualquier plataforma con Node.js sirve.
 
 Tipo de servicio: **Worker**. Comando de inicio: `node bot.js`.
 Configura `STEAM_API_KEY` como variable de entorno (y `WHATSAPP_NUMBER` si
@@ -111,7 +125,7 @@ Importante: la carpeta `auth_info/` guarda la sesión de WhatsApp. En plataforma
 con disco efímero necesitas un **disco persistente**, o tendrás que escanear el
 QR o el código en cada redespliegue.
 
-## Notas
+## 📝 Notas
 
 - Ya no se usa `DISCORD_TOKEN` ni intents de Discord; la vinculación es por código
   de celular o por QR.
@@ -119,4 +133,3 @@ QR o el código en cada redespliegue.
   la sesión de WhatsApp da acceso a tu cuenta.
 - Esta conexión usa la librería no oficial Baileys. Un uso abusivo (spam, muchos
   mensajes automáticos) puede provocar el bloqueo del número por parte de WhatsApp.
-
