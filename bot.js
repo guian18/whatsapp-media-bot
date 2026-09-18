@@ -23,6 +23,7 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 import qrcode from "qrcode-terminal";
 import readline from "node:readline/promises";
+import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 
@@ -34,6 +35,16 @@ const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
 const AUTH_DIR = process.env.AUTH_DIR || "auth_info";
 // Responder también a los comandos que escribes con tu propio número (ALLOW_SELF=false lo desactiva)
 const ALLOW_SELF = process.env.ALLOW_SELF !== "false";
+// Borrar la sesión automáticamente cuando queda inválida (AUTO_RESET=false lo desactiva)
+const AUTO_RESET = process.env.AUTO_RESET !== "false";
+let yaReseteado = false;
+
+function borrarSesion() {
+  if (existsSync(AUTH_DIR)) {
+    rmSync(AUTH_DIR, { recursive: true, force: true });
+    console.log(`Sesión borrada (${AUTH_DIR}).`);
+  }
+}
 
 function onlyDigits(value) {
   return (value || "").replace(/\D/g, "");
@@ -69,6 +80,11 @@ function textFromMessage(msg) {
 }
 
 async function start() {
+  // "npm start -- --reset" borra la sesión antes de arrancar (solo la primera vez)
+  if (!yaReseteado && process.argv.includes("--reset")) {
+    yaReseteado = true;
+    borrarSesion();
+  }
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
   const { version } = await fetchLatestBaileysVersion();
 
@@ -126,9 +142,21 @@ async function start() {
     }
     if (connection === "close") {
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
-      if (code === DisconnectReason.loggedOut) {
+      const sesionInvalida =
+        code === DisconnectReason.loggedOut ||
+        code === DisconnectReason.badSession ||
+        code === 401 ||
+        code === 403;
+      if (sesionInvalida) {
+        if (AUTO_RESET) {
+          console.log("Sesión inválida: borrando la sesión automáticamente...");
+          borrarSesion();
+          console.log("Listo, vuelve a vincular ahora.\n");
+          start();
+          return;
+        }
         console.log(
-          `Sesión cerrada. Borra la carpeta ${AUTH_DIR} y vuelve a vincular (QR o código).`,
+          `Sesión cerrada. Ejecuta "npm run reset" para borrar ${AUTH_DIR} y vincular de nuevo.`,
         );
         process.exit(1);
       }
