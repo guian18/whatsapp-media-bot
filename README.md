@@ -13,7 +13,7 @@ terminal tiene internet y Node.js, el bot funciona.
 
 Es un portado de la versión original para Discord, adaptado para WhatsApp:
 funciona dentro de grupos (y también en chats privados, si lo permites) y
-responde solo a mensajes que empiezan por `!`, así que no molesta en la
+responde solo a mensajes que empiecen por `!`, así que no molesta en la
 conversación normal.
 
 ## ✨ Qué puede hacer
@@ -29,23 +29,51 @@ conversación normal.
 
 ## 🚀 Instalación
 
-Requiere Node.js 18 o superior.
+Requiere Node.js 20 o superior.
 
 ```bash
 npm install
 npm start
 ```
 
-**Steam API key:** al arrancar, el bot te la **pide en la terminal** (consíguela
-gratis en https://steamcommunity.com/dev/apikey). Verifica el formato, te pregunta
-si quieres guardarla para la próxima vez y no vuelve a pedirla. No hace falta
-ponerla en `.env` cuando usas la terminal.
+### Scripts útiles
 
-La primera vez hay que vincular el bot con una cuenta de WhatsApp. Hay dos formas:
+| Script | Para qué sirve |
+|---|---|
+| `npm start` | Arranca el bot normalmente. Pide la Steam API key en Termux/terminal si no está guardada y luego vincula WhatsApp. |
+| `npm run start:termux` | Igual que `start` pero activa un *wake lock* para que Android no mate el proceso. |
+| `npm run reset` | Borra la sesión guardada (`auth_info/`) y reinicia desde cero. Úsalo si la vinculación falla. |
+| `npm run relink` | Alias rñpido para `npm run reset`. |
 
-### Opción A — código con tu número de celular (sin QR)
+## 🔑 Steam API key
 
-Pon tu número con código de país (solo dígitos) en `.env`:
+La primera vez (o siempre que no tengas una clave guardada), el bot te pide la
+**Steam API key** en la terminal. Consìguela gratis en
+https://steamcommunity.com/dev/apikey.
+
+- Valida que tenga 32 caracteres hexadecimales.
+- Te da 3 intentos si la escribes mal.
+- Puedes guardarla en el archivo `.steam_key` para que no vuelva a pedirla.
+- Si ya existe una clave válida, te avisa de dónde la cargó (archivo, variable
+  de entorno o previamente guardada).
+
+Para forzar que pregunte aunque haya una clave guardada, arranca con:
+
+```bash
+STEAM_ASK_ALWAYS=true npm start
+```
+
+En plataformas sin terminal interactiva (Railway, Render, VPS) configura la
+variable de entorno `STEAM_API_KEY` directamente.
+
+## 📲 Vincular WhatsApp
+
+La primera vez hay que vincular el bot con una cuenta de WhatsApp. Hay tres
+formas:
+
+### Opción A — código con tu número de celular (recomendada en Termux)
+
+Pon tu número con código de país (solo dígitos, sin `+` ni `00`) en `.env`:
 
 ```
 WHATSAPP_NUMBER=51987654321
@@ -55,16 +83,36 @@ Al arrancar, la terminal muestra un **código de 8 dígitos**. En el celular:
 WhatsApp → **Dispositivos vinculados** → *Vincular un dispositivo* →
 **Vincular con número de teléfono** → escribe el código.
 
+El código se forma en dos grupos de 4 dígitos para leerlo más fácil, por ejemplo
+`1234-5678`.
+
 Si prefieres escribir el número al arrancar en vez de guardarlo, usa
 `PAIRING_CODE=true` y el bot lo preguntará por consola.
 
-### Opción B — código QR
+> **Nota:** cada vez que pides un código nuevo se borra cualquier sesjón a
+> medio vincular y se reinicia limpio, evitando el error clásico de "verifica
+> que sea el número correcto".
+
+### Opción B — código QR en la terminal
 
 Sin `WHATSAPP_NUMBER` ni `PAIRING_CODE`, aparece un **código QR** en la terminal.
-Escanéalo desde WhatsApp → **Dispositivos vinculados** → *Vincular un dispositivo*.
+Escánalo desde WhatsApp → **Dispositivos vinculados** → *Vincular un dispositivo*.
 
-La sesión queda guardada en la carpeta `auth_info/`, así que no hace falta
-volver a vincular en los siguientes arranques.
+### Opción C — página web `/qr` (Railway, Render, VPS)
+
+Si despliegas el bot en la nube, abre el dominio que te dé la plataforma y
+añade `/qr`. La página muestra:
+
+- El **código QR** como imagen.
+- El **código de 8 dígitos** si pusiste `WHATSAPP_NUMBER`.
+- El estado de conexión (`Conectado ✅` o `Esperando vinculación…`).
+
+La página se actualiza sola cada 3 segundos, así que puedes dejarla abierta
+hasta que aparezca el QR o el código.
+
+La sesión queda guardada en la carpeta `auth_info/` (o en `/data/auth_info` si
+Railway tiene un volumen en `/data`), así que no hace falta volver a vincular
+en los siguientes arranques.
 
 ## 📱 Instalación en Termux (Android)
 
@@ -84,7 +132,7 @@ npm start
 Consejos para Termux:
 
 - Vincula con **tu número de celular** (`WHATSAPP_NUMBER`): copiar el código de
-  8 dígitos es mucho más cómodo que escanear un QR en la misma pantalla.
+  8 dígitos es mucho más címodo que escanear un QR en la misma pantalla.
 - Para que Android no mate el proceso: `pkg install termux-api` y arranca con
   `npm run start:termux` (activa el wake lock). También conviene desactivar la
   optimización de batería para Termux.
@@ -93,6 +141,9 @@ Consejos para Termux:
   con `tmux attach -t bot`.
 - No hace falta compilar nada nativo: `.npmrc` ya omite las dependencias
   opcionales que fallan en Android.
+- Si la Steam API key no te aparece, asegúrate de no tener `STEAM_API_KEY`
+  puesta en `.env`; bórrala y vuelve a arrancar, o usa
+  `STEAM_ASK_ALWAYS=true npm start`.
 
 ## 👥 Usarlo en un grupo
 
@@ -102,7 +153,7 @@ Poner el bot a trabajar en un grupo toma un minuto:
 2. Añade ese número al grupo (o usa una cuenta que ya esté dentro).
 3. Escribe cualquier comando en el grupo, por ejemplo `!ayuda`.
 
-El bot responde citando el mensaje y solo reacciona a textos que empiezan por `!`,
+El bot responde citando el mensaje y solo reacciona a textos que empiecen por `!`,
 así que no molesta en la conversación normal.
 
 ### Limitar el bot a grupos concretos
@@ -127,16 +178,7 @@ quieres vincular por código en vez de QR).
 
 Importante: la carpeta `auth_info/` guarda la sesión de WhatsApp. En plataformas
 con disco efímero necesitas un **disco persistente**, o tendrás que escanear el
-QR o el código en cada redespliegue.
-
-## 📝 Notas
-
-- Ya no se usa `DISCORD_TOKEN` ni intents de Discord; la vinculación es por código
-  de celular o por QR.
-- `auth_info/` y `.env` están en `.gitignore`: nunca los subas al repositorio,
-  la sesión de WhatsApp da acceso a tu cuenta.
-- Esta conexión usa la librería no oficial Baileys. Un uso abusivo (spam, muchos
-  mensajes automáticos) puede provocar el bloqueo del número por parte de WhatsApp.
+QR o pedir el código en cada redespliegue.
 
 ## 🚂 Despliegue en Railway
 
@@ -147,13 +189,53 @@ QR o el código en cada redespliegue.
    esa carpeta y guarda ahí la sesión (`/data/auth_info`), así no hay que volver
    a vincular en cada despliegue.
 4. En **Settings → Networking** pulsa *Generate Domain*. Abre ese dominio en
-   `/qr`: verás el **código QR** o el **código de vinculación** para conectar
-   WhatsApp desde el navegador, sin depender de los logs.
-5. Cuando aparezca `Conectado a WhatsApp ✅` en los logs, escribe `!ayuda` en tu
-   grupo.
+   `/qr`: verás el **código QR** como imagen y el **código de vinculación**
+   (si configuraste `WHATSAPP_NUMBER`) para conectar WhatsApp desde el navegador,
+   sin depender de los logs. La página se recarga sola cada 3 segundos.
+5. Cuando aparezca `Conectado a WhatsApp ✅` en la página o en los logs, escribe
+   `!ayuda` yn tu grupo.
 
 Notas:
 - El arranque es `node bot.js` (definido en `railway.json` y en el `Procfile`).
 - La ruta `/` responde al healthcheck (`ok` cuando el bot está conectado).
 - Railway no tiene terminal interactiva: la clave de Steam debe ir sí o sí en las
-  variables de entorno, y la vinculación se hace por `/qr`.
+  variables de entorno.
+
+## 🛠️ Cambios recientes
+
+### Web `/qr`
+- Muestra el **QR como imagen** en vez de solo texto.
+- Muestra el **código de 8 dígitos** junto al QR si hay `WHATSAPP_NUMBER`.
+- Se actualiza automáticamente cada 3 segundos.
+- Avisa cuando el bot queda conectado.
+
+### Vinculación por código de 8 dígitos
+- Espera a que la conexión con WhatsApp esté lista antes de pedir el código.
+- Borra la sesión vieja y reinicia limpio cada vez que se solicita un código,
+  evitando sesiones a medio vincular.
+- Normaliza los números: quita `+`, espacios y prefijos `00`.
+- Si la sesión se invalida (`loggedOut`, `badSession`, `401`, `403`), se borra
+  automáticamente y se vuelve a intentar vincular.
+
+### Steam API key
+- Ahora se pregunta **solo en la terminal** (Termux / PC). No se pide en la web.
+- Validación de formato (32 caracteres hexadecimales) con 3 intentos.
+- Opción de guardarla en `.steam_key` para no volver a pedirla.
+- `STEAM_ASK_ALWAYS=true` fuerza la pregunta aunque ya exista una clave.
+
+### Dependencias y scripts
+- Actualizada la librería de WhatsApp (Baileys) a la última versión estable
+  (`^6.7.24`) para corregir fallos conocidos de vinculación.
+- Añadidas `qrcode` y `qrcode-terminal` para generar el QR de la web y de la
+  terminal.
+- Nuevos scripts: `start:termux`, `reset`, `relink`.
+
+## 📝 Notas
+
+- Ya no se usa `DISCORD_TOKEN` ni intents de Discord; la vinculación es por código
+  de celular o por QR.
+- `auth_info/`, `.steam_key`, `.env` y otros archivos de sesión están en
+  `.gitignore`: nunca los subas al repositorio, la sesión de WhatsApp da acceso
+  a tu cuenta.
+- Esta conexión usa la librería no oficial Baileys. Un uso abusivo (spam, muchos
+  mensajes automáticos) puede provocar el bloqueo del número por parte de WhatsApp.
