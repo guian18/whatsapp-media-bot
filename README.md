@@ -133,3 +133,23 @@ QR o el código en cada redespliegue.
   la sesión de WhatsApp da acceso a tu cuenta.
 - Esta conexión usa la librería no oficial Baileys. Un uso abusivo (spam, muchos
   mensajes automáticos) puede provocar el bloqueo del número por parte de WhatsApp.
+
+## 🚂 Despliegue en Railway
+
+1. En Railway: **New Project → Deploy from GitHub repo** y elige `infoplayerleft`.
+2. En **Variables** añade `STEAM_API_KEY` (y `WHATSAPP_NUMBER` si quieres vincular
+   con código de 8 dígitos en vez de QR).
+3. En **Settings → Volumes** crea un volumen montado en `/data`. El bot detecta
+   esa carpeta y guarda ahí la sesión (`/data/auth_info`), así no hay que volver
+   a vincular en cada despliegue.
+4. En **Settings → Networking** pulsa *Generate Domain*. Abre ese dominio en
+   `/qr`: verás el **código QR** o el **código de vinculación** para conectar
+   WhatsApp desde el navegador, sin depender de los logs.
+5. Cuando aparezca `Conectado a WhatsApp ✅` en los logs, escribe `!ayuda` en tu
+   grupo.
+
+Notas:
+- El arranque es `node bot.js` (definido en `railway.json` y en el `Procfile`).
+- La ruta `/` responde al healthcheck (`ok` cuando el bot está conectado).
+- Railway no tiene terminal interactiva: la clave de Steam debe ir sí o sí en las
+  variables de entorno, y la vinculación se hace por `/qr`.
