@@ -25,7 +25,7 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 import qrcode from "qrcode-terminal";
 import readline from "node:readline/promises";
-import { rmSync, existsSync } from "node:fs";
+import { rmSync, existsSync, accessSync, constants } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 import { ensureSteamApiKey } from "./src/steamkey.js";
@@ -38,8 +38,16 @@ const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
 // En Railway conviene montar un volumen en /data para no perder la sesión
 // en cada despliegue. Si existe, se usa automáticamente.
+function dataEscribible() {
+  try {
+    accessSync("/data", constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 const AUTH_DIR =
-  process.env.AUTH_DIR || (existsSync("/data") ? "/data/auth_info" : "auth_info");
+  process.env.AUTH_DIR || (dataEscribible() ? "/data/auth_info" : "auth_info");
 // Responder también a los comandos que escribes con tu propio número (ALLOW_SELF=false lo desactiva)
 const ALLOW_SELF = process.env.ALLOW_SELF !== "false";
 // Borrar la sesión automáticamente cuando queda inválida (AUTO_RESET=false lo desactiva)
@@ -123,6 +131,32 @@ function textFromMessage(msg) {
   );
 }
 
+// Espera a que el socket termine el handshake con WhatsApp.
+// Pedir el código antes de eso devuelve un código que el celular rechaza.
+function esperarSocketListo(sock, timeoutMs = 25000) {
+  return new Promise((resolve) => {
+    let terminado = false;
+    const finalizar = (ok) => {
+      if (terminado) return;
+      terminado = true;
+      clearTimeout(temporizador);
+      try {
+        sock.ev.off("connection.update", handler);
+      } catch {
+        /* ignorar */
+      }
+      resolve(ok);
+    };
+    const handler = ({ qr, connection }) => {
+      // El primer QR (o la conexión abierta) significa que el socket ya está operativo.
+      if (qr || connection === "open") finalizar(true);
+      if (connection === "close") finalizar(false);
+    };
+    const temporizador = setTimeout(() => finalizar(false), timeoutMs);
+    sock.ev.on("connection.update", handler);
+  });
+}
+
 /**
  * Pide un código de 8 dígitos SIEMPRE con una sesión nueva.
  * Reutilizar credenciales a medio vincular es la causa típica de
@@ -157,11 +191,9 @@ async function atenderPairing(sock) {
   const solicitud = pairingPendiente;
   if (!solicitud) return;
   try {
-    // Baileys debe pedir el código durante el registro inicial. Esperar a que llegue
-    // un QR primero inicia otro método de vinculación y WhatsApp puede rechazar
-    // después el código como inválido. Damos tiempo solo al arranque del socket.
-    await esperar(3000);
-    if (sock !== sockActual) throw new Error("La conexión se reinició. Vuelve a pedir el código.");
+    const listo = await esperarSocketListo(sock);
+    if (!listo) throw new Error("WhatsApp no respondió a tiempo. Vuelve a pedir el código.");
+    await esperar(1500);
     const code = await sock.requestPairingCode(solicitud.numero);
     const pretty = code?.match(/.{1,4}/g)?.join("-") || code;
     console.log("\n==============================================");
@@ -233,9 +265,7 @@ async function start() {
   }
 
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr) {
-      // Guardar siempre el QR para que la web lo muestre aunque también se haya
-      // solicitado un código por número. Ambos métodos quedan disponibles.
+    if (qr && !pairingPendiente && !usePairingCode) {
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
       qrcode.generate(qr, { small: true });
       setQr(qr);
