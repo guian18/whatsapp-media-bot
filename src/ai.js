@@ -28,9 +28,18 @@ const STYLES = {
   breve: "muy conciso, en pocas frases y sin rodeos",
   amable: "cálido, cercano y respetuoso",
 };
+const LANGUAGES = {
+  es: "español",
+  en: "inglés",
+  it: "italiano",
+  pt: "portugués",
+  fr: "francés",
+  de: "alemán",
+};
 let requestInFlight = false;
 let lastRequestAt = 0;
 let manualStyle = null;
+let manualLanguage = null;
 
 function envNumber(name, fallback) {
   const value = Number(process.env[name]);
@@ -109,7 +118,10 @@ async function askModel(question, style, sources, includeSources) {
   const sourceInstruction = includeSources
     ? "Incluye las fuentes como [1], [2] al final y usa los enlaces proporcionados."
     : "Responde solo con texto; no incluyas URLs, enlaces ni una lista de fuentes salvo que la persona los pida explícitamente.";
-  const dateContext = new Intl.DateTimeFormat("es-ES", { dateStyle: "full" }).format(new Date());
+  const language = manualLanguage || (process.env.AI_LANGUAGE || "es").trim().toLowerCase();
+  const languageName = LANGUAGES[language] || LANGUAGES.es;
+  const locale = language === "en" ? "en-US" : language;
+  const dateContext = new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(new Date());
   const response = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
@@ -120,7 +132,7 @@ async function askModel(question, style, sources, includeSources) {
       messages: [
         {
           role: "system",
-          content: `Responde en español con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`,
+          content: `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`,
         },
         { role: "user", content: `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}` },
       ],
@@ -169,6 +181,31 @@ export function cmdTono(value) {
     console.error("No se pudo guardar el tono en .env:", error?.message || error);
   }
   return `Tono cambiado a: ${requested}`;
+}
+
+export function cmdIdioma(value) {
+  const requested = String(value || "").trim().toLowerCase();
+  if (!requested || requested === "lista") {
+    return `Idiomas: ${Object.entries(LANGUAGES).map(([code, name]) => `${code} (${name})`).join(", ")}\nUso: !idioma <código>`;
+  }
+  if (!LANGUAGES[requested]) {
+    return `Idioma no válido. Usa: ${Object.keys(LANGUAGES).join(", ")}`;
+  }
+  manualLanguage = requested;
+  process.env.AI_LANGUAGE = requested;
+  const file = process.env.ENV_FILE || ".env";
+  try {
+    if (existsSync(file)) {
+      let content = readFileSync(file, "utf8");
+      const pattern = /^AI_LANGUAGE\s*=.*$/m;
+      if (pattern.test(content)) content = content.replace(pattern, `AI_LANGUAGE=${requested}`);
+      else content += `\nAI_LANGUAGE=${requested}\n`;
+      writeFileSync(file, content, { mode: 0o600 });
+    }
+  } catch (error) {
+    console.error("No se pudo guardar el idioma en .env:", error?.message || error);
+  }
+  return `Idioma cambiado a: ${LANGUAGES[requested]}`;
 }
 
 export function detectStyle(question) {

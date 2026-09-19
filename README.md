@@ -70,6 +70,7 @@ AI_PROVIDER=groq
 AI_MODEL=openai/gpt-oss-20b
 AI_API_URL=
 AI_DEFAULT_STYLE=insultos
+AI_LANGUAGE=es
 SEARCH_PROVIDERS=duckduckgo
 PING_DEAD_CHANCE=0.10
 PING_TRIP_CHANCE=0.30
@@ -168,6 +169,7 @@ Escanea el QR mostrado en la terminal desde **WhatsApp → Dispositivos vinculad
 | `!ping` | Comprueba que el bot responde. |
 | `!ayuda` | Muestra los comandos. |
 | `!tono <estilo>` | Cambia y guarda el tono de la IA. |
+| `!idioma <código>` | Cambia y guarda el idioma de la IA. |
 | `!info <SteamID, vanity o URL>` | Consulta un perfil de Steam. |
 | `!buscar <nickname>` | Busca un jugador en servidores públicos de L4D2. |
 | `!servidor <IP:puerto>` | Consulta un servidor. |
@@ -219,6 +221,19 @@ Para cambiarlo manualmente y guardarlo para los siguientes reinicios:
 ```
 
 Con `!tono lista` se muestran los estilos disponibles.
+
+Para cambiar manualmente el idioma:
+
+```text
+!idioma es
+!idioma en
+!idioma it
+!idioma pt
+!idioma fr
+!idioma de
+```
+
+Usa `!idioma lista` para mostrar los códigos disponibles. El idioma se guarda en `.env` y se conserva al reiniciar.
 
 Puede usar humor adulto, doble sentido y palabrotas entre amigos adultos cuando el contexto sea consensuado y amistoso. No permite sexualizar menores, coerción, amenazas, slurs, discriminación ni acoso dirigido.
 
