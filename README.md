@@ -72,7 +72,7 @@ AI_API_URL=
 AI_DEFAULT_STYLE=tranquilo
 SEARCH_PROVIDERS=duckduckgo
 PING_DEAD_CHANCE=0.10
-PING_TRIP_CHANCE=0.40
+PING_TRIP_CHANCE=0.30
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
 GROUPS_ENABLED=true
@@ -173,7 +173,7 @@ Escanea el QR mostrado en la terminal desde **WhatsApp → Dispositivos vinculad
 | `!jugadores <IP:puerto>` | Consulta los jugadores de un servidor. |
 | `!ai <pregunta>` | Busca información en Internet y responde con IA. |
 
-`!ping` tiene tres resultados: 10% responde `Pong fallido: el bot falleció 💀`, 40% responde `El bot se tropezó y falló el Pong 🤕` y el 50% restante responde `Pong! 🏓`. Las probabilidades se pueden cambiar con `PING_DEAD_CHANCE` y `PING_TRIP_CHANCE`.
+`!ping` tiene tres resultados: 10% responde `Pong fallido: el bot falleció 💀`, 30% responde `El bot se tropezó y falló el Pong 🤕` y el 60% restante responde `Pong! 🏓`. Las probabilidades se pueden cambiar con `PING_DEAD_CHANCE` y `PING_TRIP_CHANCE`.
 
 ## Comando `!ai`
 
