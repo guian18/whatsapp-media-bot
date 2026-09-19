@@ -6,6 +6,8 @@ InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/Whi
 
 El bot responde únicamente a mensajes que comienzan con `!`, funciona en grupos y chats privados, y no necesita una base de datos externa. La sesión de WhatsApp se guarda en disco para evitar repetir la vinculación después de cada reinicio.
 
+> **Estado actual:** el proyecto está diseñado para ejecutarse localmente en Linux, macOS, Windows o Termux. No incluye servidor HTTP, panel web, `PORT`, `Procfile` ni configuración para plataformas de hosting.
+
 ## Funciones
 
 | Comando | Descripción |
@@ -236,6 +238,8 @@ Ejecuta la suite de pruebas:
 npm test
 ```
 
+La suite actual contiene 3 pruebas automatizadas y debe terminar con `3 tests passed`.
+
 Las pruebas comprueban:
 
 - Procesamiento de `!ping`, `!ayuda` y comandos desconocidos.
@@ -270,4 +274,4 @@ STEAM_ASK_ALWAYS=true npm start
 
 ## Licencia y estado del proyecto
 
-Este repositorio es privado por configuración del propietario. Consulta el historial de Git para ver las correcciones y cambios desplegados.
+Este repositorio es privado por configuración del propietario. Consulta el historial de Git para ver las correcciones y cambios realizados.
