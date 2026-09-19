@@ -85,11 +85,20 @@ AUTO_RESET=false
 
 ### Obtener las API Keys
 
-- [Crear Steam Web API Key](https://steamcommunity.com/dev/apikey)
-- [Documentación oficial Steam Web API](https://steamcommunity.com/dev)
-- [Crear OpenAI API Key](https://platform.openai.com/settings/organization/api-keys)
-- [Guía oficial OpenAI API](https://developers.openai.com/api/docs/quickstart)
-- [Referencia oficial OpenAI API](https://developers.openai.com/api/reference/overview/)
+Entra en estos enlaces para crear directamente las claves:
+
+| Servicio | Enlace directo | Variable `.env` |
+|---|---|---|
+| OpenAI | [Crear OpenAI API Key](https://platform.openai.com/api-keys) | `AI_API_KEY` |
+| Steam | [Crear Steam Web API Key](https://steamcommunity.com/dev/apikey) | `STEAM_API_KEY` |
+| Brave | [Crear Brave Search API Key](https://api-dashboard.search.brave.com/register) | `BRAVE_SEARCH_API_KEY` |
+| Mojeek | [Crear Mojeek Search API Key](https://www.mojeek.com/services/search/web-search-api/) | `MOJEEK_API_KEY` |
+| Google API | [Crear o gestionar una API Key](https://console.cloud.google.com/apis/credentials) | `GOOGLE_SEARCH_API_KEY` |
+| Google CSE | [Crear Programmable Search Engine](https://programmablesearchengine.google.com/controlpanel/all) | `GOOGLE_CSE_ID` |
+
+En Google necesitas **las dos cosas**: `GOOGLE_SEARCH_API_KEY` y `GOOGLE_CSE_ID`. La API de Google Custom Search puede no aceptar cuentas nuevas; Brave o Mojeek son alternativas recomendadas.
+
+Documentación oficial: [Steam Web API](https://steamcommunity.com/dev), [OpenAI API](https://developers.openai.com/api/docs/quickstart), [Google Custom Search API](https://developers.google.com/custom-search/v1/overview), [Brave Search API](https://brave.com/search/api/) y [Mojeek Search API](https://www.mojeek.com/support/api/search/).
 
 Nunca publiques `.env`, `.steam_key` ni `auth_info/`.
 
