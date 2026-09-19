@@ -19,6 +19,7 @@ test("command dispatcher serves local commands without external services", async
   assert.equal(await handleCommand("!desconocido"), null);
   assert.equal(await handleCommand("texto normal"), null);
   assert.match(await handleCommand("!ayuda"), /!info/);
+  assert.match(await handleCommand("!ayuda"), /!ai <pregunta>/);
   assert.match(await handleCommand("!ai"), /Uso: `!ai/);
   assert.match(await handleCommand("!ai pregunta directa"), /AI_API_KEY/);
   assert.equal(await handleCommand("!ia pregunta directa"), null);
