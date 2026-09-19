@@ -204,6 +204,8 @@ El tono `insultos` permite lenguaje vulgar e insultos genéricos dirigidos a err
 
 La IA detecta el tono de cada pregunta y procura responder en el mismo estilo: formal, amable, divertido, sarcástico, agresivo, vulgar o breve. Si el mensaje no da una señal clara, utiliza `AI_DEFAULT_STYLE` como respaldo.
 
+Puede usar humor adulto, doble sentido y palabrotas entre amigos adultos cuando el contexto sea consensuado y amistoso. No permite sexualizar menores, coerción, amenazas, slurs, discriminación ni acoso dirigido.
+
 `ALLOW_SELF` está activado permanentemente para que puedas probar el bot desde la misma cuenta vinculada. Si no quieres usar una API de IA, deja `AI_API_KEY` vacío; las búsquedas y los demás comandos seguirán funcionando.
 
 ### Búsqueda web
