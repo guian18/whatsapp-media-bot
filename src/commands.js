@@ -52,7 +52,7 @@ export function ayuda() {
     "`!servidor <ip:puerto>` — información detallada de un servidor",
     "`!jugadores <ip:puerto>` — lista los jugadores conectados",
     "`!ping` — comprueba que el bot responde",
-    "`!ia <pregunta>` — consulta Internet y responde con IA",
+    "`!ia [tono:] <pregunta>` — consulta Internet y responde con IA",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }

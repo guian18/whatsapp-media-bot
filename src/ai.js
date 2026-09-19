@@ -6,6 +6,14 @@ const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
 const REQUEST_TIMEOUT_MS = 15_000;
 const MIN_INTERVAL_MS = 4_000;
+const STYLES = {
+  tranquilo: "sereno, paciente y fácil de entender",
+  agresivo: "firme, directo y contundente; no insultes, amenaces ni ataques a personas o grupos",
+  formal: "profesional, estructurado y preciso",
+  divertido: "ameno, ingenioso y ligero sin perder exactitud",
+  sarcastico: "sarcástico con moderación, sin humillar ni insultar",
+  breve: "muy conciso, en pocas frases y sin rodeos",
+};
 let requestInFlight = false;
 let lastRequestAt = 0;
 
@@ -59,7 +67,7 @@ function aiConfig() {
   return { key, url, model };
 }
 
-async function askModel(question, sources) {
+async function askModel(question, style, sources) {
   const { key, url, model } = aiConfig();
   if (!key) return null;
   const context = sources.length
@@ -75,7 +83,7 @@ async function askModel(question, sources) {
       messages: [
         {
           role: "system",
-          content: "Responde en español de forma clara y breve. Usa únicamente el contexto web proporcionado para afirmar datos actuales. Si no hay evidencia suficiente, dilo explícitamente. Añade las fuentes como [1], [2] al final.",
+          content: `Responde en español de forma clara. Usa únicamente el contexto web proporcionado para afirmar datos actuales. Si no hay evidencia suficiente, dilo explícitamente. Usa este tono: ${style}. El tono agresivo significa firmeza, nunca insultos, amenazas, discriminación ni acoso. Añade las fuentes como [1], [2] al final.`,
         },
         { role: "user", content: `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}` },
       ],
@@ -94,9 +102,23 @@ export function aiConfigured() {
   return Boolean(aiConfig().key);
 }
 
+function parseAIInput(input) {
+  const raw = String(input || "").trim();
+  const defaultStyle = (process.env.AI_DEFAULT_STYLE || "tranquilo").toLowerCase();
+  const match = raw.match(/^([a-záéíóúñ]+)(?::|\s+)([\s\S]+)$/i);
+  if (match && STYLES[match[1].toLowerCase()]) {
+    return { styleName: match[1].toLowerCase(), style: STYLES[match[1].toLowerCase()], question: match[2].trim() };
+  }
+  return { styleName: STYLES[defaultStyle] ? defaultStyle : "tranquilo", style: STYLES[defaultStyle] || STYLES.tranquilo, question: raw };
+}
+
 export async function cmdIA(question) {
-  const query = String(question || "").trim();
-  if (!query) return "Uso: `!ia <pregunta>`\nEjemplo: `!ia ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
+  const raw = String(question || "").trim();
+  if (raw.toLowerCase() === "tonos" || raw.toLowerCase() === "estilos") {
+    return "Tonos disponibles: `tranquilo`, `agresivo`, `formal`, `divertido`, `sarcastico` y `breve`.\nEjemplo: `!ia agresivo: ¿qué ocurrió?`";
+  }
+  const { styleName, style, question: query } = parseAIInput(raw);
+  if (!query) return "Uso: `!ia [tono:] <pregunta>`\nEjemplo: `!ia tranquilo: ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;
   if (!aiConfigured()) {
     return "La IA no está configurada. Añade `AI_API_KEY` (o `OPENAI_API_KEY`) en el entorno y vuelve a intentarlo.";
@@ -110,12 +132,12 @@ export async function cmdIA(question) {
   lastRequestAt = now;
   try {
     const sources = await webSearch(query);
-    const answer = await askModel(query, sources);
+    const answer = await askModel(query, style, sources);
     if (!answer) return "No se pudo consultar la IA.";
     const sourceLines = sources.length
       ? `\n\nFuentes:\n${sources.map((s, i) => `[${i + 1}] ${s.url}`).join("\n")}`
       : "";
-    return `${answer}${sourceLines}`.slice(0, 3900);
+    return `_${styleName}_\n${answer}${sourceLines}`.slice(0, 3900);
   } catch (error) {
     console.error("Error en !ia:", error?.message || error);
     return "No pude consultar Internet o la IA ahora. Intenta de nuevo más tarde.";

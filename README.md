@@ -26,9 +26,25 @@ Las consultas de Steam requieren una clave de Steam Web API. `!ping` y `!ayuda` 
 AI_API_KEY=tu_clave_de_ia
 AI_MODEL=gpt-4o-mini
 AI_API_URL=https://api.openai.com/v1/chat/completions
+AI_DEFAULT_STYLE=tranquilo
+AI_TIMEOUT_MS=15000
+AI_MIN_INTERVAL_MS=4000
 ```
 
 El comando realiza una búsqueda web breve, envía los resultados al modelo y muestra las fuentes. La clave nunca se publica en WhatsApp. Si no configuras `AI_API_KEY`, el resto de los comandos continúa funcionando normalmente.
+
+Puedes elegir el tono de respuesta escribiéndolo antes de la pregunta:
+
+```text
+!ia tranquilo: explícame qué es Steam Deck
+!ia agresivo: dime directamente cuál es el problema
+!ia formal: resume esta noticia
+!ia divertido: explica este concepto
+!ia sarcastico: analiza esta situación
+!ia breve: responde en dos frases
+```
+
+También puedes consultar los tonos con `!ia tonos`. Si no especificas uno, se usa `AI_DEFAULT_STYLE=tranquilo`. El tono `agresivo` es firme y directo, pero el bot no debe insultar, amenazar, discriminar ni acosar.
 
 ### Dónde obtener las claves de API
 
@@ -95,6 +111,10 @@ STEAM_API_KEY=0123456789abcdef0123456789abcdef
 AI_API_KEY=tu_clave_de_ia
 AI_MODEL=gpt-4o-mini
 AI_API_URL=https://api.openai.com/v1/chat/completions
+AI_DEFAULT_STYLE=tranquilo
+# Opcionales: tiempo máximo y espera mínima entre consultas
+AI_TIMEOUT_MS=15000
+AI_MIN_INTERVAL_MS=4000
 # Opcionales: tiempo máximo y espera mínima entre consultas
 AI_TIMEOUT_MS=15000
 AI_MIN_INTERVAL_MS=4000
