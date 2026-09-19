@@ -96,12 +96,15 @@ function aiConfig() {
   return { key, url, model };
 }
 
-async function askModel(question, style, sources) {
+async function askModel(question, style, sources, includeSources) {
   const { key, url, model } = aiConfig();
   if (!key) return null;
   const context = sources.length
     ? sources.map((s, i) => `[${i + 1}] ${s.title}\nURL: ${s.url}\n${s.snippet}`).join("\n\n")
     : "No se encontraron resultados web verificables.";
+  const sourceInstruction = includeSources
+    ? "Incluye las fuentes como [1], [2] al final y usa los enlaces proporcionados."
+    : "Responde solo con texto; no incluyas URLs, enlaces ni una lista de fuentes salvo que la persona los pida explícitamente.";
   const response = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
@@ -112,7 +115,7 @@ async function askModel(question, style, sources) {
       messages: [
         {
           role: "system",
-          content: `Responde en español de forma clara. Usa únicamente el contexto web proporcionado para afirmar datos actuales. Si no hay evidencia suficiente, dilo explícitamente. Usa este tono: ${style}. No generes amenazas, insultos discriminatorios, slurs, doxxing ni acoso dirigido a una persona identificable. Añade las fuentes como [1], [2] al final.`,
+          content: `Responde en español de forma clara. Usa únicamente el contexto web proporcionado para afirmar datos actuales. Si no hay evidencia suficiente, dilo explícitamente. Usa este tono: ${style}. No generes amenazas, insultos discriminatorios, slurs, doxxing ni acoso dirigido a una persona identificable. ${sourceInstruction}`,
         },
         { role: "user", content: `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}` },
       ],
@@ -137,9 +140,14 @@ function configuredStyle() {
   return { styleName, style: STYLES[styleName] };
 }
 
+function requestsSources(question) {
+  return /\b(fuente|fuentes|enlace|enlaces|link|links|url|urls|referencia|referencias|origen|orígenes|cita|citas)\b/i.test(question);
+}
+
 export async function cmdIA(question) {
   const query = String(question || "").trim();
   const { styleName, style } = configuredStyle();
+  const includeSources = requestsSources(query);
   if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;
   if (!aiConfigured()) {
@@ -161,9 +169,9 @@ export async function cmdIA(question) {
       // DuckDuckGo está lento, bloqueado o no disponible en Termux.
       console.error("Búsqueda web no disponible; se continuará sin fuentes:", error?.message || error);
     }
-    const answer = await askModel(query, style, sources);
+    const answer = await askModel(query, style, sources, includeSources);
     if (!answer) return "No se pudo consultar la IA.";
-    const sourceLines = sources.length
+    const sourceLines = includeSources && sources.length
       ? `\n\nFuentes:\n${sources.map((s, i) => `[${i + 1}] ${s.url}`).join("\n")}`
       : "";
     return `_${styleName}_\n${answer}${sourceLines}`.slice(0, 3900);
