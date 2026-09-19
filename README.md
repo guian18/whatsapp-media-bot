@@ -15,9 +15,20 @@ El bot responde únicamente a mensajes que comienzan con `!`, funciona en grupos
 | `!servidor <ip:puerto>` | Muestra información detallada de un servidor. |
 | `!jugadores <ip:puerto>` | Muestra el servidor y su lista de jugadores conectados. |
 | `!ping` | Comprueba que el bot responde. |
+| `!ia <pregunta>` | Busca información reciente en Internet y la resume con IA. Requiere `AI_API_KEY`. |
 | `!ayuda` | Muestra la lista de comandos. |
 
 Las consultas de Steam requieren una clave de Steam Web API. `!ping` y `!ayuda` funcionan sin ella.
+
+`!ia` es opcional. Configura en `.env` una clave de una API compatible con OpenAI Chat Completions:
+
+```env
+AI_API_KEY=tu_clave_de_ia
+AI_MODEL=gpt-4o-mini
+AI_API_URL=https://api.openai.com/v1/chat/completions
+```
+
+El comando realiza una búsqueda web breve, envía los resultados al modelo y muestra las fuentes. La clave nunca se publica en WhatsApp. Si no configuras `AI_API_KEY`, el resto de los comandos continúa funcionando normalmente.
 
 ## Requisitos
 

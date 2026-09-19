@@ -42,11 +42,21 @@ function request(port, path, { method = "GET", body = "" } = {}) {
 }
 
 test("command dispatcher serves local commands without external services", async () => {
+  const previousAiKey = process.env.AI_API_KEY;
+  const previousOpenAiKey = process.env.OPENAI_API_KEY;
+  process.env.AI_API_KEY = "";
+  process.env.OPENAI_API_KEY = "";
   assert.equal(await handleCommand("!ping"), "Pong! 🏓");
   assert.equal(await handleCommand("!PING"), "Pong! 🏓");
   assert.equal(await handleCommand("!desconocido"), null);
   assert.equal(await handleCommand("texto normal"), null);
   assert.match(await handleCommand("!ayuda"), /!info/);
+  assert.match(await handleCommand("!ia"), /Uso: `!ia/);
+  assert.match(await handleCommand("!ia pregunta sin clave"), /AI_API_KEY/);
+  if (previousAiKey === undefined) delete process.env.AI_API_KEY;
+  else process.env.AI_API_KEY = previousAiKey;
+  if (previousOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
+  else process.env.OPENAI_API_KEY = previousOpenAiKey;
   assert.equal(await cmdInfo(""), "Uso: `!info <steamid64 | vanity | url del perfil>`");
   assert.match(await cmdBuscar(""), /Uso: `!buscar/);
   assert.match(await cmdServidor("sin-puerto"), /Uso: `!servidor/);
