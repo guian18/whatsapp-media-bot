@@ -63,7 +63,7 @@ export function ayuda() {
     "`!servidor <ip:puerto>` — información detallada de un servidor",
     "`!jugadores <ip:puerto>` — lista los jugadores conectados",
     "`!ping` — comprueba que el bot responde",
-    "`!ai <pregunta>` — consulta Internet y responde con IA",
+    "`!ai` / `!ia` `<pregunta>` — consulta Internet y responde con IA",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }
@@ -202,6 +202,7 @@ export async function handleCommand(text) {
     case "ping":
       return pingResponse();
     case "ai":
+    case "ia":
       return cmdIA(args);
     case "ayuda":
     case "help":

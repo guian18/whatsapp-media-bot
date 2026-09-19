@@ -24,10 +24,11 @@ test("command dispatcher serves local commands without external services", async
   assert.equal(await handleCommand("!desconocido"), null);
   assert.equal(await handleCommand("texto normal"), null);
   assert.match(await handleCommand("!ayuda"), /!info/);
-  assert.match(await handleCommand("!ayuda"), /!ai <pregunta>/);
+  assert.match(await handleCommand("!ayuda"), /!ai.*!ia.*pregunta/);
   assert.match(await handleCommand("!ai"), /Uso: `!ai/);
   assert.match(await handleCommand("!ai pregunta directa"), /AI_API_KEY/);
-  assert.equal(await handleCommand("!ia pregunta directa"), null);
+  assert.match(await handleCommand("!AI pregunta directa"), /AI_API_KEY/);
+  assert.match(await handleCommand("!IA pregunta directa"), /AI_API_KEY/);
   if (previousAiKey === undefined) delete process.env.AI_API_KEY;
   else process.env.AI_API_KEY = previousAiKey;
   if (previousOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
