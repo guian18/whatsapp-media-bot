@@ -83,9 +83,25 @@ AUTH_DIR=auth_info
 AUTO_RESET=false
 ```
 
-### Obtener las API Keys
+## APIs y opciones de configuración
 
-Entra en estos enlaces para crear directamente las claves:
+### Opciones sin pagar
+
+No necesitas crear ninguna API de búsqueda. Deja esta configuración:
+
+```env
+SEARCH_PROVIDERS=duckduckgo
+GOOGLE_SEARCH_API_KEY=
+GOOGLE_CSE_ID=
+BRAVE_SEARCH_API_KEY=
+MOJEEK_API_KEY=
+```
+
+DuckDuckGo se consulta sin clave ni suscripción. Puede tener límites o cambiar su HTML, pero es la opción integrada sin coste. La [Steam Web API Key](https://steamcommunity.com/dev/apikey) también se obtiene gratuitamente para consultar perfiles públicos.
+
+### APIs opcionales con posibles costes
+
+Estas APIs requieren una cuenta y sus condiciones, límites o créditos pueden cambiar. No las presentes como gratuitas:
 
 | Servicio | Enlace directo | Variable `.env` |
 |---|---|---|
@@ -96,7 +112,7 @@ Entra en estos enlaces para crear directamente las claves:
 | Google API | [Crear o gestionar una API Key](https://console.cloud.google.com/apis/credentials) | `GOOGLE_SEARCH_API_KEY` |
 | Google CSE | [Crear Programmable Search Engine](https://programmablesearchengine.google.com/controlpanel/all) | `GOOGLE_CSE_ID` |
 
-En Google necesitas **las dos cosas**: `GOOGLE_SEARCH_API_KEY` y `GOOGLE_CSE_ID`. La API de Google Custom Search puede no aceptar cuentas nuevas; Brave o Mojeek son alternativas recomendadas.
+En Google necesitas **las dos cosas**: `GOOGLE_SEARCH_API_KEY` y `GOOGLE_CSE_ID`. La API de Google Custom Search puede no aceptar cuentas nuevas. OpenAI tampoco es una API gratuita garantizada: ChatGPT y la API se facturan por separado. Para usar `!ai` sin pagar por OpenAI necesitas configurar otro proveedor compatible con Chat Completions que ofrezca un nivel gratuito, o dejar la IA desactivada.
 
 Documentación oficial: [Steam Web API](https://steamcommunity.com/dev), [OpenAI API](https://developers.openai.com/api/docs/quickstart), [Google Custom Search API](https://developers.google.com/custom-search/v1/overview), [Brave Search API](https://brave.com/search/api/) y [Mojeek Search API](https://www.mojeek.com/support/api/search/).
 
@@ -174,7 +190,7 @@ Tonos disponibles:
 
 El tono `insultos` permite lenguaje vulgar e insultos genéricos dirigidos a errores, ideas o situaciones. No genera amenazas, discriminación, slurs ni acoso dirigido.
 
-Si no quieres usar IA, deja `AI_API_KEY` vacío. Los demás comandos seguirán funcionando.
+Si no quieres usar una API de IA de pago, deja `AI_API_KEY` vacío. Las búsquedas y los demás comandos seguirán funcionando; `!ai` necesitará una API compatible configurada para generar la respuesta.
 
 ### Búsqueda web
 
