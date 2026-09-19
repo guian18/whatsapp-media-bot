@@ -9,6 +9,7 @@ const MIN_INTERVAL_MS = 4_000;
 const STYLES = {
   tranquilo: "sereno, paciente y fácil de entender",
   agresivo: "firme, directo y contundente; no insultes, amenaces ni ataques a personas o grupos",
+  insultos: "irreverente y vulgar; puedes usar palabrotas e insultos genéricos dirigidos a ideas, errores o situaciones, pero no amenazas, insultos discriminatorios, slurs ni acoso contra una persona identificable",
   formal: "profesional, estructurado y preciso",
   divertido: "ameno, ingenioso y ligero sin perder exactitud",
   sarcastico: "sarcástico con moderación, sin humillar ni insultar",
@@ -83,7 +84,7 @@ async function askModel(question, style, sources) {
       messages: [
         {
           role: "system",
-          content: `Responde en español de forma clara. Usa únicamente el contexto web proporcionado para afirmar datos actuales. Si no hay evidencia suficiente, dilo explícitamente. Usa este tono: ${style}. El tono agresivo significa firmeza, nunca insultos, amenazas, discriminación ni acoso. Añade las fuentes como [1], [2] al final.`,
+          content: `Responde en español de forma clara. Usa únicamente el contexto web proporcionado para afirmar datos actuales. Si no hay evidencia suficiente, dilo explícitamente. Usa este tono: ${style}. No generes amenazas, insultos discriminatorios, slurs, doxxing ni acoso dirigido a una persona identificable. Añade las fuentes como [1], [2] al final.`,
         },
         { role: "user", content: `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}` },
       ],
@@ -115,10 +116,10 @@ function parseAIInput(input) {
 export async function cmdIA(question) {
   const raw = String(question || "").trim();
   if (raw.toLowerCase() === "tonos" || raw.toLowerCase() === "estilos") {
-    return "Tonos disponibles: `tranquilo`, `agresivo`, `formal`, `divertido`, `sarcastico` y `breve`.\nEjemplo: `!ia agresivo: ¿qué ocurrió?`";
+    return "Tonos disponibles: `tranquilo`, `agresivo`, `insultos`, `formal`, `divertido`, `sarcastico` y `breve`.\nFormato único: `!ia <tono> <pregunta>`\nEjemplo: `!ia insultos ¿qué ocurrió?`";
   }
   const { styleName, style, question: query } = parseAIInput(raw);
-  if (!query) return "Uso: `!ia [tono:] <pregunta>`\nEjemplo: `!ia tranquilo: ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
+  if (!query) return "Uso: `!ia <tono> <pregunta>`\nEjemplo: `!ia tranquilo ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;
   if (!aiConfigured()) {
     return "La IA no está configurada. Añade `AI_API_KEY` (o `OPENAI_API_KEY`) en el entorno y vuelve a intentarlo.";
