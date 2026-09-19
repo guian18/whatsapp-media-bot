@@ -70,7 +70,7 @@ AI_PROVIDER=groq
 AI_MODEL=openai/gpt-oss-20b
 AI_API_URL=
 AI_DEFAULT_STYLE=insultos
-AI_LANGUAGE=es
+AI_LANGUAGE=es-ES
 SEARCH_PROVIDERS=duckduckgo
 PING_DEAD_CHANCE=0.10
 PING_TRIP_CHANCE=0.30
@@ -225,15 +225,19 @@ Con `!tono lista` se muestran los estilos disponibles.
 Para cambiar manualmente el idioma:
 
 ```text
-!idioma es
-!idioma en
-!idioma it
-!idioma pt
-!idioma fr
-!idioma de
+!idioma es-ES
+!idioma es-MX
+!idioma es-AR
+!idioma en-US
+!idioma en-GB
+!idioma it-IT
+!idioma pt-BR
+!idioma pt-PT
+!idioma fr-FR
+!idioma de-DE
 ```
 
-Usa `!idioma lista` para mostrar los códigos disponibles. El idioma se guarda en `.env` y se conserva al reiniciar.
+También puedes usar el nombre del país, por ejemplo `!idioma Italia`, `!idioma México`, `!idioma USA` o `!idioma Brasil`. Usa `!idioma lista` para mostrar los códigos disponibles. La selección se guarda en `.env` y se conserva al reiniciar.
 
 Puede usar humor adulto, doble sentido y palabrotas entre amigos adultos cuando el contexto sea consensuado y amistoso. No permite sexualizar menores, coerción, amenazas, slurs, discriminación ni acoso dirigido.
 

@@ -29,12 +29,17 @@ const STYLES = {
   amable: "cálido, cercano y respetuoso",
 };
 const LANGUAGES = {
-  es: "español",
-  en: "inglés",
-  it: "italiano",
-  pt: "portugués",
-  fr: "francés",
-  de: "alemán",
+  "es-ES": { name: "español de España", aliases: ["es", "es-es", "españa", "espana"] },
+  "es-MX": { name: "español de México", aliases: ["es-mx", "méxico", "mexico"] },
+  "es-AR": { name: "español de Argentina", aliases: ["es-ar", "argentina"] },
+  "es-CO": { name: "español de Colombia", aliases: ["es-co", "colombia"] },
+  "en-US": { name: "inglés de Estados Unidos", aliases: ["en", "en-us", "eeuu", "usa"] },
+  "en-GB": { name: "inglés del Reino Unido", aliases: ["en-gb", "uk", "reino unido"] },
+  "it-IT": { name: "italiano de Italia", aliases: ["it", "it-it", "italia"] },
+  "pt-BR": { name: "portugués de Brasil", aliases: ["pt", "pt-br", "brasil"] },
+  "pt-PT": { name: "portugués de Portugal", aliases: ["pt-pt", "portugal"] },
+  "fr-FR": { name: "francés de Francia", aliases: ["fr", "fr-fr", "francia"] },
+  "de-DE": { name: "alemán de Alemania", aliases: ["de", "de-de", "alemania"] },
 };
 let requestInFlight = false;
 let lastRequestAt = 0;
@@ -118,9 +123,10 @@ async function askModel(question, style, sources, includeSources) {
   const sourceInstruction = includeSources
     ? "Incluye las fuentes como [1], [2] al final y usa los enlaces proporcionados."
     : "Responde solo con texto; no incluyas URLs, enlaces ni una lista de fuentes salvo que la persona los pida explícitamente.";
-  const language = manualLanguage || (process.env.AI_LANGUAGE || "es").trim().toLowerCase();
-  const languageName = LANGUAGES[language] || LANGUAGES.es;
-  const locale = language === "en" ? "en-US" : language;
+  const language = manualLanguage || (process.env.AI_LANGUAGE || "es").trim();
+  const languageInfo = LANGUAGES[language] || LANGUAGES["es-ES"];
+  const languageName = languageInfo.name;
+  const locale = LANGUAGES[language] ? language : "es-ES";
   const dateContext = new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(new Date());
   const response = await fetch(url, {
     method: "POST",
@@ -184,12 +190,13 @@ export function cmdTono(value) {
 }
 
 export function cmdIdioma(value) {
-  const requested = String(value || "").trim().toLowerCase();
-  if (!requested || requested === "lista") {
-    return `Idiomas: ${Object.entries(LANGUAGES).map(([code, name]) => `${code} (${name})`).join(", ")}\nUso: !idioma <código>`;
+  const input = String(value || "").trim().toLowerCase();
+  if (!input || input === "lista") {
+    return `Idiomas: ${Object.entries(LANGUAGES).map(([code, info]) => `${code} (${info.name})`).join(", ")}\nUso: !idioma <país o código>`;
   }
-  if (!LANGUAGES[requested]) {
-    return `Idioma no válido. Usa: ${Object.keys(LANGUAGES).join(", ")}`;
+  const requested = Object.entries(LANGUAGES).find(([code, info]) => code.toLowerCase() === input || info.aliases.includes(input))?.[0];
+  if (!requested) {
+    return `Idioma no válido o país no reconocido. Usa: ${Object.keys(LANGUAGES).join(", ")}`;
   }
   manualLanguage = requested;
   process.env.AI_LANGUAGE = requested;
@@ -205,7 +212,7 @@ export function cmdIdioma(value) {
   } catch (error) {
     console.error("No se pudo guardar el idioma en .env:", error?.message || error);
   }
-  return `Idioma cambiado a: ${LANGUAGES[requested]}`;
+  return `Idioma cambiado a: ${LANGUAGES[requested].name}`;
 }
 
 export function detectStyle(question) {
