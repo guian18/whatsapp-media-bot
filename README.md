@@ -2,7 +2,7 @@
 
 > Consulta desde WhatsApp quién está jugando Left 4 Dead 2, en qué servidor está y qué jugadores hay conectados.
 
-InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/WhiskeySockets/Baileys) que consulta perfiles de Steam, servidores públicos de Left 4 Dead 2 y jugadores conectados. Funciona en Termux, Railway, Render y VPS con Node.js. Usa la rama oficial del parche de Baileys para el flujo de vinculación por código.
+InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/WhiskeySockets/Baileys) que consulta perfiles de Steam, servidores públicos de Left 4 Dead 2 y jugadores conectados. Funciona en Termux, Railway, Render y VPS con Node.js. Usa el paquete publicado `@whiskeysockets/baileys@7.0.0-rc14`; las protecciones de pairing y reconexión están implementadas en este repositorio.
 
 El bot responde únicamente a mensajes que comienzan con `!`, funciona en grupos y chats privados, y no necesita una base de datos externa. La sesión de WhatsApp se guarda en disco para evitar repetir la vinculación después de cada reinicio.
 
