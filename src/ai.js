@@ -125,7 +125,14 @@ export async function cmdIA(question) {
   requestInFlight = true;
   lastRequestAt = now;
   try {
-    const sources = await webSearch(query);
+    let sources = [];
+    try {
+      sources = await webSearch(query);
+    } catch (error) {
+      // La búsqueda aporta contexto, pero no debe impedir usar la IA cuando
+      // DuckDuckGo está lento, bloqueado o no disponible en Termux.
+      console.error("Búsqueda web no disponible; se continuará sin fuentes:", error?.message || error);
+    }
     const answer = await askModel(query, style, sources);
     if (!answer) return "No se pudo consultar la IA.";
     const sourceLines = sources.length
