@@ -67,7 +67,7 @@ Configuración mínima:
 STEAM_API_KEY=tu_steam_api_key
 AI_API_KEY=tu_clave_groq_o_gemini
 AI_PROVIDER=groq
-AI_MODEL=llama-3.1-8b-instant
+AI_MODEL=openai/gpt-oss-20b
 AI_API_URL=
 AI_DEFAULT_STYLE=tranquilo
 SEARCH_PROVIDERS=duckduckgo
@@ -110,7 +110,7 @@ Para `!ai` sin pagar, usa uno de estos niveles gratuitos oficiales:
 
 | Proveedor | Enlace para crear la clave | Configuración |
 |---|---|---|
-| Groq Free tier | [Crear Groq API Key](https://console.groq.com/keys) | `AI_PROVIDER=groq` y `AI_MODEL=llama-3.1-8b-instant` |
+| Groq Free tier | [Crear Groq API Key](https://console.groq.com/keys) | `AI_PROVIDER=groq` y `AI_MODEL=openai/gpt-oss-20b` |
 | Google Gemini Free tier | [Crear Gemini API Key](https://aistudio.google.com/apikey) | `AI_PROVIDER=gemini` y `AI_MODEL=gemini-2.5-flash` |
 
 Google y Groq publican cuotas gratuitas, no ilimitadas. Sus límites pueden cambiar por modelo, cuenta y día. No se necesita añadir Google Custom Search ni Brave: las búsquedas del bot siguen usando DuckDuckGo sin API.

@@ -8,7 +8,7 @@ const AI_PRESETS = {
   },
   groq: {
     url: "https://api.groq.com/openai/v1/chat/completions",
-    model: "llama-3.1-8b-instant",
+    model: "openai/gpt-oss-20b",
   },
 };
 const MAX_QUESTION_LENGTH = 600;
