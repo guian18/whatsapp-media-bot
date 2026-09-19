@@ -26,15 +26,33 @@ if (existsSync(file)) {
 
   // Migra automáticamente configuraciones antiguas para que una actualización
   // del bot no obligue a editar .env a mano.
-  const provider = (process.env.AI_PROVIDER || "").trim().toLowerCase();
+  let provider = (process.env.AI_PROVIDER || "").trim().toLowerCase();
+  const apiKey = (process.env.AI_API_KEY || "").trim();
   const oldGroqModels = new Set(["llama-3.1-8b-instant"]);
+  let migrated = false;
+  const setEnvLine = (key, value) => {
+    process.env[key] = value;
+    const pattern = new RegExp(`^${key}\\s*=.*$`, "m");
+    if (pattern.test(content)) content = content.replace(pattern, `${key}=${value}`);
+    else content += `\n${key}=${value}\n`;
+    migrated = true;
+  };
+
+  // Una clave gsk_ identifica Groq aunque el .env provenga de una versión vieja.
+  if (apiKey.startsWith("gsk_") && provider !== "groq") {
+    provider = "groq";
+    setEnvLine("AI_PROVIDER", "groq");
+  }
   if (provider === "groq" && oldGroqModels.has((process.env.AI_MODEL || "").trim())) {
-    process.env.AI_MODEL = "openai/gpt-oss-20b";
-    content = content.replace(/^AI_MODEL\s*=.*$/m, "AI_MODEL=openai/gpt-oss-20b");
-    if (!/^AI_MODEL\s*=/m.test(content)) content += "\nAI_MODEL=openai/gpt-oss-20b\n";
+    setEnvLine("AI_MODEL", "openai/gpt-oss-20b");
+  }
+  if (provider === "groq" && (process.env.AI_API_URL || "").includes("api.openai.com")) {
+    setEnvLine("AI_API_URL", "");
+  }
+  if (migrated) {
     try {
       writeFileSync(file, content, { mode: 0o600 });
-      console.log("Configuración migrada automáticamente: modelo Groq actualizado.");
+      console.log("Configuración de Groq migrada automáticamente.");
     } catch (error) {
       console.warn("No se pudo guardar la migración de .env; se usará durante esta ejecución:", error?.message || error);
     }
