@@ -1,3 +1,5 @@
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+
 const SEARCH_URL = "https://html.duckduckgo.com/html/";
 const DEFAULT_AI_URL = "https://api.openai.com/v1/chat/completions";
 const DEFAULT_AI_MODEL = "gpt-4o-mini";
@@ -28,6 +30,7 @@ const STYLES = {
 };
 let requestInFlight = false;
 let lastRequestAt = 0;
+let manualStyle = null;
 
 function envNumber(name, fallback) {
   const value = Number(process.env[name]);
@@ -142,6 +145,32 @@ function configuredStyle() {
   return { styleName, style: STYLES[styleName] };
 }
 
+export function cmdTono(value) {
+  const requested = String(value || "").trim().toLowerCase();
+  if (!requested || requested === "lista") {
+    return `Tonos: ${Object.keys(STYLES).join(", ")}\nUso: !tono <estilo>`;
+  }
+  if (!STYLES[requested]) {
+    return `Tono no válido. Usa: ${Object.keys(STYLES).join(", ")}`;
+  }
+
+  manualStyle = requested;
+  process.env.AI_DEFAULT_STYLE = requested;
+  const file = process.env.ENV_FILE || ".env";
+  try {
+    if (existsSync(file)) {
+      let content = readFileSync(file, "utf8");
+      const pattern = /^AI_DEFAULT_STYLE\s*=.*$/m;
+      if (pattern.test(content)) content = content.replace(pattern, `AI_DEFAULT_STYLE=${requested}`);
+      else content += `\nAI_DEFAULT_STYLE=${requested}\n`;
+      writeFileSync(file, content, { mode: 0o600 });
+    }
+  } catch (error) {
+    console.error("No se pudo guardar el tono en .env:", error?.message || error);
+  }
+  return `Tono cambiado a: ${requested}`;
+}
+
 export function detectStyle(question) {
   const text = String(question || "").trim();
   if (!text) return null;
@@ -163,7 +192,7 @@ function requestsSources(question) {
 export async function cmdIA(question) {
   const query = String(question || "").trim();
   const configured = configuredStyle();
-  const styleName = detectStyle(query) || configured.styleName;
+  const styleName = manualStyle || detectStyle(query) || configured.styleName;
   const style = STYLES[styleName];
   const includeSources = requestsSources(query);
   if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy sobre Left 4 Dead 2?`";

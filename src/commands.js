@@ -1,7 +1,7 @@
 // Lógica de comandos, independiente de WhatsApp: cada uno devuelve texto plano.
 import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
-import { cmdIA } from "./ai.js";
+import { cmdIA, cmdTono } from "./ai.js";
 
 const MAX_SERVERS = 200;
 const CONCURRENCY = 20;
@@ -64,6 +64,7 @@ export function ayuda() {
     "`!jugadores <ip:puerto>` — lista los jugadores conectados",
     "`!ping` — comprueba que el bot responde",
     "`!ai` / `!ia` `<pregunta>` — consulta Internet y responde con IA",
+    "`!tono <estilo>` — cambia y guarda el tono de la IA",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }
@@ -204,6 +205,8 @@ export async function handleCommand(text) {
     case "ai":
     case "ia":
       return cmdIA(args);
+    case "tono":
+      return cmdTono(args);
     case "ayuda":
     case "help":
       return ayuda();

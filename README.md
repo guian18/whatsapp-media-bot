@@ -167,6 +167,7 @@ Escanea el QR mostrado en la terminal desde **WhatsApp → Dispositivos vinculad
 |---|---|
 | `!ping` | Comprueba que el bot responde. |
 | `!ayuda` | Muestra los comandos. |
+| `!tono <estilo>` | Cambia y guarda el tono de la IA. |
 | `!info <SteamID, vanity o URL>` | Consulta un perfil de Steam. |
 | `!buscar <nickname>` | Busca un jugador en servidores públicos de L4D2. |
 | `!servidor <IP:puerto>` | Consulta un servidor. |
@@ -203,6 +204,21 @@ Tonos disponibles:
 El tono `insultos` permite lenguaje vulgar e insultos genéricos dirigidos a errores, ideas o situaciones. No genera amenazas, discriminación, slurs ni acoso dirigido.
 
 La IA detecta el tono de cada pregunta y procura responder en el mismo estilo: formal, amable, divertido, sarcástico, agresivo, vulgar o breve. Si el mensaje no da una señal clara, utiliza `AI_DEFAULT_STYLE=insultos` como respaldo. También reconoce frases como “usa el tono de insulto”.
+
+Para cambiarlo manualmente y guardarlo para los siguientes reinicios:
+
+```text
+!tono insultos
+!tono tranquilo
+!tono formal
+!tono divertido
+!tono sarcastico
+!tono agresivo
+!tono amable
+!tono breve
+```
+
+Con `!tono lista` se muestran los estilos disponibles.
 
 Puede usar humor adulto, doble sentido y palabrotas entre amigos adultos cuando el contexto sea consensuado y amistoso. No permite sexualizar menores, coerción, amenazas, slurs, discriminación ni acoso dirigido.
 
