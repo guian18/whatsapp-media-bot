@@ -198,27 +198,6 @@ En Render, VPS u otro hosting compatible con Node.js:
 
 Los servicios serverless que suspenden o destruyen continuamente el proceso no son adecuados para un bot de WhatsApp persistente.
 
-## Compatibilidad y paquetes
-
-El proyecto funciona con Node.js 20 o superior en Windows, Linux y Termux. En Windows usa PowerShell o `cmd.exe`; en Linux y Termux usa una terminal normal. La carpeta `auth_info/` debe permanecer junto al proceso o puedes indicar otra ubicación mediante `AUTH_DIR`.
-
-En Windows, después de instalar Node.js 20 o superior y ejecutar `npm install`, puedes iniciar con doble clic en:
-
-```text
-start-windows.cmd
-```
-
-En Linux, marca el lanzador como ejecutable y ejecútalo:
-
-```bash
-chmod +x start-linux.sh
-./start-linux.sh
-```
-
-También puedes usar `npm start` en ambos sistemas. No se distribuye un `.exe` autónomo porque Baileys depende de módulos nativos y ESM que los empaquetadores Node no incluyen correctamente; la instalación con Node.js es la opción compatible y reproducible.
-
-Una APK Android nativa no se genera con este bot porque WhatsApp y Baileys necesitan un proceso Node.js persistente, no una interfaz Android. En Android, la opción compatible y soportada es Termux; el paquete `build:termux` prepara los archivos para instalar con `npm install`.
-
 ## Pruebas y mantenimiento
 
 Instala exactamente las dependencias del lockfile:
@@ -251,7 +230,6 @@ Scripts disponibles:
 | `npm test` | Ejecuta las pruebas automatizadas. |
 | `npm run reset` | Elimina la sesión configurada en `AUTH_DIR`. |
 | `npm run relink` | Elimina la sesión y vuelve a iniciar el bot. |
-| `npm run build:termux` | Crea un ZIP con el código listo para instalar en Termux. |
 
 Para forzar una nueva solicitud de Steam API key:
 

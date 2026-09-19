@@ -3,4 +3,3 @@ auth_info/
 .env
 *.log
 .steam_key
-dist/

@@ -7,11 +7,10 @@
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
-    "start:termux": "node scripts/start-termux.js",
+    "start:termux": "termux-wake-lock 2>/dev/null; node bot.js",
     "reset": "node scripts/reset.js",
     "relink": "node scripts/reset.js && node bot.js",
-    "test": "node --test",
-    "build:termux": "node scripts/build-termux-bundle.js"
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20"
