@@ -93,10 +93,24 @@ async function braveSearch(question) {
   }));
 }
 
+async function mojeekSearch(question) {
+  const key = (process.env.MOJEEK_API_KEY || "").trim();
+  if (!key) return [];
+  const url = `https://api.mojeek.com/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(question)}&fmt=json&f=${MAX_SEARCH_RESULTS}`;
+  const response = await fetch(url, { signal: timeoutSignal(REQUEST_TIMEOUT_MS) });
+  if (!response.ok) throw new Error(`Mojeek Search HTTP ${response.status}`);
+  const data = await response.json();
+  return (data.response?.results || []).slice(0, MAX_SEARCH_RESULTS).map((item) => ({
+    title: cleanText(item.title),
+    url: item.url,
+    snippet: cleanText(item.desc),
+  }));
+}
+
 async function webSearch(question) {
-  const providers = (process.env.SEARCH_PROVIDERS || "google,brave,duckduckgo")
+  const providers = (process.env.SEARCH_PROVIDERS || "google,brave,mojeek,duckduckgo")
     .split(",").map((name) => name.trim().toLowerCase()).filter(Boolean);
-  const searches = { google: googleSearch, brave: braveSearch, duckduckgo: duckDuckGoSearch };
+  const searches = { google: googleSearch, brave: braveSearch, mojeek: mojeekSearch, duckduckgo: duckDuckGoSearch };
   const all = [];
   for (const provider of providers) {
     const search = searches[provider];

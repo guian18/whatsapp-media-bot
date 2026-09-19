@@ -69,10 +69,11 @@ AI_API_KEY=tu_openai_api_key
 AI_MODEL=gpt-4o-mini
 AI_API_URL=https://api.openai.com/v1/chat/completions
 AI_DEFAULT_STYLE=tranquilo
-SEARCH_PROVIDERS=google,brave,duckduckgo
+SEARCH_PROVIDERS=google,brave,mojeek,duckduckgo
 GOOGLE_SEARCH_API_KEY=
 GOOGLE_CSE_ID=
 BRAVE_SEARCH_API_KEY=
+MOJEEK_API_KEY=
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
 REPLY_IN_PRIVATE=true
@@ -168,7 +169,9 @@ Si no quieres usar IA, deja `AI_API_KEY` vacío. Los demás comandos seguirán f
 
 ### Búsqueda web
 
-`!ai` puede consultar Google Custom Search, Brave y DuckDuckGo. Google y Brave son opcionales; si no configuras sus claves, se usa DuckDuckGo como respaldo. Para Google necesitas una API Key y un identificador de Programmable Search Engine (`GOOGLE_CSE_ID`). Para Brave necesitas una Search API Key.
+`!ai` puede consultar Google Custom Search, Brave, Mojeek y DuckDuckGo. Las APIs son opcionales; si no configuras ninguna, se usa DuckDuckGo como respaldo. Para Google necesitas una API Key y un identificador de Programmable Search Engine (`GOOGLE_CSE_ID`). Google informa que su Custom Search JSON API no admite nuevos clientes y está prevista para transición antes del 1 de enero de 2027, por lo que Brave o Mojeek son alternativas más prácticas para una instalación nueva. Para Brave necesitas una Search API Key y para Mojeek una API Key.
+
+Enlaces oficiales: [Google Custom Search API](https://developers.google.com/custom-search/v1/overview), [Brave Search API](https://brave.com/search/api/), [Mojeek Search API](https://www.mojeek.com/support/api/search/) y [DuckDuckGo](https://duckduckgo.com/).
 
 Tor no es un buscador ni un navegador que el bot pueda invocar por nombre: es una red/proxy. El bot no incluye un proxy Tor automático. Si necesitas Tor, debes ejecutar un servicio Tor local y configurar una integración de proxy compatible; las búsquedas normales no lo requieren.
 
