@@ -65,9 +65,10 @@ Configuración mínima:
 
 ```env
 STEAM_API_KEY=tu_steam_api_key
-AI_API_KEY=tu_openai_api_key
-AI_MODEL=gpt-4o-mini
-AI_API_URL=https://api.openai.com/v1/chat/completions
+AI_API_KEY=tu_clave_groq_o_gemini
+AI_PROVIDER=groq
+AI_MODEL=llama-3.1-8b-instant
+AI_API_URL=
 AI_DEFAULT_STYLE=tranquilo
 SEARCH_PROVIDERS=duckduckgo
 WHATSAPP_NUMBER=
@@ -91,13 +92,24 @@ SEARCH_PROVIDERS=duckduckgo
 
 DuckDuckGo se consulta sin clave ni suscripción. Puede tener límites o cambiar su HTML, pero es la opción integrada sin coste. La [Steam Web API Key](https://steamcommunity.com/dev/apikey) también se obtiene gratuitamente para consultar perfiles públicos.
 
+Para `!ai` sin pagar, usa uno de estos niveles gratuitos oficiales:
+
+| Proveedor | Enlace para crear la clave | Configuración |
+|---|---|---|
+| Groq Free tier | [Crear Groq API Key](https://console.groq.com/keys) | `AI_PROVIDER=groq` y `AI_MODEL=llama-3.1-8b-instant` |
+| Google Gemini Free tier | [Crear Gemini API Key](https://aistudio.google.com/apikey) | `AI_PROVIDER=gemini` y `AI_MODEL=gemini-2.5-flash` |
+
+Google y Groq publican cuotas gratuitas, no ilimitadas. Sus límites pueden cambiar por modelo, cuenta y día. No se necesita añadir Google Custom Search ni Brave: las búsquedas del bot siguen usando DuckDuckGo sin API.
+
 ### Enlaces gratuitos
 
 | Servicio | Enlace directo | Variable `.env` |
 |---|---|---|
 | Steam | [Crear Steam Web API Key](https://steamcommunity.com/dev/apikey) | `STEAM_API_KEY` |
+| Groq | [Crear Groq API Key](https://console.groq.com/keys) | `AI_API_KEY` |
+| Gemini | [Crear Gemini API Key](https://aistudio.google.com/apikey) | `AI_API_KEY` |
 
-Documentación oficial: [Steam Web API](https://steamcommunity.com/dev) y [DuckDuckGo](https://duckduckgo.com/).
+Documentación oficial: [Steam Web API](https://steamcommunity.com/dev), [DuckDuckGo](https://duckduckgo.com/), [Groq Quickstart](https://console.groq.com/docs/quickstart), [Groq límites](https://console.groq.com/docs/rate-limits), [Gemini OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai), [Gemini precios](https://ai.google.dev/gemini-api/docs/pricing) y [Gemini límites](https://ai.google.dev/gemini-api/docs/rate-limits).
 
 Nunca publiques `.env`, `.steam_key` ni `auth_info/`.
 
@@ -177,7 +189,7 @@ Si no quieres usar una API de IA de pago, deja `AI_API_KEY` vacío. Las búsqued
 
 ### Búsqueda web
 
-`!ai` consulta DuckDuckGo sin una API de búsqueda de pago. La generación de la respuesta de IA sigue necesitando una `AI_API_KEY` compatible; si la dejas vacía, `!ai` mostrará que la IA no está configurada.
+`!ai` consulta DuckDuckGo sin una API de búsqueda de pago. Para generar la respuesta, configura Groq o Gemini con su nivel gratuito. Si dejas `AI_API_KEY` vacía, `!ai` mostrará que la IA no está configurada.
 
 Tor no es un buscador ni un navegador que el bot pueda invocar por nombre: es una red/proxy. El bot no incluye un proxy Tor automático. Si necesitas Tor, debes ejecutar un servicio Tor local y configurar una integración de proxy compatible; las búsquedas normales no lo requieren.
 

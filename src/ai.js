@@ -1,6 +1,16 @@
 const SEARCH_URL = "https://html.duckduckgo.com/html/";
 const DEFAULT_AI_URL = "https://api.openai.com/v1/chat/completions";
 const DEFAULT_AI_MODEL = "gpt-4o-mini";
+const AI_PRESETS = {
+  gemini: {
+    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    model: "gemini-2.5-flash",
+  },
+  groq: {
+    url: "https://api.groq.com/openai/v1/chat/completions",
+    model: "llama-3.1-8b-instant",
+  },
+};
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
@@ -72,8 +82,10 @@ async function webSearch(question) {
 
 function aiConfig() {
   const key = (process.env.AI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
-  const url = (process.env.AI_API_URL || DEFAULT_AI_URL).trim();
-  const model = (process.env.AI_MODEL || DEFAULT_AI_MODEL).trim();
+  const provider = (process.env.AI_PROVIDER || "openai").trim().toLowerCase();
+  const preset = AI_PRESETS[provider];
+  const url = (process.env.AI_API_URL || preset?.url || DEFAULT_AI_URL).trim();
+  const model = (process.env.AI_MODEL || preset?.model || DEFAULT_AI_MODEL).trim();
   return { key, url, model };
 }
 
