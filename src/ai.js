@@ -105,6 +105,7 @@ async function askModel(question, style, sources, includeSources) {
   const sourceInstruction = includeSources
     ? "Incluye las fuentes como [1], [2] al final y usa los enlaces proporcionados."
     : "Responde solo con texto; no incluyas URLs, enlaces ni una lista de fuentes salvo que la persona los pida explícitamente.";
+  const dateContext = new Intl.DateTimeFormat("es-ES", { dateStyle: "full" }).format(new Date());
   const response = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
@@ -115,7 +116,7 @@ async function askModel(question, style, sources, includeSources) {
       messages: [
         {
           role: "system",
-          content: `Responde en español de forma clara. Usa únicamente el contexto web proporcionado para afirmar datos actuales. Si no hay evidencia suficiente, dilo explícitamente. Usa este tono: ${style}. No generes amenazas, insultos discriminatorios, slurs, doxxing ni acoso dirigido a una persona identificable. ${sourceInstruction}`,
+          content: `Responde en español con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. No generes amenazas, insultos discriminatorios, slurs, doxxing ni acoso dirigido a una persona identificable. ${sourceInstruction}`,
         },
         { role: "user", content: `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}` },
       ],
