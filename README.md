@@ -30,6 +30,13 @@ AI_API_URL=https://api.openai.com/v1/chat/completions
 
 El comando realiza una búsqueda web breve, envía los resultados al modelo y muestra las fuentes. La clave nunca se publica en WhatsApp. Si no configuras `AI_API_KEY`, el resto de los comandos continúa funcionando normalmente.
 
+### Dónde obtener las claves de API
+
+- **Steam Web API:** crea la clave en el [formulario oficial de Steam](https://steamcommunity.com/dev/apikey). Consulta la [documentación oficial de Steam Web API](https://steamcommunity.com/dev) y sus [términos de uso](https://steamcommunity.com/dev/apiterms). La clave debe tener 32 caracteres hexadecimales.
+- **OpenAI para `!ia`:** crea una clave en [OpenAI API Keys](https://platform.openai.com/settings/organization/api-keys). Consulta la [guía oficial de inicio rápido](https://developers.openai.com/api/docs/quickstart) y la [referencia oficial de la API](https://developers.openai.com/api/reference/overview/). El uso de la API puede estar sujeto a facturación y límites de la cuenta.
+
+Guarda las claves únicamente en `.env` o en variables de entorno. No las publiques en GitHub, grupos de WhatsApp, capturas de pantalla ni en el código fuente.
+
 ## Requisitos
 
 - Node.js 20 o superior.
@@ -37,6 +44,18 @@ El comando realiza una búsqueda web breve, envía los resultados al modelo y mu
 - Una cuenta de WhatsApp para vincular como dispositivo adicional.
 - Una Steam Web API key para los comandos que consultan Steam.
 - Para un hosting persistente: almacenamiento persistente para `auth_info/`.
+
+## Cambios incluidos
+
+- Se añadió `!ia <pregunta>` y su alias `!ai`. Realiza una búsqueda web breve, consulta una API compatible con OpenAI y devuelve una respuesta en español con fuentes.
+- La IA es opcional: sin `AI_API_KEY`, `!ping`, `!ayuda`, los comandos de Steam y las consultas A2S continúan funcionando.
+- Se añadieron límites de longitud, tiempo de espera, consultas simultáneas y frecuencia para proteger el bot y controlar el consumo de la API.
+- La vinculación por código usa únicamente códigos reales entregados por WhatsApp; el bot no inventa códigos.
+- Se estabilizaron la reconexión después de aceptar un código, el guardado de credenciales y la deduplicación de mensajes.
+- La sesión se guarda en `AUTH_DIR` y, por defecto, en `auth_info/`. `npm run reset` elimina exactamente esa carpeta para volver a vincular.
+- Se protegieron las rutas web `/qr`, `/status` y `/pair` mediante `PAIRING_ADMIN_TOKEN` cuando se configura.
+- Se reforzaron las validaciones de Steam, las consultas A2S y los límites de búsqueda de servidores.
+- Se añadieron pruebas automatizadas para comandos, configuración, pairing y rutas web.
 
 ## Instalación local en Linux, macOS o Windows
 
@@ -72,6 +91,14 @@ Ejemplo completo para un equipo local:
 # Steam Web API: https://steamcommunity.com/dev/apikey
 STEAM_API_KEY=0123456789abcdef0123456789abcdef
 
+# IA opcional para !ia; OpenAI o cualquier API compatible con Chat Completions
+AI_API_KEY=tu_clave_de_ia
+AI_MODEL=gpt-4o-mini
+AI_API_URL=https://api.openai.com/v1/chat/completions
+# Opcionales: tiempo máximo y espera mínima entre consultas
+AI_TIMEOUT_MS=15000
+AI_MIN_INTERVAL_MS=4000
+
 # Número internacional, solo dígitos y código de país; sin +, espacios ni guiones
 WHATSAPP_NUMBER=51987654321
 
@@ -99,6 +126,16 @@ AUTO_RESET=false
 ```
 
 No subas `.env`, `.steam_key` ni `auth_info/` a GitHub. Ya están incluidos en `.gitignore` porque contienen credenciales o la sesión de WhatsApp.
+
+### Probar `!ia`
+
+Después de guardar `.env`, reinicia el bot y envía desde WhatsApp:
+
+```text
+!ia ¿Cuál es la versión más reciente de Left 4 Dead 2?
+```
+
+Si responde que la IA no está configurada, comprueba que `AI_API_KEY` no esté vacío y que hayas reiniciado el proceso después de editar `.env`. Si aparece un error de cuota, autenticación o modelo, revisa la cuenta y la documentación del proveedor de IA. El comando no inventa una clave ni usa la clave de Steam para la IA.
 
 ## Vincular WhatsApp
 
