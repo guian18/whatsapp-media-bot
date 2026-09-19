@@ -71,6 +71,7 @@ AI_MODEL=llama-3.1-8b-instant
 AI_API_URL=
 AI_DEFAULT_STYLE=tranquilo
 SEARCH_PROVIDERS=duckduckgo
+PING_MISS_CHANCE=0.25
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
 GROUPS_ENABLED=true
@@ -170,6 +171,8 @@ Escanea el QR mostrado en la terminal desde **WhatsApp → Dispositivos vinculad
 | `!servidor <IP:puerto>` | Consulta un servidor. |
 | `!jugadores <IP:puerto>` | Consulta los jugadores de un servidor. |
 | `!ai <pregunta>` | Busca información en Internet y responde con IA. |
+
+`PING_MISS_CHANCE` controla la probabilidad de que el bot “pierda” un `!ping` y no responda. `0.25` significa 25%; usa `0` para responder siempre o `1` para no responder nunca. Solo afecta a `!ping`.
 
 ## Comando `!ai`
 

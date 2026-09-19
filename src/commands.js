@@ -10,6 +10,12 @@ const MAX_RESULTS = 8;
 const MAX_NICKNAME_LENGTH = 64;
 let searchInFlight = false;
 
+function pingMisses() {
+  const configured = Number(process.env.PING_MISS_CHANCE ?? "0.25");
+  const chance = Number.isFinite(configured) ? Math.min(1, Math.max(0, configured)) : 0.25;
+  return Math.random() < chance;
+}
+
 function fmtDuration(seconds) {
   const s = Math.max(0, Math.floor(seconds || 0));
   const m = Math.floor(s / 60);
@@ -189,6 +195,7 @@ export async function handleCommand(text) {
 
   switch (cmd) {
     case "ping":
+      if (pingMisses()) return null;
       return "Pong! 🏓";
     case "ai":
       return cmdIA(args);
