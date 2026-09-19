@@ -71,7 +71,7 @@ AI_API_URL=https://api.openai.com/v1/chat/completions
 AI_DEFAULT_STYLE=tranquilo
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
-REPLY_IN_PRIVATE=false
+REPLY_IN_PRIVATE=true
 ALLOW_SELF=false
 ALLOWED_GROUPS=
 AUTH_DIR=auth_info
@@ -200,7 +200,7 @@ npm run relink         Borra la sesión y vuelve a iniciar.
 - No compartas códigos de vinculación.
 - No publiques tus API Keys.
 - No subas `.env`, `.steam_key` ni `auth_info/`.
-- Usa `REPLY_IN_PRIVATE=false` si no quieres responder en chats privados.
+- Usa `REPLY_IN_PRIVATE=false` solo si no quieres responder en chats privados.
 - Baileys no es una librería oficial de WhatsApp.
 
 ## Licencia
