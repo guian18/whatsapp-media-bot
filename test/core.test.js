@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -61,4 +61,10 @@ test("environment loader applies values from the configured .env file", (t) => {
     encoding: "utf8",
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
+test("env example contains variables only", () => {
+  const lines = readFileSync(".env.example", "utf8").split(/\r?\n/).filter(Boolean);
+  assert.ok(lines.length > 0);
+  assert.equal(lines.some((line) => line.trimStart().startsWith("#")), false);
 });
