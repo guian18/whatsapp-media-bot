@@ -69,11 +69,7 @@ AI_API_KEY=tu_openai_api_key
 AI_MODEL=gpt-4o-mini
 AI_API_URL=https://api.openai.com/v1/chat/completions
 AI_DEFAULT_STYLE=tranquilo
-SEARCH_PROVIDERS=google,brave,mojeek,duckduckgo
-GOOGLE_SEARCH_API_KEY=
-GOOGLE_CSE_ID=
-BRAVE_SEARCH_API_KEY=
-MOJEEK_API_KEY=
+SEARCH_PROVIDERS=duckduckgo
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
 REPLY_IN_PRIVATE=true
@@ -91,30 +87,17 @@ No necesitas crear ninguna API de búsqueda. Deja esta configuración:
 
 ```env
 SEARCH_PROVIDERS=duckduckgo
-GOOGLE_SEARCH_API_KEY=
-GOOGLE_CSE_ID=
-BRAVE_SEARCH_API_KEY=
-MOJEEK_API_KEY=
 ```
 
 DuckDuckGo se consulta sin clave ni suscripción. Puede tener límites o cambiar su HTML, pero es la opción integrada sin coste. La [Steam Web API Key](https://steamcommunity.com/dev/apikey) también se obtiene gratuitamente para consultar perfiles públicos.
 
-### APIs opcionales con posibles costes
-
-Estas APIs requieren una cuenta y sus condiciones, límites o créditos pueden cambiar. No las presentes como gratuitas:
+### Enlaces gratuitos
 
 | Servicio | Enlace directo | Variable `.env` |
 |---|---|---|
-| OpenAI | [Crear OpenAI API Key](https://platform.openai.com/api-keys) | `AI_API_KEY` |
 | Steam | [Crear Steam Web API Key](https://steamcommunity.com/dev/apikey) | `STEAM_API_KEY` |
-| Brave | [Crear Brave Search API Key](https://api-dashboard.search.brave.com/register) | `BRAVE_SEARCH_API_KEY` |
-| Mojeek | [Crear Mojeek Search API Key](https://www.mojeek.com/services/search/web-search-api/) | `MOJEEK_API_KEY` |
-| Google API | [Crear o gestionar una API Key](https://console.cloud.google.com/apis/credentials) | `GOOGLE_SEARCH_API_KEY` |
-| Google CSE | [Crear Programmable Search Engine](https://programmablesearchengine.google.com/controlpanel/all) | `GOOGLE_CSE_ID` |
 
-En Google necesitas **las dos cosas**: `GOOGLE_SEARCH_API_KEY` y `GOOGLE_CSE_ID`. La API de Google Custom Search puede no aceptar cuentas nuevas. OpenAI tampoco es una API gratuita garantizada: ChatGPT y la API se facturan por separado. Para usar `!ai` sin pagar por OpenAI necesitas configurar otro proveedor compatible con Chat Completions que ofrezca un nivel gratuito, o dejar la IA desactivada.
-
-Documentación oficial: [Steam Web API](https://steamcommunity.com/dev), [OpenAI API](https://developers.openai.com/api/docs/quickstart), [Google Custom Search API](https://developers.google.com/custom-search/v1/overview), [Brave Search API](https://brave.com/search/api/) y [Mojeek Search API](https://www.mojeek.com/support/api/search/).
+Documentación oficial: [Steam Web API](https://steamcommunity.com/dev) y [DuckDuckGo](https://duckduckgo.com/).
 
 Nunca publiques `.env`, `.steam_key` ni `auth_info/`.
 
@@ -194,9 +177,7 @@ Si no quieres usar una API de IA de pago, deja `AI_API_KEY` vacío. Las búsqued
 
 ### Búsqueda web
 
-`!ai` puede consultar Google Custom Search, Brave, Mojeek y DuckDuckGo. Las APIs son opcionales; si no configuras ninguna, se usa DuckDuckGo como respaldo. Para Google necesitas una API Key y un identificador de Programmable Search Engine (`GOOGLE_CSE_ID`). Google informa que su Custom Search JSON API no admite nuevos clientes y está prevista para transición antes del 1 de enero de 2027, por lo que Brave o Mojeek son alternativas más prácticas para una instalación nueva. Para Brave necesitas una Search API Key y para Mojeek una API Key.
-
-Enlaces oficiales: [Google Custom Search API](https://developers.google.com/custom-search/v1/overview), [Brave Search API](https://brave.com/search/api/), [Mojeek Search API](https://www.mojeek.com/support/api/search/) y [DuckDuckGo](https://duckduckgo.com/).
+`!ai` consulta DuckDuckGo sin una API de búsqueda de pago. La generación de la respuesta de IA sigue necesitando una `AI_API_KEY` compatible; si la dejas vacía, `!ai` mostrará que la IA no está configurada.
 
 Tor no es un buscador ni un navegador que el bot pueda invocar por nombre: es una red/proxy. El bot no incluye un proxy Tor automático. Si necesitas Tor, debes ejecutar un servicio Tor local y configurar una integración de proxy compatible; las búsquedas normales no lo requieren.
 
