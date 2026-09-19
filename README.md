@@ -69,6 +69,10 @@ AI_API_KEY=tu_openai_api_key
 AI_MODEL=gpt-4o-mini
 AI_API_URL=https://api.openai.com/v1/chat/completions
 AI_DEFAULT_STYLE=tranquilo
+SEARCH_PROVIDERS=google,brave,duckduckgo
+GOOGLE_SEARCH_API_KEY=
+GOOGLE_CSE_ID=
+BRAVE_SEARCH_API_KEY=
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
 REPLY_IN_PRIVATE=true
@@ -161,6 +165,12 @@ Tonos disponibles:
 El tono `insultos` permite lenguaje vulgar e insultos genéricos dirigidos a errores, ideas o situaciones. No genera amenazas, discriminación, slurs ni acoso dirigido.
 
 Si no quieres usar IA, deja `AI_API_KEY` vacío. Los demás comandos seguirán funcionando.
+
+### Búsqueda web
+
+`!ai` puede consultar Google Custom Search, Brave y DuckDuckGo. Google y Brave son opcionales; si no configuras sus claves, se usa DuckDuckGo como respaldo. Para Google necesitas una API Key y un identificador de Programmable Search Engine (`GOOGLE_CSE_ID`). Para Brave necesitas una Search API Key.
+
+Tor no es un buscador ni un navegador que el bot pueda invocar por nombre: es una red/proxy. El bot no incluye un proxy Tor automático. Si necesitas Tor, debes ejecutar un servicio Tor local y configurar una integración de proxy compatible; las búsquedas normales no lo requieren.
 
 ## Sesión y reinicio
 

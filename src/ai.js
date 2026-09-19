@@ -51,7 +51,7 @@ function searchResultsFromHtml(html) {
   return results;
 }
 
-async function webSearch(question) {
+async function duckDuckGoSearch(question) {
   const url = `${SEARCH_URL}?q=${encodeURIComponent(question)}`;
   const response = await fetch(url, {
     headers: { "user-agent": "InfoPlayerLeft/1.0 (web search)" },
@@ -59,6 +59,56 @@ async function webSearch(question) {
   });
   if (!response.ok) throw new Error(`búsqueda web HTTP ${response.status}`);
   return searchResultsFromHtml(await response.text());
+}
+
+async function googleSearch(question) {
+  const key = (process.env.GOOGLE_SEARCH_API_KEY || "").trim();
+  const cx = (process.env.GOOGLE_CSE_ID || "").trim();
+  if (!key || !cx) return [];
+  const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(question)}`;
+  const response = await fetch(url, { signal: timeoutSignal(REQUEST_TIMEOUT_MS) });
+  if (!response.ok) throw new Error(`Google Search HTTP ${response.status}`);
+  const data = await response.json();
+  return (data.items || []).slice(0, MAX_SEARCH_RESULTS).map((item) => ({
+    title: cleanText(item.title),
+    url: item.link,
+    snippet: cleanText(item.snippet),
+  }));
+}
+
+async function braveSearch(question) {
+  const key = (process.env.BRAVE_SEARCH_API_KEY || "").trim();
+  if (!key) return [];
+  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(question)}&count=${MAX_SEARCH_RESULTS}`;
+  const response = await fetch(url, {
+    headers: { accept: "application/json", "x-subscription-token": key },
+    signal: timeoutSignal(REQUEST_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`Brave Search HTTP ${response.status}`);
+  const data = await response.json();
+  return (data.web?.results || []).slice(0, MAX_SEARCH_RESULTS).map((item) => ({
+    title: cleanText(item.title),
+    url: item.url,
+    snippet: cleanText(item.description),
+  }));
+}
+
+async function webSearch(question) {
+  const providers = (process.env.SEARCH_PROVIDERS || "google,brave,duckduckgo")
+    .split(",").map((name) => name.trim().toLowerCase()).filter(Boolean);
+  const searches = { google: googleSearch, brave: braveSearch, duckduckgo: duckDuckGoSearch };
+  const all = [];
+  for (const provider of providers) {
+    const search = searches[provider];
+    if (!search) continue;
+    try {
+      all.push(...await search(question));
+    } catch (error) {
+      console.error(`Proveedor de búsqueda ${provider} no disponible:`, error?.message || error);
+    }
+  }
+  const unique = new Map(all.filter((item) => /^https?:\/\//i.test(item.url)).map((item) => [item.url, item]));
+  return [...unique.values()].slice(0, MAX_SEARCH_RESULTS);
 }
 
 function aiConfig() {
