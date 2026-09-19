@@ -10,10 +10,15 @@ const MAX_RESULTS = 8;
 const MAX_NICKNAME_LENGTH = 64;
 let searchInFlight = false;
 
-function pingMisses() {
-  const configured = Number(process.env.PING_MISS_CHANCE ?? "0.25");
-  const chance = Number.isFinite(configured) ? Math.min(1, Math.max(0, configured)) : 0.25;
-  return Math.random() < chance;
+function pingResponse() {
+  const dead = Number(process.env.PING_DEAD_CHANCE ?? "0.10");
+  const trip = Number(process.env.PING_TRIP_CHANCE ?? "0.40");
+  const deadChance = Number.isFinite(dead) ? Math.min(1, Math.max(0, dead)) : 0.10;
+  const tripChance = Number.isFinite(trip) ? Math.min(1, Math.max(0, trip)) : 0.40;
+  const roll = Math.random();
+  if (roll < deadChance) return "Pong fallido: el bot falleció 💀";
+  if (roll < deadChance + tripChance) return "El bot se tropezó y falló el Pong 🤕";
+  return "Pong! 🏓";
 }
 
 function fmtDuration(seconds) {
@@ -195,8 +200,7 @@ export async function handleCommand(text) {
 
   switch (cmd) {
     case "ping":
-      if (pingMisses()) return null;
-      return "Pong! 🏓";
+      return pingResponse();
     case "ai":
       return cmdIA(args);
     case "ayuda":

@@ -12,10 +12,12 @@ import { looksValidSteamKey } from "../src/steamkey.js";
 test("command dispatcher serves local commands without external services", async () => {
   const previousAiKey = process.env.AI_API_KEY;
   const previousOpenAiKey = process.env.OPENAI_API_KEY;
-  const previousPingChance = process.env.PING_MISS_CHANCE;
+  const previousPingDeadChance = process.env.PING_DEAD_CHANCE;
+  const previousPingTripChance = process.env.PING_TRIP_CHANCE;
   process.env.AI_API_KEY = "";
   process.env.OPENAI_API_KEY = "";
-  process.env.PING_MISS_CHANCE = "0";
+  process.env.PING_DEAD_CHANCE = "0";
+  process.env.PING_TRIP_CHANCE = "0";
   assert.equal(await handleCommand("!ping"), "Pong! 🏓");
   assert.equal(await handleCommand("!PING"), "Pong! 🏓");
   assert.equal(await handleCommand("!desconocido"), null);
@@ -29,8 +31,10 @@ test("command dispatcher serves local commands without external services", async
   else process.env.AI_API_KEY = previousAiKey;
   if (previousOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
   else process.env.OPENAI_API_KEY = previousOpenAiKey;
-  if (previousPingChance === undefined) delete process.env.PING_MISS_CHANCE;
-  else process.env.PING_MISS_CHANCE = previousPingChance;
+  if (previousPingDeadChance === undefined) delete process.env.PING_DEAD_CHANCE;
+  else process.env.PING_DEAD_CHANCE = previousPingDeadChance;
+  if (previousPingTripChance === undefined) delete process.env.PING_TRIP_CHANCE;
+  else process.env.PING_TRIP_CHANCE = previousPingTripChance;
   assert.equal(await cmdInfo(""), "Uso: `!info <steamid64 | vanity | url del perfil>`");
   assert.match(await cmdBuscar(""), /Uso: `!buscar/);
   assert.match(await cmdServidor("sin-puerto"), /Uso: `!servidor/);
