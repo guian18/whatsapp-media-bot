@@ -1,7 +1,7 @@
 /**
  * Bot de WhatsApp — infoplayerleft
  * Consulta info de jugadores de Left 4 Dead 2 vía Steam Web API y A2S.
- * Vinculación por código QR o por código de 8 dígitos con un número de celular.
+ * Vinculación por código QR o por código de 8 caracteres con un número de celular.
  *
  * Variables de entorno (se leen de .env o del entorno del sistema):
  *   STEAM_API_KEY         opcional; en una terminal se solicita si no existe.
@@ -23,10 +23,11 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 import qrcode from "qrcode-terminal";
 import readline from "node:readline/promises";
-import { rmSync, existsSync, accessSync, constants } from "node:fs";
+import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 import { ensureSteamApiKey } from "./src/steamkey.js";
+import { getAuthDir } from "./src/config.js";
 import {
   startWebServer,
   setQr,
@@ -39,23 +40,12 @@ const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
-const ALLOW_SELF = process.env.ALLOW_SELF !== "false";
-const AUTO_RESET = process.env.AUTO_RESET !== "false";
+const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE === "true";
+const ALLOW_SELF = process.env.ALLOW_SELF === "true";
+const AUTO_RESET = process.env.AUTO_RESET === "true";
 
-function dataEscribible() {
-  try {
-    accessSync("/data", constants.W_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Railway monta normalmente el volumen persistente en /data. En otros entornos
-// (incluido Termux) se conserva la carpeta local para no fallar por permisos.
-const AUTH_DIR =
-  process.env.AUTH_DIR || (dataEscribible() ? "/data/auth_info" : "auth_info");
+// Railway usa /data cuando hay volumen; Termux y local usan auth_info.
+const AUTH_DIR = getAuthDir();
 
 let yaReseteado = false;
 let reiniciando = false;
@@ -64,6 +54,8 @@ let cerrandoManual = false;
 let pairingPendiente = null;
 let pairingEnCurso = false;
 let pairingReconnecting = false;
+let guardarCredsPendiente = Promise.resolve();
+const mensajesProcesados = new Map();
 
 function borrarSesion() {
   if (existsSync(AUTH_DIR)) {
@@ -73,24 +65,41 @@ function borrarSesion() {
 }
 
 function cerrarSocket() {
-  if (!sockActual) return;
+  const sock = sockActual;
+  if (!sock) return Promise.resolve();
+  sockActual = null;
   cerrandoManual = true;
+  const cerrado = new Promise((resolve) => {
+    const timer = setTimeout(resolve, 5000);
+    const onUpdate = ({ connection }) => {
+      if (connection !== "close") return;
+      clearTimeout(timer);
+      try { sock.ev.off("connection.update", onUpdate); } catch {}
+      resolve();
+    };
+    sock.ev.on("connection.update", onUpdate);
+  });
   try {
-    sockActual.end(new Error("reinicio para pedir un código nuevo"));
+    sock.end(new Error("reinicio para pedir un código nuevo"));
   } catch {
     // El socket ya estaba cerrado.
   }
-  sockActual = null;
+  return cerrado;
 }
 
 function reiniciar(delayMs = 2000) {
   if (reiniciando) return;
   reiniciando = true;
   setTimeout(() => {
-    reiniciando = false;
-    start().catch((err) => {
-      console.error("No se pudo reconectar:", err?.message || err);
-    });
+    guardarCredsPendiente
+      .catch(() => {})
+      .finally(() => {
+        reiniciando = false;
+        start().catch((err) => {
+          console.error("No se pudo reconectar:", err?.message || err);
+          reiniciar(Math.min(delayMs * 2, 30_000));
+        });
+      });
   }, delayMs);
 }
 
@@ -179,7 +188,8 @@ async function solicitarCodigo(numeroCrudo) {
   setPairingCode("");
   setQr("");
   pairingEnCurso = false;
-  cerrarSocket();
+  await cerrarSocket();
+  await guardarCredsPendiente;
   borrarSesion();
 
   const promesa = new Promise((resolve, reject) => {
@@ -260,7 +270,13 @@ async function start() {
   sockActual = sock;
   pairingReconnecting = false;
 
-  sock.ev.on("creds.update", saveCreds);
+  sock.ev.on("creds.update", () => {
+    guardarCredsPendiente = guardarCredsPendiente
+      .then(() => saveCreds())
+      .catch((err) => {
+        console.error("No se pudieron guardar las credenciales:", err?.message || err);
+      });
+  });
 
   // Código pedido desde /qr o mediante WHATSAPP_NUMBER al arrancar.
   if (!alreadyRegistered) {
@@ -276,6 +292,7 @@ async function start() {
   }
 
   sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
+    if (sock !== sockActual && !cerrandoManual) return;
     if (qr && !pairingPendiente && !usePairingCode) {
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
       qrcode.generate(qr, { small: true });
@@ -350,6 +367,13 @@ async function start() {
     for (const msg of messages) {
       const jid = msg.key.remoteJid;
       if (!jid) continue;
+      const messageId = msg.key.id;
+      if (messageId) {
+        const now = Date.now();
+        for (const [id, at] of mensajesProcesados) if (now - at > 10 * 60_000) mensajesProcesados.delete(id);
+        if (mensajesProcesados.has(messageId)) continue;
+        mensajesProcesados.set(messageId, now);
+      }
 
       const isGroup = jid.endsWith("@g.us");
       if (!isGroup && !REPLY_IN_PRIVATE) continue;
@@ -357,6 +381,7 @@ async function start() {
 
       const text = textFromMessage(msg).trim();
       if (!text.startsWith("!")) continue;
+      if (text.length > 500) continue;
       if (msg.key.fromMe && !ALLOW_SELF) continue;
 
       console.log(
@@ -371,9 +396,17 @@ async function start() {
         }
       } catch (err) {
         console.error("Error procesando comando:", err);
-        await sock.sendMessage(jid, { text: `❌ Error: ${err.message}` }, { quoted: msg });
+        try {
+          await sock.sendMessage(jid, { text: `❌ Error: ${err.message}` }, { quoted: msg });
+        } catch (sendErr) {
+          console.error("No se pudo enviar el error al chat:", sendErr?.message || sendErr);
+        }
       } finally {
-        await sock.sendPresenceUpdate("paused", jid);
+        try {
+          await sock.sendPresenceUpdate("paused", jid);
+        } catch (presenceErr) {
+          console.error("No se pudo actualizar la presencia:", presenceErr?.message || presenceErr);
+        }
       }
     }
   });

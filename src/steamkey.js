@@ -1,6 +1,6 @@
 // Gestión de la Steam Web API key: variable de entorno, archivo local,
 // pregunta en la terminal al arrancar o formulario de la página web.
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, chmodSync } from "node:fs";
 import readline from "node:readline/promises";
 
 const KEY_FILE = process.env.STEAM_KEY_FILE || ".steam_key";
@@ -17,6 +17,7 @@ function readKeyFile() {
 function saveKeyFile(key) {
   try {
     writeFileSync(KEY_FILE, `${key}\n`, { mode: 0o600 });
+    chmodSync(KEY_FILE, 0o600);
     console.log(`Clave guardada en ${KEY_FILE} (no se volverá a pedir).`);
     return true;
   } catch (err) {
@@ -89,7 +90,7 @@ export async function ensureSteamApiKey() {
   }
 
   // 4) Preguntar en la terminal
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
   try {
     console.log("\n==============================================");
     console.log(" Necesito tu clave personal de la Steam Web API");

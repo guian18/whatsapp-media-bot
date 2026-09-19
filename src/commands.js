@@ -2,10 +2,12 @@
 import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 
-const MAX_SERVERS = 400;
-const CONCURRENCY = 60;
+const MAX_SERVERS = 200;
+const CONCURRENCY = 20;
 const A2S_TIMEOUT = 2000;
 const MAX_RESULTS = 8;
+const MAX_NICKNAME_LENGTH = 64;
+let searchInFlight = false;
 
 function fmtDuration(seconds) {
   const s = Math.max(0, Math.floor(seconds || 0));
@@ -127,6 +129,18 @@ export async function cmdServidor(direccion, incluirJugadores = false) {
 
 export async function cmdBuscar(nickname) {
   if (!nickname) return "Uso: `!buscar <nickname>`";
+  if (nickname.length > MAX_NICKNAME_LENGTH) return `El nickname no puede superar ${MAX_NICKNAME_LENGTH} caracteres.`;
+  if (searchInFlight) return "Ya hay una búsqueda en curso. Intenta de nuevo en unos segundos.";
+
+  searchInFlight = true;
+  try {
+    return await cmdBuscarInterno(nickname);
+  } finally {
+    searchInFlight = false;
+  }
+}
+
+async function cmdBuscarInterno(nickname) {
 
   const servidores = await masterServerList({ limit: MAX_SERVERS });
   if (!servidores.length) return "❌ El Master Server de Steam no respondió. Intenta más tarde.";

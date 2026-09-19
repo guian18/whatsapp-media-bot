@@ -1,8 +1,13 @@
 // Borra la sesión de WhatsApp para volver a vincular (QR o código).
 // Uso: npm run reset      (o npm run relink para borrar y arrancar de nuevo)
-import { rmSync, existsSync } from "node:fs";
+import "../src/env.js";
+import { existsSync, rmSync } from "node:fs";
+import { getAuthDir } from "../src/config.js";
 
-const dir = process.env.AUTH_DIR || "auth_info";
+const dir = getAuthDir();
+if (!dir || dir === "/" || dir === ".") {
+  throw new Error(`Ruta de sesión insegura: ${dir || "vacía"}`);
+}
 
 if (existsSync(dir)) {
   rmSync(dir, { recursive: true, force: true });

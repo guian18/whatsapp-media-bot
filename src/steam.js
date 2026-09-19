@@ -10,6 +10,7 @@ async function getJson(url, params) {
 export async function resolveVanity(vanity) {
   const STEAM_API_KEY = getSteamApiKey();
   if (!STEAM_API_KEY) return null;
+  if (!/^[\w-]{1,64}$/.test(vanity)) return null;
   try {
     const { body } = await getJson(
       "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/",
@@ -25,10 +26,22 @@ export async function extractIdentifier(input) {
   let s = (input || "").trim();
   if (!s) return null;
   if (s.startsWith("http://") || s.startsWith("https://")) {
-    s = s.replace(/\/+$/, "").split("/").pop();
+    try {
+      const url = new URL(s);
+      const hostname = url.hostname.toLowerCase();
+      if (hostname !== "steamcommunity.com" && !hostname.endsWith(".steamcommunity.com")) return null;
+      const parts = url.pathname.replace(/^\/+|\/+$/g, "").split("/");
+      if (parts.length < 2 || !/^(id|profiles)$/i.test(parts[0])) return null;
+      s = parts[1];
+    } catch {
+      return null;
+    }
   }
-  s = s.replace(/^(id|profiles)\//i, "");
-  if (/^\d{17,20}$/.test(s)) return s;
+  if (/^\d{17,20}$/.test(s)) {
+    try {
+      if (BigInt(s) > 0n) return s;
+    } catch {}
+  }
   return resolveVanity(s);
 }
 

@@ -22,7 +22,7 @@ function sendUdp(host, port, payload, timeout = 2000) {
       try { sock.close(); } catch {}
       reject(err);
     });
-    sock.send(payload, port, host);
+    sock.connect(port, host, () => sock.send(payload));
   });
 }
 
@@ -31,11 +31,13 @@ class Reader {
     this.buf = buf;
     this.o = offset;
   }
-  byte() { return this.buf[this.o++]; }
-  short() { const v = this.buf.readInt16LE(this.o); this.o += 2; return v; }
-  long() { const v = this.buf.readInt32LE(this.o); this.o += 4; return v; }
-  float() { const v = this.buf.readFloatLE(this.o); this.o += 4; return v; }
+  ensure(size) { if (this.o + size > this.buf.length) throw new Error("respuesta A2S truncada"); }
+  byte() { this.ensure(1); return this.buf[this.o++]; }
+  short() { this.ensure(2); const v = this.buf.readInt16LE(this.o); this.o += 2; return v; }
+  long() { this.ensure(4); const v = this.buf.readInt32LE(this.o); this.o += 4; return v; }
+  float() { this.ensure(4); const v = this.buf.readFloatLE(this.o); this.o += 4; return v; }
   string() {
+    this.ensure(1);
     const end = this.buf.indexOf(0, this.o);
     const stop = end === -1 ? this.buf.length : end;
     const s = this.buf.toString("utf8", this.o, stop);
@@ -55,10 +57,13 @@ export async function serverInfo(host, port, timeout = 2000) {
     ]);
 
   let res = await sendUdp(host, port, query(), timeout);
+  if (res.length < 5 || !res.subarray(0, 4).equals(HEADER)) throw new Error("respuesta A2S inválida");
   if (res.readInt32LE(0) === -2) throw new Error("respuesta fragmentada no soportada");
   if (res[4] === 0x41) {
+    if (res.length < 9) throw new Error("challenge A2S truncado");
     res = await sendUdp(host, port, query(res.subarray(5, 9)), timeout);
   }
+  if (res.length < 5 || !res.subarray(0, 4).equals(HEADER)) throw new Error("respuesta A2S inválida");
   if (res[4] !== 0x49) throw new Error("respuesta A2S_INFO inválida");
 
   const r = new Reader(res, 5);
@@ -80,10 +85,13 @@ export async function serverPlayers(host, port, timeout = 2000) {
     Buffer.concat([HEADER, Buffer.from("U"), challenge]);
 
   let res = await sendUdp(host, port, query(Buffer.from([0xff, 0xff, 0xff, 0xff])), timeout);
+  if (res.length < 5 || !res.subarray(0, 4).equals(HEADER)) throw new Error("respuesta A2S inválida");
   if (res.readInt32LE(0) === -2) throw new Error("respuesta fragmentada no soportada");
   if (res[4] === 0x41) {
+    if (res.length < 9) throw new Error("challenge A2S truncado");
     res = await sendUdp(host, port, query(res.subarray(5, 9)), timeout);
   }
+  if (res.length < 5 || !res.subarray(0, 4).equals(HEADER)) throw new Error("respuesta A2S inválida");
   if (res[4] !== 0x44) throw new Error("respuesta A2S_PLAYER inválida");
 
   const r = new Reader(res, 5);
@@ -149,5 +157,11 @@ export function parseAddress(text) {
   const ip = text.trim().slice(0, idx);
   const port = Number(text.trim().slice(idx + 1));
   if (!ip || !Number.isInteger(port) || port <= 0 || port > 65535) return null;
+  if (/[\s/\\]/.test(ip) || ip.length > 253) return null;
+  if (ip === "localhost" || ip === "localhost.localdomain" || ip.endsWith(".local")) return null;
+  const allowPrivate = process.env.ALLOW_PRIVATE_SERVERS === "true";
+  if (!allowPrivate && (/^127\./.test(ip) || /^10\./.test(ip) || /^192\.168\./.test(ip) ||
+      /^169\.254\./.test(ip) || /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+      /^224\./.test(ip) || ip === "0.0.0.0")) return null;
   return { ip, port };
 }

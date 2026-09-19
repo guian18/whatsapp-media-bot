@@ -54,12 +54,13 @@ test("command dispatcher serves local commands without external services", async
 });
 
 test("address and Steam-key validation reject malformed input", () => {
-  assert.deepEqual(parseAddress("127.0.0.1:27015"), { ip: "127.0.0.1", port: 27015 });
+  assert.deepEqual(parseAddress("8.8.8.8:27015"), { ip: "8.8.8.8", port: 27015 });
   assert.deepEqual(parseAddress("server.example.org:12345"), {
     ip: "server.example.org",
     port: 12345,
   });
   assert.equal(parseAddress("127.0.0.1"), null);
+  assert.equal(parseAddress("127.0.0.1:27015"), null);
   assert.equal(parseAddress("127.0.0.1:0"), null);
   assert.equal(parseAddress("127.0.0.1:65536"), null);
   assert.equal(looksValidSteamKey("0123456789abcdef0123456789ABCDEF"), true);
@@ -83,6 +84,8 @@ test("environment loader applies values from the configured .env file", (t) => {
 });
 
 test("web server exposes health, status, QR page, and pairing requests", async (t) => {
+  process.env.PAIRING_RATE_LIMIT_MS = "0";
+  process.env.PAIRING_ADMIN_TOKEN = "test-token";
   const { startWebServer, setConectado, setPairingRequester } = await import("../src/web.js");
   setConectado(false);
   let realCode = false;
@@ -104,15 +107,18 @@ test("web server exposes health, status, QR page, and pairing requests", async (
   assert.equal(health.status, 200);
   assert.deepEqual(JSON.parse(health.body), { ok: true });
 
-  const page = await request(port, "/qr");
+  const unauthorized = await request(port, "/qr");
+  assert.equal(unauthorized.status, 401);
+
+  const page = await request(port, "/qr?token=test-token");
   assert.equal(page.status, 200);
   assert.match(page.body, /Vincular bot de WhatsApp/);
 
-  const invalid = await request(port, "/pair", { method: "POST", body: "numero=123" });
+  const invalid = await request(port, "/pair?token=test-token", { method: "POST", body: "numero=123" });
   assert.equal(invalid.status, 200);
   assert.equal(JSON.parse(invalid.body).ok, false);
 
-  const fakePairing = await request(port, "/pair", {
+  const fakePairing = await request(port, "/pair?token=test-token", {
     method: "POST",
     body: "numero=%2B51%20987654321",
   });
@@ -120,12 +126,12 @@ test("web server exposes health, status, QR page, and pairing requests", async (
   assert.equal(JSON.parse(fakePairing.body).ok, false);
 
   realCode = true;
-  const pairing = await request(port, "/pair", {
+  const pairing = await request(port, "/pair?token=test-token", {
     method: "POST",
     body: "numero=%2B51%20987654321",
   });
   assert.deepEqual(JSON.parse(pairing.body), { ok: true, code: "12345678" });
 
-  const status = await request(port, "/status");
+  const status = await request(port, "/status?token=test-token");
   assert.equal(JSON.parse(status.body).pairingCode, "12345678");
 });

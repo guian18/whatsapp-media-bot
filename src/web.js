@@ -6,6 +6,7 @@
 import http from "node:http";
 import qrcodeTerminal from "qrcode-terminal";
 import QRCode from "qrcode";
+import { getPairingAdminToken } from "./config.js";
 
 const estado = {
   conectado: false,
@@ -22,9 +23,23 @@ function esCodigoPairingValido(code) {
 }
 
 let pairingRequester = null;
+let pairingInFlight = false;
+let lastPairingRequestAt = 0;
+const pairingRateLimitMs = Number.isFinite(Number(process.env.PAIRING_RATE_LIMIT_MS))
+  ? Math.max(0, Number(process.env.PAIRING_RATE_LIMIT_MS))
+  : 15_000;
 
 export function setPairingRequester(fn) {
   pairingRequester = typeof fn === "function" ? fn : null;
+}
+
+function authorized(req, rawUrl) {
+  const expected = getPairingAdminToken();
+  if (!expected) return true;
+  const bearer = (req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+  const header = String(req.headers["x-pairing-token"] || "").trim();
+  const query = new URL(rawUrl, "http://localhost").searchParams.get("token") || "";
+  return bearer === expected || header === expected || query === expected;
 }
 
 export function setConectado(valor) {
@@ -135,8 +150,13 @@ const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
       $("codebox").innerHTML = '<p class="code">' + pretty + '</p>';
     }
   }
+  const token = new URLSearchParams(location.search).get("token") || "";
+  const authHeaders = token ? { "x-pairing-token": token } : {};
   async function tick() {
-    try { pintar(await (await fetch("/status", { cache: "no-store" })).json()); } catch {}
+    try {
+      const path = "/status" + (token ? "?token=" + encodeURIComponent(token) : "");
+      pintar(await (await fetch(path, { cache: "no-store", headers: authHeaders })).json());
+    } catch {}
   }
   $("f").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -144,9 +164,10 @@ const PAGINA = `<!doctype html><html lang="es"><meta charset="utf-8">
     btn.disabled = true;
     $("codebox").innerHTML = '<p class="muted">Pidiendo código…</p>';
     try {
-      const r = await fetch("/pair", {
+      const path = "/pair" + (token ? "?token=" + encodeURIComponent(token) : "");
+      const r = await fetch(path, {
         method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
+        headers: { "content-type": "application/x-www-form-urlencoded", ...authHeaders },
         body: new URLSearchParams({ numero: e.target.numero.value }),
       });
       const d = await r.json();
@@ -181,6 +202,10 @@ export function startWebServer(portValue = process.env.PORT) {
   const server = http.createServer((req, res) => {
     const url = (req.url || "/").split("?")[0];
 
+    if (url !== "/health" && !authorized(req, req.url || "/")) {
+      return json(res, 401, { ok: false, error: "No autorizado." });
+    }
+
     if (req.method === "POST" && url === "/pair") {
       leerCuerpo(req)
         .then(async (body) => {
@@ -192,6 +217,14 @@ export function startWebServer(portValue = process.env.PORT) {
           if (!pairingRequester) {
             return json(res, 200, { ok: false, error: "El bot aún no está listo, inténtalo en unos segundos." });
           }
+          if (pairingInFlight) {
+            return json(res, 409, { ok: false, error: "Ya hay una vinculación en curso. Espera unos segundos." });
+          }
+          if (Date.now() - lastPairingRequestAt < pairingRateLimitMs) {
+            return json(res, 429, { ok: false, error: "Espera unos segundos antes de pedir otro código." });
+          }
+          pairingInFlight = true;
+          lastPairingRequestAt = Date.now();
           try {
             const code = await pairingRequester(numero);
             if (!esCodigoPairingValido(code)) {
@@ -204,6 +237,8 @@ export function startWebServer(portValue = process.env.PORT) {
             return json(res, 200, { ok: true, code });
           } catch (err) {
             return json(res, 200, { ok: false, error: String(err?.message || err) });
+          } finally {
+            pairingInFlight = false;
           }
         })
         .catch(() => json(res, 400, { ok: false, error: "bad request" }));
@@ -234,7 +269,7 @@ export function startWebServer(portValue = process.env.PORT) {
     res.end("not found");
   });
 
-  server.listen(port, () => {
+  server.listen(port, "0.0.0.0", () => {
     const address = server.address();
     const listeningPort = typeof address === "object" && address ? address.port : port;
     console.log(`[web] página de vinculación lista en el puerto ${listeningPort} (/qr)`);

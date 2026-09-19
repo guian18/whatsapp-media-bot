@@ -72,16 +72,19 @@ PAIRING_CODE=false
 ALLOWED_GROUPS=
 
 # false: ignora chats privados
-REPLY_IN_PRIVATE=true
+REPLY_IN_PRIVATE=false
 
 # Directorio persistente de la sesión
 AUTH_DIR=auth_info
 
+# Recomendado en Railway: protege /qr, /status y /pair
+PAIRING_ADMIN_TOKEN=
+
 # false: ignora comandos enviados por la propia cuenta vinculada
-ALLOW_SELF=true
+ALLOW_SELF=false
 
 # false: no elimina automáticamente una sesión inválida
-AUTO_RESET=true
+AUTO_RESET=false
 ```
 
 No subas `.env`, `.steam_key` ni `auth_info/` a GitHub. Ya están incluidos en `.gitignore` porque contienen credenciales o la sesión de WhatsApp.
@@ -233,10 +236,20 @@ STEAM_API_KEY=tu_clave_de_steam
 WHATSAPP_NUMBER=51987654321
 PAIRING_CODE=false
 AUTH_DIR=/data/auth_info
-REPLY_IN_PRIVATE=true
-ALLOW_SELF=true
-AUTO_RESET=true
+REPLY_IN_PRIVATE=false
+ALLOW_SELF=false
+AUTO_RESET=false
+PAIRING_ADMIN_TOKEN=una-clave-larga-y-aleatoria
 ```
+
+Con `PAIRING_ADMIN_TOKEN`, abre la página incluyendo el token:
+
+```text
+https://TU-DOMINIO.up.railway.app/qr?token=una-clave-larga-y-aleatoria
+```
+
+El token protege `/qr`, `/status` y `/pair`; `/health` permanece público para el
+healthcheck de Railway. No compartas esa URL.
 
 `WHATSAPP_NUMBER` debe contener únicamente dígitos con código de país. No escribas `+`, espacios ni guiones.
 
