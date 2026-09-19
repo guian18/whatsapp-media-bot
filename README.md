@@ -2,7 +2,7 @@
 
 > Consulta desde WhatsApp quién está jugando Left 4 Dead 2, en qué servidor está y qué jugadores hay conectados.
 
-InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/WhiskeySockets/Baileys) que consulta perfiles de Steam, servidores públicos de Left 4 Dead 2 y jugadores conectados. Funciona en Termux, Render y VPS con Node.js. Usa el paquete publicado `@whiskeysockets/baileys@7.0.0-rc14`; las protecciones de pairing y reconexión están implementadas en este repositorio.
+InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/WhiskeySockets/Baileys) que consulta perfiles de Steam, servidores públicos de Left 4 Dead 2 y jugadores conectados. Funciona localmente en Linux, macOS, Windows y Termux con Node.js. Usa el paquete publicado `@whiskeysockets/baileys@7.0.0-rc14`; las protecciones de pairing y reconexión están implementadas en este repositorio.
 
 El bot responde únicamente a mensajes que comienzan con `!`, funciona en grupos y chats privados, y no necesita una base de datos externa. La sesión de WhatsApp se guarda en disco para evitar repetir la vinculación después de cada reinicio.
 
@@ -48,7 +48,7 @@ Guarda las claves únicamente en `.env` o en variables de entorno. No las publiq
 - Conexión a Internet.
 - Una cuenta de WhatsApp para vincular como dispositivo adicional.
 - Una Steam Web API key para los comandos que consultan Steam.
-- Para un hosting persistente: almacenamiento persistente para `auth_info/`.
+- Almacenamiento local para conservar `auth_info/` entre reinicios.
 
 ## Cambios incluidos
 
@@ -58,9 +58,9 @@ Guarda las claves únicamente en `.env` o en variables de entorno. No las publiq
 - La vinculación por código usa únicamente códigos reales entregados por WhatsApp; el bot no inventa códigos.
 - Se estabilizaron la reconexión después de aceptar un código, el guardado de credenciales y la deduplicación de mensajes.
 - La sesión se guarda en `AUTH_DIR` y, por defecto, en `auth_info/`. `npm run reset` elimina exactamente esa carpeta para volver a vincular.
-- Se protegieron las rutas web `/qr`, `/status` y `/pair` mediante `PAIRING_ADMIN_TOKEN` cuando se configura.
+- La vinculación se realiza exclusivamente desde la terminal mediante QR o código real de WhatsApp; no se incluye panel web ni servidor de hosting.
 - Se reforzaron las validaciones de Steam, las consultas A2S y los límites de búsqueda de servidores.
-- Se añadieron pruebas automatizadas para comandos, configuración, pairing y rutas web.
+- Se añadieron pruebas automatizadas para comandos, configuración, pairing y validaciones locales.
 
 ## Instalación local en Linux, macOS o Windows
 
@@ -104,9 +104,6 @@ AI_DEFAULT_STYLE=tranquilo
 # Opcionales: tiempo máximo y espera mínima entre consultas
 AI_TIMEOUT_MS=15000
 AI_MIN_INTERVAL_MS=4000
-# Opcionales: tiempo máximo y espera mínima entre consultas
-AI_TIMEOUT_MS=15000
-AI_MIN_INTERVAL_MS=4000
 
 # Número internacional, solo dígitos y código de país; sin +, espacios ni guiones
 WHATSAPP_NUMBER=51987654321
@@ -123,9 +120,6 @@ REPLY_IN_PRIVATE=false
 
 # Directorio persistente de la sesión
 AUTH_DIR=auth_info
-
-# Opcional: protege /qr, /status y /pair con un token privado
-PAIRING_ADMIN_TOKEN=
 
 # false: ignora comandos enviados por la propia cuenta vinculada
 ALLOW_SELF=false
@@ -148,11 +142,11 @@ Si responde que la IA no está configurada, comprueba que `AI_API_KEY` no esté 
 
 ## Vincular WhatsApp
 
-La vinculación se realiza como un dispositivo adicional de WhatsApp. Hay tres opciones.
+La vinculación se realiza como un dispositivo adicional de WhatsApp. Hay dos opciones desde la terminal.
 
-### Opción A: código de vinculación
+### Opción A: código de vinculación en la terminal
 
-Esta opción es recomendable en Termux y hosting sin terminal interactiva.
+Esta opción es recomendable en Termux y equipos donde prefieras vincular sin escanear un QR.
 
 1. Configura `WHATSAPP_NUMBER` con código de país, solo dígitos:
 
@@ -161,7 +155,7 @@ Esta opción es recomendable en Termux y hosting sin terminal interactiva.
    PAIRING_CODE=false
    ```
 
-2. Inicia el bot o abre la página `/qr` en el hosting.
+2. Inicia el bot desde la terminal.
 3. En WhatsApp, abre **Dispositivos vinculados → Vincular un dispositivo → Vincular con el número de teléfono**.
 4. Introduce el código mostrado por el bot.
 
@@ -184,21 +178,6 @@ npm start
 ```
 
 Escanéalo desde **WhatsApp → Dispositivos vinculados → Vincular un dispositivo**.
-
-### Opción C: página web `/qr`
-
-Cuando existe la variable `PORT`, el bot inicia un servidor HTTP con estas rutas:
-
-| Ruta | Uso |
-|---|---|
-| `/` | Página de estado y vinculación. |
-| `/qr` | Página para ver el QR o solicitar un código. |
-| `/status` | Estado JSON del QR, código y conexión. |
-| `/pair` | Endpoint `POST` usado para solicitar el código. |
-| `/health` | Healthcheck del servicio; devuelve `{"ok":true}`. |
-
-
-La página se actualiza automáticamente cada tres segundos. Si WhatsApp acepta el código, espera hasta que aparezca `Conectado a WhatsApp ✅` en la página o en los logs.
 
 ## Instalación en Termux
 
@@ -243,18 +222,6 @@ Recomendaciones para Termux:
 - La sesión se guarda en `auth_info/` por defecto.
 - Para volver a vincular desde cero, ejecuta `npm run reset`.
 
-## Despliegue en Render y VPS
-
-En Render, VPS u otro hosting compatible con Node.js:
-
-- Usa el comando `node bot.js`.
-- Configura `STEAM_API_KEY` y `WHATSAPP_NUMBER` como variables de entorno.
-- Usa el `PORT` proporcionado por la plataforma.
-- Monta almacenamiento persistente y configura `AUTH_DIR` con una ruta dentro de ese almacenamiento.
-- Abre `/qr` para vincular y `/health` para comprobar el servicio.
-
-Los servicios serverless que suspenden o destruyen continuamente el proceso no son adecuados para un bot de WhatsApp persistente.
-
 ## Pruebas y mantenimiento
 
 Instala exactamente las dependencias del lockfile:
@@ -275,15 +242,14 @@ Las pruebas comprueban:
 - Validación de direcciones de servidores.
 - Validación de Steam API keys.
 - Carga de variables desde `.env`.
-- Rutas web `/health`, `/status`, `/qr` y `/pair`.
-- Rechazo de códigos falsos en la interfaz web.
+- Vinculación y persistencia desde la terminal.
 
 Scripts disponibles:
 
 | Script | Descripción |
 |---|---|
 | `npm start` | Inicia el bot. |
-| `npm run start:termux` | Activa `termux-wake-lock` y arranca el bot. |
+| `npm run start:termux` | Arranca el bot en Termux. |
 | `npm test` | Ejecuta las pruebas automatizadas. |
 | `npm run reset` | Elimina la sesión configurada en `AUTH_DIR`. |
 | `npm run relink` | Elimina la sesión y vuelve a iniciar el bot. |
@@ -297,7 +263,7 @@ STEAM_ASK_ALWAYS=true npm start
 ## Seguridad y notas
 
 - `auth_info/` contiene la sesión de WhatsApp. Trátala como credencial privada.
-- No publiques códigos de vinculación ni compartas la URL `/qr` mientras esté activa.
+- No publiques ni compartas los códigos de vinculación mientras estén activos.
 - No subas `.env`, `.steam_key` ni archivos de sesión a GitHub.
 - Baileys es una librería no oficial. El uso abusivo, el spam o demasiadas solicitudes pueden provocar restricciones de WhatsApp.
 - El bot consulta servidores A2S directamente; algunos servidores pueden no responder, estar protegidos o limitar consultas.

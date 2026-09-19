@@ -28,13 +28,6 @@ import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 import { ensureSteamApiKey } from "./src/steamkey.js";
 import { getAuthDir } from "./src/config.js";
-import {
-  startWebServer,
-  setQr,
-  setConectado,
-  setPairingCode,
-  setPairingRequester,
-} from "./src/web.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
@@ -171,34 +164,6 @@ function esperarSocketListo(sock, timeoutMs = 25000) {
  * Pide un código de vinculación siempre con credenciales nuevas. Reutilizar
  * credenciales que quedaron a medio vincular provoca rechazos de WhatsApp.
  */
-async function solicitarCodigo(numeroCrudo) {
-  const numero = normalizarNumero(numeroCrudo);
-  if (!/^\d{8,15}$/.test(numero)) {
-    throw new Error(
-      "Número inválido. Escribe el código de país + tu número, solo dígitos (ej. 51987654321).",
-    );
-  }
-
-  if (pairingPendiente) {
-    pairingPendiente.reject(new Error("Se pidió otro código."));
-    pairingPendiente = null;
-  }
-
-  setPairingCode("");
-  setQr("");
-  pairingEnCurso = false;
-  await cerrarSocket();
-  await guardarCredsPendiente;
-  borrarSesion();
-
-  const promesa = new Promise((resolve, reject) => {
-    pairingPendiente = { numero, resolve, reject };
-  });
-
-  reiniciar(500);
-  return promesa;
-}
-
 async function atenderPairing(sock) {
   const solicitud = pairingPendiente;
   if (!solicitud) return;
@@ -217,7 +182,6 @@ async function atenderPairing(sock) {
     console.log("En el celular: WhatsApp > Dispositivos vinculados >");
     console.log("Vincular un dispositivo > Vincular con número de teléfono.");
     console.log("El código dura ~1 minuto; si expira, pide otro.\n");
-    setPairingCode(code);
     pairingEnCurso = true;
     solicitud.resolve(code);
   } catch (err) {
@@ -283,7 +247,7 @@ async function start() {
       });
   });
 
-  // Código pedido desde /qr o mediante WHATSAPP_NUMBER al arrancar.
+  // Código pedido mediante WHATSAPP_NUMBER al arrancar.
   if (!alreadyRegistered) {
     if (!pairingPendiente && usePairingCode && phoneNumber) {
       pairingPendiente = {
@@ -301,17 +265,14 @@ async function start() {
     if (qr && !pairingPendiente && !usePairingCode) {
       console.log("\nEscanea este QR con WhatsApp > Dispositivos vinculados:\n");
       qrcode.generate(qr, { small: true });
-      setQr(qr);
     }
 
     if (connection === "open") {
       console.log("Conectado a WhatsApp ✅");
       pairingEnCurso = false;
-      setConectado(true);
     }
 
     if (connection === "close") {
-      setConectado(false);
       if (cerrandoManual) {
         cerrandoManual = false;
         return;
@@ -340,7 +301,6 @@ async function start() {
       // Solo detenemos el intento si WhatsApp cerró por otra razón.
       if (pairingEnCurso) {
         pairingEnCurso = false;
-        setPairingCode("");
         console.error(
           `La vinculación no terminó (WhatsApp cerró la conexión${code ? `, código ${code}` : ""}). Pide un código nuevo.`,
         );
@@ -417,16 +377,9 @@ async function start() {
   });
 }
 
-// La página /qr puede solicitar un código en cualquier momento.
-setPairingRequester(solicitarCodigo);
-
-// Inicia el healthcheck y /qr cuando la plataforma proporciona PORT.
-startWebServer();
-
 function iniciarConReintentos(delayMs = 1000) {
   start().catch((err) => {
     console.error("No se pudo iniciar el bot; se reintentará:", err?.message || err);
-    setConectado(false);
     setTimeout(() => iniciarConReintentos(Math.min(delayMs * 2, 30_000)), delayMs);
   });
 }

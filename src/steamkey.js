@@ -1,5 +1,5 @@
-// Gestión de la Steam Web API key: variable de entorno, archivo local,
-// pregunta en la terminal al arrancar o formulario de la página web.
+// Gestión de la Steam Web API key: variable de entorno, archivo local
+// o pregunta en la terminal al arrancar.
 import { readFileSync, writeFileSync, existsSync, chmodSync } from "node:fs";
 import readline from "node:readline/promises";
 
@@ -39,7 +39,7 @@ export function looksValidSteamKey(key) {
   return /^[A-Fa-f0-9]{32}$/.test((key || "").trim());
 }
 
-/** Guarda la clave (usado por el formulario de la web). Devuelve true si es válida. */
+/** Guarda la clave localmente. Devuelve true si es válida. */
 export function guardarSteamApiKey(key, persistir = true) {
   const limpia = (key || "").trim();
   if (!looksValidSteamKey(limpia)) return false;
@@ -54,8 +54,7 @@ export function guardarSteamApiKey(key, persistir = true) {
  * Orden: archivo .steam_key → variable STEAM_API_KEY → preguntar en la terminal.
  * En una terminal (Termux, PC) SIEMPRE se pregunta si no hay una clave válida.
  * Con STEAM_ASK_ALWAYS=true pregunta aunque ya haya una guardada.
- * Sin terminal (Docker u otro servicio) se usa la variable/el archivo, o se puede
- * escribir la clave en la página web.
+ * En una terminal local se pregunta al usuario si no existe una clave válida.
  */
 export async function ensureSteamApiKey() {
   const askAlways = process.env.STEAM_ASK_ALWAYS === "true";
@@ -84,7 +83,7 @@ export async function ensureSteamApiKey() {
   if (!interactivo) {
     console.warn(
       "No hay Steam API key y la terminal no es interactiva.\n" +
-        "Configura STEAM_API_KEY o escríbela en la página web (/qr).",
+        "Configura STEAM_API_KEY o escríbela cuando el bot la solicite en la terminal.",
     );
     return apiKey;
   }
