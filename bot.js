@@ -239,7 +239,14 @@ async function start() {
   await ensureSteamApiKey();
 
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-  const { version } = await fetchLatestBaileysVersion();
+  let version;
+  try {
+    ({ version } = await fetchLatestBaileysVersion());
+  } catch (err) {
+    // Railway puede iniciar mientras GitHub/WhatsApp está temporalmente lento.
+    // El socket tiene una versión compatible por defecto; no debemos tumbar /health.
+    console.warn("No se pudo consultar la versión más reciente de Baileys; se usará la predeterminada:", err?.message || err);
+  }
   const alreadyRegistered = Boolean(state.creds?.registered);
 
   let phoneNumber = ENV_NUMBER;
@@ -259,7 +266,7 @@ async function start() {
   }
 
   const sock = makeWASocket({
-    version,
+    ...(version ? { version } : {}),
     auth: state,
     markOnlineOnConnect: false,
     syncFullHistory: false,
@@ -418,7 +425,12 @@ setPairingRequester(solicitarCodigo);
 // Inicia el healthcheck y /qr cuando la plataforma proporciona PORT.
 startWebServer();
 
-start().catch((err) => {
-  console.error("No se pudo iniciar el bot:", err);
-  process.exit(1);
-});
+function iniciarConReintentos(delayMs = 1000) {
+  start().catch((err) => {
+    console.error("No se pudo iniciar el bot; se reintentará:", err?.message || err);
+    setConectado(false);
+    setTimeout(() => iniciarConReintentos(Math.min(delayMs * 2, 30_000)), delayMs);
+  });
+}
+
+iniciarConReintentos();
