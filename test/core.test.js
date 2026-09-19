@@ -85,6 +85,7 @@ test("ai detects the tone used in the question", () => {
   assert.equal(detectStyle("responde breve y rápido"), "breve");
   assert.equal(detectStyle("¡contesta ya!!"), "agresivo");
   assert.equal(detectStyle("hola, ayúdame porfa"), "amable");
+  assert.equal(detectStyle("usa el tono de insulto"), "insultos");
   assert.equal(detectStyle("consulta normal"), null);
 });
 

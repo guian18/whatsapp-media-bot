@@ -69,7 +69,7 @@ AI_API_KEY=tu_clave_groq_o_gemini
 AI_PROVIDER=groq
 AI_MODEL=openai/gpt-oss-20b
 AI_API_URL=
-AI_DEFAULT_STYLE=tranquilo
+AI_DEFAULT_STYLE=insultos
 SEARCH_PROVIDERS=duckduckgo
 PING_DEAD_CHANCE=0.10
 PING_TRIP_CHANCE=0.30
@@ -186,7 +186,7 @@ Ejemplo:
 El tono se configura en `.env`:
 
 ```env
-AI_DEFAULT_STYLE=tranquilo
+AI_DEFAULT_STYLE=insultos
 ```
 
 Tonos disponibles:
@@ -202,7 +202,7 @@ Tonos disponibles:
 
 El tono `insultos` permite lenguaje vulgar e insultos genéricos dirigidos a errores, ideas o situaciones. No genera amenazas, discriminación, slurs ni acoso dirigido.
 
-La IA detecta el tono de cada pregunta y procura responder en el mismo estilo: formal, amable, divertido, sarcástico, agresivo, vulgar o breve. Si el mensaje no da una señal clara, utiliza `AI_DEFAULT_STYLE` como respaldo.
+La IA detecta el tono de cada pregunta y procura responder en el mismo estilo: formal, amable, divertido, sarcástico, agresivo, vulgar o breve. Si el mensaje no da una señal clara, utiliza `AI_DEFAULT_STYLE=insultos` como respaldo. También reconoce frases como “usa el tono de insulto”.
 
 Puede usar humor adulto, doble sentido y palabrotas entre amigos adultos cuando el contexto sea consensuado y amistoso. No permite sexualizar menores, coerción, amenazas, slurs, discriminación ni acoso dirigido.
 

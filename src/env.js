@@ -49,6 +49,9 @@ if (existsSync(file)) {
   if (provider === "groq" && (process.env.AI_API_URL || "").includes("api.openai.com")) {
     setEnvLine("AI_API_URL", "");
   }
+  if ((process.env.AI_DEFAULT_STYLE || "").trim().toLowerCase() === "tranquilo") {
+    setEnvLine("AI_DEFAULT_STYLE", "insultos");
+  }
   if (migrated) {
     try {
       writeFileSync(file, content, { mode: 0o600 });

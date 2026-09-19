@@ -137,8 +137,8 @@ export function aiConfigured() {
 }
 
 function configuredStyle() {
-  const defaultStyle = (process.env.AI_DEFAULT_STYLE || "tranquilo").toLowerCase();
-  const styleName = STYLES[defaultStyle] ? defaultStyle : "tranquilo";
+  const defaultStyle = (process.env.AI_DEFAULT_STYLE || "insultos").toLowerCase();
+  const styleName = STYLES[defaultStyle] ? defaultStyle : "insultos";
   return { styleName, style: STYLES[styleName] };
 }
 
@@ -149,6 +149,7 @@ export function detectStyle(question) {
   if (/\b(jaja|jeje|lol|😂|🤣|broma|chiste|divertido|gracioso)\b/i.test(text)) return "divertido";
   if (/\b(sarcasmo|sarcástico|sarcastico|irónico|ironico|claro, cómo no|ya veo)\b/i.test(text)) return "sarcastico";
   if (/\b(por favor|podría|podria|usted|solicito|explique formalmente|informe)\b/i.test(text)) return "formal";
+  if (/\b(tono de insulto|tono insulto|insulta|insulto|insultos|vulgar|palabrotas)\b/i.test(text)) return "insultos";
   if (/\b(mierda|joder|coño|cabrón|cabron|pendejo|imbécil|imbecil|idiota|puto|carajo)\b/i.test(text)) return "insultos";
   if (/\b(ahora mismo|contesta ya|deja de|sin rodeos|directo|espabila|rápido)\b/i.test(text) || /!{2,}|\?{2,}/.test(text)) return "agresivo";
   if (/\b(gracias|porfa|ayuda|amigo|amiga|hola|buenas)\b/i.test(text)) return "amable";
