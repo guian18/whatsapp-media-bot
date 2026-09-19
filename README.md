@@ -80,6 +80,15 @@ AUTH_DIR=auth_info
 AUTO_RESET=false
 ```
 
+Para ver todas las opciones comentadas en Termux, vuelve a copiar la plantilla solo si todavía no tienes datos propios:
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Si ya tienes un `.env` con claves, no lo sobrescribas: abre `nano .env` y copia únicamente las líneas de proveedor que necesites desde `.env.example`.
+
 ## APIs y opciones de configuración
 
 ### Opciones sin pagar
