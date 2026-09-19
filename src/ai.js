@@ -103,23 +103,16 @@ export function aiConfigured() {
   return Boolean(aiConfig().key);
 }
 
-function parseAIInput(input) {
-  const raw = String(input || "").trim();
+function configuredStyle() {
   const defaultStyle = (process.env.AI_DEFAULT_STYLE || "tranquilo").toLowerCase();
-  const match = raw.match(/^([a-záéíóúñ]+)(?::|\s+)([\s\S]+)$/i);
-  if (match && STYLES[match[1].toLowerCase()]) {
-    return { styleName: match[1].toLowerCase(), style: STYLES[match[1].toLowerCase()], question: match[2].trim() };
-  }
-  return { styleName: STYLES[defaultStyle] ? defaultStyle : "tranquilo", style: STYLES[defaultStyle] || STYLES.tranquilo, question: raw };
+  const styleName = STYLES[defaultStyle] ? defaultStyle : "tranquilo";
+  return { styleName, style: STYLES[styleName] };
 }
 
 export async function cmdIA(question) {
-  const raw = String(question || "").trim();
-  if (raw.toLowerCase() === "tonos" || raw.toLowerCase() === "estilos") {
-    return "Tonos disponibles: `tranquilo`, `agresivo`, `insultos`, `formal`, `divertido`, `sarcastico` y `breve`.\nFormato único: `!ia <tono> <pregunta>`\nEjemplo: `!ia insultos ¿qué ocurrió?`";
-  }
-  const { styleName, style, question: query } = parseAIInput(raw);
-  if (!query) return "Uso: `!ia <tono> <pregunta>`\nEjemplo: `!ia tranquilo ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
+  const query = String(question || "").trim();
+  const { styleName, style } = configuredStyle();
+  if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;
   if (!aiConfigured()) {
     return "La IA no está configurada. Añade `AI_API_KEY` (o `OPENAI_API_KEY`) en el entorno y vuelve a intentarlo.";
@@ -140,7 +133,7 @@ export async function cmdIA(question) {
       : "";
     return `_${styleName}_\n${answer}${sourceLines}`.slice(0, 3900);
   } catch (error) {
-    console.error("Error en !ia:", error?.message || error);
+    console.error("Error en !ai:", error?.message || error);
     return "No pude consultar Internet o la IA ahora. Intenta de nuevo más tarde.";
   } finally {
     requestInFlight = false;

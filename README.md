@@ -15,12 +15,12 @@ El bot responde únicamente a mensajes que comienzan con `!`, funciona en grupos
 | `!servidor <ip:puerto>` | Muestra información detallada de un servidor. |
 | `!jugadores <ip:puerto>` | Muestra el servidor y su lista de jugadores conectados. |
 | `!ping` | Comprueba que el bot responde. |
-| `!ia <tono> <pregunta>` | Busca información reciente en Internet y la resume con IA. Requiere `AI_API_KEY`. |
+| `!ai <pregunta>` | Busca información reciente en Internet y la resume con IA. Requiere `AI_API_KEY`. El tono se configura en `.env`. |
 | `!ayuda` | Muestra la lista de comandos. |
 
 Las consultas de Steam requieren una clave de Steam Web API. `!ping` y `!ayuda` funcionan sin ella.
 
-`!ia` es opcional. Configura en `.env` una clave de una API compatible con OpenAI Chat Completions:
+`!ai` es opcional. Configura en `.env` una clave de una API compatible con OpenAI Chat Completions:
 
 ```env
 AI_API_KEY=tu_clave_de_ia
@@ -33,24 +33,12 @@ AI_MIN_INTERVAL_MS=4000
 
 El comando realiza una búsqueda web breve, envía los resultados al modelo y muestra las fuentes. La clave nunca se publica en WhatsApp. Si no configuras `AI_API_KEY`, el resto de los comandos continúa funcionando normalmente.
 
-Todos los estilos se usan con el único comando `!ia`, escribiendo el tono antes de la pregunta:
-
-```text
-!ia tranquilo explícame qué es Steam Deck
-!ia agresivo dime directamente cuál es el problema
-!ia insultos critica este error de configuración
-!ia formal resume esta noticia
-!ia divertido explica este concepto
-!ia sarcastico analiza esta situación
-!ia breve responde en dos frases
-```
-
-También puedes consultar los tonos con `!ia tonos`. Si no especificas uno, se usa `AI_DEFAULT_STYLE=tranquilo`. El tono `insultos` permite palabrotas e insultos genéricos dirigidos a errores, ideas o situaciones; no debe generar amenazas, insultos discriminatorios, slurs ni acoso dirigido a una persona identificable.
+El único comando de IA es `!ai <pregunta>`. El tono se configura en `.env` con `AI_DEFAULT_STYLE`: `tranquilo`, `agresivo`, `insultos`, `formal`, `divertido`, `sarcastico` o `breve`. El tono `insultos` permite palabrotas e insultos genéricos dirigidos a errores, ideas o situaciones; no debe generar amenazas, insultos discriminatorios, slurs ni acoso dirigido a una persona identificable.
 
 ### Dónde obtener las claves de API
 
 - **Steam Web API:** crea la clave en el [formulario oficial de Steam](https://steamcommunity.com/dev/apikey). Consulta la [documentación oficial de Steam Web API](https://steamcommunity.com/dev) y sus [términos de uso](https://steamcommunity.com/dev/apiterms). La clave debe tener 32 caracteres hexadecimales.
-- **OpenAI para `!ia`:** crea una clave en [OpenAI API Keys](https://platform.openai.com/settings/organization/api-keys). Consulta la [guía oficial de inicio rápido](https://developers.openai.com/api/docs/quickstart) y la [referencia oficial de la API](https://developers.openai.com/api/reference/overview/). El uso de la API puede estar sujeto a facturación y límites de la cuenta.
+- **OpenAI para `!ai`:** crea una clave en [OpenAI API Keys](https://platform.openai.com/settings/organization/api-keys). Consulta la [guía oficial de inicio rápido](https://developers.openai.com/api/docs/quickstart) y la [referencia oficial de la API](https://developers.openai.com/api/reference/overview/). El uso de la API puede estar sujeto a facturación y límites de la cuenta.
 
 Guarda las claves únicamente en `.env` o en variables de entorno. No las publiques en GitHub, grupos de WhatsApp, capturas de pantalla ni en el código fuente.
 
@@ -64,7 +52,7 @@ Guarda las claves únicamente en `.env` o en variables de entorno. No las publiq
 
 ## Cambios incluidos
 
-- Se añadió el comando único `!ia <tono> <pregunta>`, que realiza una búsqueda web breve, consulta una API compatible con OpenAI y devuelve una respuesta en español con fuentes.
+- Se añadió el comando único `!ai <pregunta>`, que realiza una búsqueda web breve, consulta una API compatible con OpenAI y devuelve una respuesta en español con fuentes. El tono se controla con `AI_DEFAULT_STYLE`.
 - La IA es opcional: sin `AI_API_KEY`, `!ping`, `!ayuda`, los comandos de Steam y las consultas A2S continúan funcionando.
 - Se añadieron límites de longitud, tiempo de espera, consultas simultáneas y frecuencia para proteger el bot y controlar el consumo de la API.
 - La vinculación por código usa únicamente códigos reales entregados por WhatsApp; el bot no inventa códigos.
@@ -108,7 +96,7 @@ Ejemplo completo para un equipo local:
 # Steam Web API: https://steamcommunity.com/dev/apikey
 STEAM_API_KEY=0123456789abcdef0123456789abcdef
 
-# IA opcional para !ia; OpenAI o cualquier API compatible con Chat Completions
+# IA opcional para !ai; OpenAI o cualquier API compatible con Chat Completions
 AI_API_KEY=tu_clave_de_ia
 AI_MODEL=gpt-4o-mini
 AI_API_URL=https://api.openai.com/v1/chat/completions
@@ -148,12 +136,12 @@ AUTO_RESET=false
 
 No subas `.env`, `.steam_key` ni `auth_info/` a GitHub. Ya están incluidos en `.gitignore` porque contienen credenciales o la sesión de WhatsApp.
 
-### Probar `!ia`
+### Probar `!ai`
 
 Después de guardar `.env`, reinicia el bot y envía desde WhatsApp:
 
 ```text
-!ia tranquilo ¿Cuál es la versión más reciente de Left 4 Dead 2?
+!ai ¿Cuál es la versión más reciente de Left 4 Dead 2?
 ```
 
 Si responde que la IA no está configurada, comprueba que `AI_API_KEY` no esté vacío y que hayas reiniciado el proceso después de editar `.env`. Si aparece un error de cuota, autenticación o modelo, revisa la cuenta y la documentación del proveedor de IA. El comando no inventa una clave ni usa la clave de Steam para la IA.
