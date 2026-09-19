@@ -53,7 +53,14 @@ function searchResultsFromHtml(html) {
   const results = [];
   const pattern = /<a[^>]+class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
   for (const match of html.matchAll(pattern)) {
-    const url = decodeURIComponent(match[1].replace(/&amp;/g, "&"));
+    let url = decodeURIComponent(match[1].replace(/&amp;/g, "&"));
+    if (url.startsWith("//duckduckgo.com/l/?")) {
+      try {
+        url = new URL(`https:${url}`).searchParams.get("uddg") || url;
+      } catch {
+        // Se descarta más abajo si el enlace no queda en HTTP(S).
+      }
+    }
     if (!/^https?:\/\//i.test(url)) continue;
     results.push({ title: cleanText(match[2]), url, snippet: cleanText(match[3]) });
     if (results.length >= MAX_SEARCH_RESULTS) break;
