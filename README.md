@@ -74,7 +74,7 @@ SEARCH_PROVIDERS=duckduckgo
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
 REPLY_IN_PRIVATE=true
-ALLOW_SELF=false
+ALLOW_SELF=true
 ALLOWED_GROUPS=
 AUTH_DIR=auth_info
 AUTO_RESET=false
@@ -194,7 +194,7 @@ Tonos disponibles:
 
 El tono `insultos` permite lenguaje vulgar e insultos genéricos dirigidos a errores, ideas o situaciones. No genera amenazas, discriminación, slurs ni acoso dirigido.
 
-Si no quieres usar una API de IA de pago, deja `AI_API_KEY` vacío. Las búsquedas y los demás comandos seguirán funcionando; `!ai` necesitará una API compatible configurada para generar la respuesta.
+`ALLOW_SELF` está activado permanentemente para que puedas probar el bot desde la misma cuenta vinculada. Si no quieres usar una API de IA, deja `AI_API_KEY` vacío; las búsquedas y los demás comandos seguirán funcionando.
 
 ### Búsqueda web
 

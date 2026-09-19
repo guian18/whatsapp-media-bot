@@ -36,7 +36,8 @@ const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
 // Responder en chats privados es el comportamiento esperado para !ping, !ayuda y !ai.
 // Se puede desactivar explícitamente con REPLY_IN_PRIVATE=false.
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
-const ALLOW_SELF = process.env.ALLOW_SELF === "true";
+// La cuenta vinculada también puede probar comandos enviados desde sí misma.
+const ALLOW_SELF = true;
 const AUTO_RESET = process.env.AUTO_RESET === "true";
 
 const AUTH_DIR = getAuthDir();
