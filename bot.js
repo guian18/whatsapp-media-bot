@@ -33,6 +33,7 @@ const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+const GROUPS_ENABLED = process.env.GROUPS_ENABLED !== "false";
 // Responder en chats privados es el comportamiento esperado para !ping, !ayuda y !ai.
 // Se puede desactivar explícitamente con REPLY_IN_PRIVATE=false.
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
@@ -344,6 +345,7 @@ async function start() {
       }
 
       const isGroup = jid.endsWith("@g.us");
+      if (isGroup && !GROUPS_ENABLED) continue;
       if (!isGroup && !REPLY_IN_PRIVATE) continue;
       if (isGroup && ALLOWED_GROUPS.length && !ALLOWED_GROUPS.includes(jid)) continue;
 

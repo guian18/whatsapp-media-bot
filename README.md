@@ -73,6 +73,7 @@ AI_DEFAULT_STYLE=tranquilo
 SEARCH_PROVIDERS=duckduckgo
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
+GROUPS_ENABLED=true
 REPLY_IN_PRIVATE=true
 ALLOW_SELF=true
 ALLOWED_GROUPS=
@@ -88,6 +89,8 @@ nano .env
 ```
 
 Si ya tienes un `.env` con claves, no lo sobrescribas: abre `nano .env` y copia únicamente las líneas de proveedor que necesites desde `.env.example`.
+
+El bot responde en grupos privados cuando `GROUPS_ENABLED=true`. Deja `ALLOWED_GROUPS=` vacío para permitir todos los grupos; si escribes IDs separados por comas, responderá únicamente en esos grupos.
 
 ## APIs y opciones de configuración
 
