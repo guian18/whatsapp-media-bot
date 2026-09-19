@@ -76,3 +76,19 @@ test("env example contains variables only", () => {
   assert.ok(lines.length > 0);
   assert.equal(lines.some((line) => line.trimStart().startsWith("#")), false);
 });
+
+test("environment loader migrates the deprecated Groq model", (t) => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-migration-"));
+  const envFile = path.join(dir, ".env");
+  writeFileSync(envFile, "AI_PROVIDER=groq\nAI_MODEL=llama-3.1-8b-instant\n", "utf8");
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+  const childEnv = { ...process.env, ENV_FILE: envFile, TEST_ENV_LOAD: "loaded-from-file", TEST_ENV_MIGRATION: "1" };
+  const result = spawnSync(process.execPath, ["fixtures/env-loader-child.js"], {
+    cwd: process.cwd(),
+    env: childEnv,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(readFileSync(envFile, "utf8"), /AI_MODEL=openai\/gpt-oss-20b/);
+});
