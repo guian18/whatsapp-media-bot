@@ -44,7 +44,6 @@ const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE === "true";
 const ALLOW_SELF = process.env.ALLOW_SELF === "true";
 const AUTO_RESET = process.env.AUTO_RESET === "true";
 
-// Railway usa /data cuando hay volumen; Termux y local usan auth_info.
 const AUTH_DIR = getAuthDir();
 
 let yaReseteado = false;
@@ -243,8 +242,7 @@ async function start() {
   try {
     ({ version } = await fetchLatestBaileysVersion());
   } catch (err) {
-    // Railway puede iniciar mientras GitHub/WhatsApp está temporalmente lento.
-    // El socket tiene una versión compatible por defecto; no debemos tumbar /health.
+    // El socket tiene una versión compatible por defecto; no debemos tumbar el proceso.
     console.warn("No se pudo consultar la versión más reciente de Baileys; se usará la predeterminada:", err?.message || err);
   }
   const alreadyRegistered = Boolean(state.creds?.registered);

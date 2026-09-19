@@ -54,7 +54,7 @@ export function guardarSteamApiKey(key, persistir = true) {
  * Orden: archivo .steam_key → variable STEAM_API_KEY → preguntar en la terminal.
  * En una terminal (Termux, PC) SIEMPRE se pregunta si no hay una clave válida.
  * Con STEAM_ASK_ALWAYS=true pregunta aunque ya haya una guardada.
- * Sin terminal (Railway, Docker) se usa la variable/el archivo, o se puede
+ * Sin terminal (Docker u otro servicio) se usa la variable/el archivo, o se puede
  * escribir la clave en la página web.
  */
 export async function ensureSteamApiKey() {

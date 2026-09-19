@@ -1,4 +1,4 @@
-// Servidor HTTP para plataformas tipo Railway:
+// Servidor HTTP opcional para hosting o uso local:
 // - healthcheck en "/"
 // - página de vinculación en "/qr": muestra el QR (imagen) y el código de 8 dígitos
 // - "/status" devuelve el estado en JSON (la página se actualiza sola)

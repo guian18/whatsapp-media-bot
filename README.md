@@ -2,7 +2,7 @@
 
 > Consulta desde WhatsApp quién está jugando Left 4 Dead 2, en qué servidor está y qué jugadores hay conectados.
 
-InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/WhiskeySockets/Baileys) que consulta perfiles de Steam, servidores públicos de Left 4 Dead 2 y jugadores conectados. Funciona en Termux, Railway, Render y VPS con Node.js. Usa el paquete publicado `@whiskeysockets/baileys@7.0.0-rc14`; las protecciones de pairing y reconexión están implementadas en este repositorio.
+InfoPlayer Left es un bot de WhatsApp basado en [Baileys](https://github.com/WhiskeySockets/Baileys) que consulta perfiles de Steam, servidores públicos de Left 4 Dead 2 y jugadores conectados. Funciona en Termux, Render y VPS con Node.js. Usa el paquete publicado `@whiskeysockets/baileys@7.0.0-rc14`; las protecciones de pairing y reconexión están implementadas en este repositorio.
 
 El bot responde únicamente a mensajes que comienzan con `!`, funciona en grupos y chats privados, y no necesita una base de datos externa. La sesión de WhatsApp se guarda en disco para evitar repetir la vinculación después de cada reinicio.
 
@@ -25,7 +25,7 @@ Las consultas de Steam requieren una clave de Steam Web API. `!ping` y `!ayuda` 
 - Conexión a Internet.
 - Una cuenta de WhatsApp para vincular como dispositivo adicional.
 - Una Steam Web API key para los comandos que consultan Steam.
-- Para Railway, Render u otro hosting: un proceso persistente y almacenamiento persistente para `auth_info/`.
+- Para un hosting persistente: almacenamiento persistente para `auth_info/`.
 
 ## Instalación local en Linux, macOS o Windows
 
@@ -77,7 +77,7 @@ REPLY_IN_PRIVATE=false
 # Directorio persistente de la sesión
 AUTH_DIR=auth_info
 
-# Recomendado en Railway: protege /qr, /status y /pair
+# Opcional: protege /qr, /status y /pair con un token privado
 PAIRING_ADMIN_TOKEN=
 
 # false: ignora comandos enviados por la propia cuenta vinculada
@@ -140,11 +140,6 @@ Cuando existe la variable `PORT`, el bot inicia un servidor HTTP con estas rutas
 | `/pair` | Endpoint `POST` usado para solicitar el código. |
 | `/health` | Healthcheck del servicio; devuelve `{"ok":true}`. |
 
-En Railway, abre:
-
-```text
-https://TU-DOMINIO.up.railway.app/qr
-```
 
 La página se actualiza automáticamente cada tres segundos. Si WhatsApp acepta el código, espera hasta que aparezca `Conectado a WhatsApp ✅` en la página o en los logs.
 
@@ -191,99 +186,7 @@ Recomendaciones para Termux:
 - La sesión se guarda en `auth_info/` por defecto.
 - Para volver a vincular desde cero, ejecuta `npm run reset`.
 
-## Despliegue en Railway
-
-Railway debe ejecutar el proyecto como un servicio persistente de Node.js.
-
-### 1. Crear el servicio
-
-En Railway selecciona **New Project → Deploy from GitHub repo** y elige `infoplayerleft`. El repositorio ya incluye `railway.json` y `Procfile`; el comando de arranque es:
-
-```bash
-node bot.js
-```
-
-### 2. Configurar el puerto y el dominio
-
-En **Settings → Networking**:
-
-1. Configura el puerto `8080` si Railway no lo asigna automáticamente.
-2. Pulsa **Generate Domain**.
-3. Railway definirá `PORT=8080` para el servicio.
-
-No es necesario fijar el puerto dentro del código: el bot utiliza `process.env.PORT`.
-
-### 3. Crear el volumen persistente
-
-En el servicio de Railway:
-
-1. Abre **Settings → Volumes** y pulsa **Add Volume**.
-2. Si tu interfaz lo muestra en el lienzo del proyecto, usa **+ New → Volume** y conéctalo al servicio `infoplayerleft`.
-3. Configura el punto de montaje:
-
-   ```text
-   /data
-   ```
-
-Un volumen pequeño es suficiente para la sesión. El bot guardará automáticamente las credenciales en `/data/auth_info`.
-
-### 4. Configurar Variables
-
-En **Variables**, añade:
-
-```env
-STEAM_API_KEY=tu_clave_de_steam
-WHATSAPP_NUMBER=51987654321
-PAIRING_CODE=false
-AUTH_DIR=/data/auth_info
-REPLY_IN_PRIVATE=false
-ALLOW_SELF=false
-AUTO_RESET=false
-PAIRING_ADMIN_TOKEN=una-clave-larga-y-aleatoria
-```
-
-Con `PAIRING_ADMIN_TOKEN`, abre la página incluyendo el token:
-
-```text
-https://TU-DOMINIO.up.railway.app/qr?token=una-clave-larga-y-aleatoria
-```
-
-El token protege `/qr`, `/status` y `/pair`; `/health` permanece público para el
-healthcheck de Railway. No compartas esa URL.
-
-`WHATSAPP_NUMBER` debe contener únicamente dígitos con código de país. No escribas `+`, espacios ni guiones.
-
-### 5. Vincular y verificar
-
-Después de guardar la configuración y hacer redeploy:
-
-1. Abre `https://TU-DOMINIO.up.railway.app/health` y confirma que responde `{"ok":true}`.
-2. Abre `https://TU-DOMINIO.up.railway.app/qr`.
-3. Solicita un código nuevo.
-4. Introduce el código inmediatamente en WhatsApp.
-5. Revisa los logs hasta ver:
-
-   ```text
-   Conectado a WhatsApp ✅
-   ```
-
-La sesión quedará en:
-
-```text
-/data/auth_info
-```
-
-No elimines el volumen ni esa carpeta después de vincular el dispositivo. En los siguientes reinicios Railway podrá reutilizar la sesión sin pedir otro código.
-
-### Problemas frecuentes en Railway
-
-- **El servicio no responde:** confirma que el puerto configurado sea `8080`, que exista un dominio generado y que el proceso esté activo.
-- **Se pierde la sesión después de un redeploy:** falta un volumen persistente o el volumen no está montado en `/data`.
-- **El código no funciona:** solicita un código nuevo y úsalo inmediatamente. No reutilices un código anterior.
-- **La clave de Steam no funciona:** revisa que `STEAM_API_KEY` tenga 32 caracteres hexadecimales y que esté configurada como variable del servicio.
-- **No se muestra el QR o el código:** espera unos segundos, actualiza `/qr` y revisa los logs.
-
-## Render y VPS
+## Despliegue en Render y VPS
 
 En Render, VPS u otro hosting compatible con Node.js:
 
@@ -336,7 +239,7 @@ STEAM_ASK_ALWAYS=true npm start
 
 ## Seguridad y notas
 
-- `auth_info/` y `/data/auth_info` contienen la sesión de WhatsApp. Trátalos como credenciales privadas.
+- `auth_info/` contiene la sesión de WhatsApp. Trátala como credencial privada.
 - No publiques códigos de vinculación ni compartas la URL `/qr` mientras esté activa.
 - No subas `.env`, `.steam_key` ni archivos de sesión a GitHub.
 - Baileys es una librería no oficial. El uso abusivo, el spam o demasiadas solicitudes pueden provocar restricciones de WhatsApp.
