@@ -24,6 +24,7 @@ const STYLES = {
   divertido: "ameno, ingenioso y ligero sin perder exactitud",
   sarcastico: "sarcástico con moderación, sin humillar ni insultar",
   breve: "muy conciso, en pocas frases y sin rodeos",
+  amable: "cálido, cercano y respetuoso",
 };
 let requestInFlight = false;
 let lastRequestAt = 0;
@@ -141,13 +142,28 @@ function configuredStyle() {
   return { styleName, style: STYLES[styleName] };
 }
 
+export function detectStyle(question) {
+  const text = String(question || "").trim();
+  if (!text) return null;
+  if (/\b(breve|rápido|rapido|resumen|resumido|en una frase|sin explicar mucho)\b/i.test(text)) return "breve";
+  if (/\b(jaja|jeje|lol|😂|🤣|broma|chiste|divertido|gracioso)\b/i.test(text)) return "divertido";
+  if (/\b(sarcasmo|sarcástico|sarcastico|irónico|ironico|claro, cómo no|ya veo)\b/i.test(text)) return "sarcastico";
+  if (/\b(por favor|podría|podria|usted|solicito|explique formalmente|informe)\b/i.test(text)) return "formal";
+  if (/\b(mierda|joder|coño|cabrón|cabron|pendejo|imbécil|imbecil|idiota|puto|carajo)\b/i.test(text)) return "insultos";
+  if (/\b(ahora mismo|contesta ya|deja de|sin rodeos|directo|espabila|rápido)\b/i.test(text) || /!{2,}|\?{2,}/.test(text)) return "agresivo";
+  if (/\b(gracias|porfa|ayuda|amigo|amiga|hola|buenas)\b/i.test(text)) return "amable";
+  return null;
+}
+
 function requestsSources(question) {
   return /\b(fuente|fuentes|enlace|enlaces|link|links|url|urls|referencia|referencias|origen|orígenes|cita|citas)\b/i.test(question);
 }
 
 export async function cmdIA(question) {
   const query = String(question || "").trim();
-  const { styleName, style } = configuredStyle();
+  const configured = configuredStyle();
+  const styleName = detectStyle(query) || configured.styleName;
+  const style = STYLES[styleName];
   const includeSources = requestsSources(query);
   if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;

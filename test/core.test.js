@@ -7,6 +7,7 @@ import test from "node:test";
 
 import { parseAddress } from "../src/a2s.js";
 import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
+import { detectStyle } from "../src/ai.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
@@ -75,6 +76,15 @@ test("env example contains variables only", () => {
   const lines = readFileSync(".env.example", "utf8").split(/\r?\n/).filter(Boolean);
   assert.ok(lines.length > 0);
   assert.equal(lines.some((line) => line.trimStart().startsWith("#")), false);
+});
+
+test("ai detects the tone used in the question", () => {
+  assert.equal(detectStyle("por favor, informe formalmente"), "formal");
+  assert.equal(detectStyle("jaja cuéntame algo divertido"), "divertido");
+  assert.equal(detectStyle("responde breve y rápido"), "breve");
+  assert.equal(detectStyle("¡contesta ya!!"), "agresivo");
+  assert.equal(detectStyle("hola, ayúdame porfa"), "amable");
+  assert.equal(detectStyle("consulta normal"), null);
 });
 
 test("environment loader migrates the deprecated Groq model", (t) => {
