@@ -110,34 +110,19 @@ SEARCH_PROVIDERS=duckduckgo
 
 DuckDuckGo se consulta sin clave ni suscripción. Puede tener límites o cambiar su HTML, pero es la opción integrada sin coste. La [Steam Web API Key](https://steamcommunity.com/dev/apikey) también se obtiene gratuitamente para consultar perfiles públicos.
 
-Para `!ai` sin pagar, usa uno de estos niveles gratuitos oficiales:
+### APIs y enlaces directos
 
-| Proveedor | Enlace para crear la clave | Configuración |
-|---|---|---|
-| Groq Free tier | [Crear Groq API Key](https://console.groq.com/keys) | `AI_PROVIDER=groq` y `AI_MODEL=openai/gpt-oss-20b` |
-| Google Gemini Free tier | [Crear Gemini API Key](https://aistudio.google.com/apikey) | `AI_PROVIDER=gemini` y `AI_MODEL=gemini-2.5-flash` |
-| ChatGPT / OpenAI | [Crear OpenAI API Key](https://platform.openai.com/api-keys) | `AI_PROVIDER=openai` y `AI_MODEL=gpt-4o-mini` |
-| Grok / xAI | [Crear xAI API Key](https://console.x.ai/) | `AI_PROVIDER=xai` y `AI_MODEL=grok-4.6` |
-| DeepSeek | [Crear DeepSeek API Key](https://platform.deepseek.com/api_keys) | `AI_PROVIDER=deepseek` y `AI_MODEL=deepseek-chat` |
-| Mistral | [Crear Mistral API Key](https://console.mistral.ai/api-keys/) | `AI_PROVIDER=mistral` y `AI_MODEL=mistral-small-4-0-26-03` |
-| OpenRouter | [Crear OpenRouter API Key](https://openrouter.ai/keys) | `AI_PROVIDER=openrouter` y `AI_MODEL=openrouter/auto` |
+- **Steam:** [crear Steam Web API Key](https://steamcommunity.com/dev/apikey) — `STEAM_API_KEY`
+- **Groq:** [crear Groq API Key](https://console.groq.com/keys) — `AI_PROVIDER=groq`, `AI_MODEL=openai/gpt-oss-20b`, `GROQ_API_KEY`
+- **Gemini:** [crear Gemini API Key](https://aistudio.google.com/apikey) — `AI_PROVIDER=gemini`, `AI_MODEL=gemini-2.5-flash`, `GEMINI_API_KEY`
+- **ChatGPT/OpenAI:** [crear OpenAI API Key](https://platform.openai.com/api-keys) — `AI_PROVIDER=openai`, `AI_MODEL=gpt-4o-mini`, `OPENAI_API_KEY`
+- **Grok/xAI:** [crear xAI API Key](https://console.x.ai/team/default/api-keys) — `AI_PROVIDER=xai`, `AI_MODEL=grok-4.6`, `XAI_API_KEY`
+- **DeepSeek:** [crear DeepSeek API Key](https://platform.deepseek.com/api_keys) — `AI_PROVIDER=deepseek`, `AI_MODEL=deepseek-chat`, `DEEPSEEK_API_KEY`
+- **Mistral:** [crear Mistral API Key](https://console.mistral.ai/api-keys/) — `AI_PROVIDER=mistral`, `AI_MODEL=mistral-small-4-0-26-03`, `MISTRAL_API_KEY`
+- **OpenRouter:** [crear OpenRouter API Key](https://openrouter.ai/keys) — `AI_PROVIDER=openrouter`, `AI_MODEL=openrouter/auto`, `OPENROUTER_API_KEY`
+- **Búsqueda web:** DuckDuckGo funciona sin API key mediante `SEARCH_PROVIDERS=duckduckgo`.
 
-Groq y Gemini pueden ofrecer cuotas gratuitas, pero no son ilimitadas. OpenAI, xAI, DeepSeek, Mistral y OpenRouter tienen sus propios precios, créditos o límites. No se necesita añadir Google Custom Search ni Brave: las búsquedas del bot siguen usando DuckDuckGo sin API.
-
-### Enlaces gratuitos
-
-| Servicio | Enlace directo | Variable `.env` |
-|---|---|---|
-| Steam | [Crear Steam Web API Key](https://steamcommunity.com/dev/apikey) | `STEAM_API_KEY` |
-| Groq | [Crear Groq API Key](https://console.groq.com/keys) | `AI_API_KEY` |
-| Gemini | [Crear Gemini API Key](https://aistudio.google.com/apikey) | `AI_API_KEY` |
-| ChatGPT / OpenAI | [Crear OpenAI API Key](https://platform.openai.com/api-keys) | `OPENAI_API_KEY` |
-| Grok / xAI | [Crear xAI API Key](https://console.x.ai/team/default/api-keys) | `XAI_API_KEY` |
-| DeepSeek | [Crear DeepSeek API Key](https://platform.deepseek.com/api_keys) | `DEEPSEEK_API_KEY` |
-| Mistral | [Crear Mistral API Key](https://console.mistral.ai/api-keys/) | `MISTRAL_API_KEY` |
-| OpenRouter | [Crear OpenRouter API Key](https://openrouter.ai/keys) | `OPENROUTER_API_KEY` |
-
-Documentación oficial: [Steam Web API](https://steamcommunity.com/dev), [DuckDuckGo](https://duckduckgo.com/), [Groq Quickstart](https://console.groq.com/docs/quickstart), [Groq límites](https://console.groq.com/docs/rate-limits), [Gemini OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai), [Gemini precios](https://ai.google.dev/gemini-api/docs/pricing) y [Gemini límites](https://ai.google.dev/gemini-api/docs/rate-limits).
+Groq y Gemini pueden ofrecer cuotas gratuitas, pero no son ilimitadas. Los demás proveedores tienen sus propios precios, créditos o límites.
 
 Nunca publiques `.env`, `.steam_key` ni `auth_info/`.
 
