@@ -82,7 +82,7 @@ ALLOW_SELF=true
 ALLOWED_GROUPS=
 AUTH_DIR=auth_info
 AUTO_RESET=false
-WATCH_INTERVAL_MINUTES=3
+WATCH_INTERVAL_SECONDS=10
 WATCH_MAX_SERVERS=200
 WATCH_STATE_FILE=watchlist.json
 ```
@@ -265,7 +265,7 @@ Ejemplo:
 !novigilar tímidok7
 ```
 
-El escaneo usa `STEAM_API_KEY` cuando está disponible y consulta el Master Server/A2S como respaldo. `WATCH_INTERVAL_MINUTES` define el intervalo mínimo (por defecto, 3 minutos); `WATCH_MAX_SERVERS` limita el número de servidores consultados para evitar saturar Termux.
+El escaneo usa `STEAM_API_KEY` cuando está disponible y consulta el Master Server/A2S como respaldo. `WATCH_INTERVAL_SECONDS=10` revisa cada 10 segundos; `WATCH_MAX_SERVERS` limita el número de servidores consultados. Escanear muchos servidores cada 10 segundos puede consumir más batería, datos y CPU en Termux.
 
 Para cambiar manualmente el idioma:
 

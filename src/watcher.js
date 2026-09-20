@@ -4,7 +4,13 @@ import { extractIdentifier, getPlayerInfo } from "./steam.js";
 
 const STATE_FILE = process.env.WATCH_STATE_FILE || "watchlist.json";
 const MAX_SERVERS = Math.min(500, Math.max(1, Number(process.env.WATCH_MAX_SERVERS || 200)));
-const SCAN_INTERVAL_MS = Math.max(60_000, Number(process.env.WATCH_INTERVAL_MINUTES || 3) * 60_000);
+const configuredSeconds = Number(process.env.WATCH_INTERVAL_SECONDS);
+const legacyMinutes = Number(process.env.WATCH_INTERVAL_MINUTES);
+const SCAN_INTERVAL_MS = Number.isFinite(configuredSeconds)
+  ? Math.max(10_000, configuredSeconds * 1000)
+  : Number.isFinite(legacyMinutes)
+    ? Math.max(10_000, legacyMinutes * 60_000)
+    : 10_000;
 const CONCURRENCY = 20;
 const BASE_STEAM_ID = 76561197960265728n;
 

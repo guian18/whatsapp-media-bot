@@ -52,6 +52,9 @@ if (existsSync(file)) {
   if ((process.env.AI_DEFAULT_STYLE || "").trim().toLowerCase() === "tranquilo") {
     setEnvLine("AI_DEFAULT_STYLE", "insultos");
   }
+  if (!/^WATCH_INTERVAL_SECONDS\s*=/m.test(content)) {
+    setEnvLine("WATCH_INTERVAL_SECONDS", "10");
+  }
   if (migrated) {
     try {
       writeFileSync(file, content, { mode: 0o600 });
