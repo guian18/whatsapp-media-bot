@@ -141,6 +141,76 @@ La lista principal de esta guía contiene solo proveedores con modalidad gratuit
 | `WATCH_STATE_FILE` | Archivo donde se guarda la lista de vigilancia. | `watchlist.json` |
 | `OFFICIAL_ADDRESSES_FILE` | Ruta opcional del archivo de direcciones oficiales completas. | Descargas de Termux |
 
+### Conectar la app móvil al bot
+
+La aplicación móvil se conecta directamente al **Control API** del bot. La URL no es una URL de GitHub ni de Expo: es la dirección local del teléfono o equipo donde se está ejecutando Node.js, seguida del puerto configurado. Por ejemplo, si la IP local del teléfono es `192.168.1.25` y el puerto es `8787`, introduce en la app:
+
+```text
+http://192.168.1.25:8787
+```
+
+No añadas `/api/control` al final; la app agrega automáticamente las rutas como `/api/control/status` y `/api/control/test-ai`.
+
+Para obtener la IP en Termux, con el teléfono conectado a la misma red Wi-Fi que el dispositivo desde el que usarás la app, ejecuta:
+
+```bash
+ip -4 addr show wlan0 | awk '/inet / {print $2}'
+```
+
+Usa la dirección antes de `/24`, por ejemplo `192.168.1.25`. Si `wlan0` no aparece, consulta todas las interfaces con `ip -4 addr` y utiliza la dirección privada de la interfaz Wi-Fi. La app y el bot deben estar en la misma red, y el router no debe aislar los dispositivos Wi-Fi.
+
+El token se define en el archivo `.env` del bot mediante `CONTROL_API_TOKEN`. No se puede recuperar desde la app ni desde el API, porque nunca se devuelve en las respuestas. Créalo una vez con un valor aleatorio largo:
+
+```bash
+cd ~/infoplayerleft
+TOKEN=$(openssl rand -hex 32)
+sed -i "s|^CONTROL_API_TOKEN=.*|CONTROL_API_TOKEN=$TOKEN|" .env
+printf 'Guarda este token en un lugar seguro; no lo publiques:\n%s\n' "$TOKEN"
+```
+
+Si `openssl` no está instalado, usa Node.js:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+En ese caso, copia el resultado manualmente después de `CONTROL_API_TOKEN=` en `.env`. Conserva las demás claves del archivo; no reemplaces `.env` completo. Después reinicia el bot para que lea el token:
+
+```bash
+npm start
+```
+
+En `.env`, la configuración para permitir conexiones desde otros dispositivos de la red local es:
+
+```env
+CONTROL_API_HOST=0.0.0.0
+CONTROL_API_PORT=8787
+```
+
+En la app, abre la pantalla de control, introduce la URL base en **URL de la API del bot** y el mismo valor de `CONTROL_API_TOKEN` en **Token de control**. Pulsa **Guardar** y después **Comprobar conexión**. El token se guarda en el llavero seguro del teléfono.
+
+Puedes verificar el API desde otro dispositivo de la misma red sin mostrar el token en la URL:
+
+```bash
+curl -H "Authorization: Bearer TU_TOKEN" \
+  http://192.168.1.25:8787/api/control/health
+```
+
+La respuesta esperada es `{"ok":true,"service":"infoplayerleft-control"}`. Si aparece `401`, la URL funciona pero el token no coincide. Si aparece `Connection refused` o hay timeout, revisa que el bot esté iniciado, que `CONTROL_API_HOST` sea `0.0.0.0`, que el puerto sea el mismo y que ambos dispositivos estén en la misma red.
+
+Por seguridad, este API está pensado para una red local de confianza. No expongas el puerto `8787` directamente a Internet ni publiques el token en GitHub, capturas de pantalla, mensajes o archivos `.env`. Para acceso fuera de casa, usa una VPN como Tailscale/WireGuard o un proxy HTTPS con autenticación adicional.
+
+### Rutas del Control API
+
+Todas las rutas requieren el encabezado `Authorization: Bearer TU_TOKEN`:
+
+| Método | Ruta | Función |
+|---|---|---|
+| `GET` | `/api/control/health` | Comprueba que el API responde. |
+| `GET` | `/api/control/status` | Muestra estado del bot, WhatsApp y proveedor sin devolver claves. |
+| `POST` | `/api/control/settings` | Guarda los ajustes permitidos desde la app. |
+| `POST` | `/api/control/test-ai` | Ejecuta una prueba del proveedor de IA configurado. |
+
 ## APIs y enlaces directos
 
 ### Steam y búsqueda web
