@@ -71,7 +71,7 @@ export function ayuda() {
     "`!vigilar <nick|SteamID|URL>` — avisa cuando un jugador se conecta a L4D2",
     "`!novigilar <nick|SteamID|URL>` — cancela una vigilancia",
     "`!lista` — muestra los jugadores vigilados en este chat",
-    "`!escaneo` — fuerza un escaneo de vigilancias",
+    "`!escaneo [SteamID64|vanity|URL]` — fuerza un escaneo global o de un objetivo",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }
@@ -227,7 +227,8 @@ export async function handleCommand(text, context = {}) {
       return listWatched(context.jid);
     case "escaneo": {
       if (typeof context.sendMessage !== "function") return "El escaneo solo está disponible desde WhatsApp.";
-      const result = await scanAndNotify(context.sendMessage);
+      const result = await scanAndNotify(context.sendMessage, args || null);
+      if (result.error) return result.error;
       return `Escaneo completado: ${result.found} conectado(s), ${result.notified} aviso(s) enviado(s).`;
     }
     case "ayuda":

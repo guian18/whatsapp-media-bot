@@ -105,7 +105,7 @@ El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias
 | `REPLY_IN_PRIVATE` | Permite respuestas en chats privados. | `true` |
 | `AUTH_DIR` | Carpeta de la sesión de WhatsApp. | `auth_info` |
 | `ALLOW_PRIVATE_SERVERS` | Permite consultar IP privadas o locales. | `false` |
-| `WATCH_INTERVAL_SECONDS` | Intervalo mínimo del escaneo de vigilancia. | `1` |
+| `WATCH_INTERVAL_SECONDS` | Intervalo del escaneo de vigilancia; nunca es inferior a 50 segundos. | `50` |
 | `WATCH_MAX_SERVERS` | Número máximo de servidores revisados. | `200` |
 
 ## APIs y enlaces directos
@@ -168,7 +168,7 @@ Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El códi
 | `!vigilar <nick, SteamID o URL>` | Crea una vigilancia en el chat actual. |
 | `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
 | `!lista` | Muestra las vigilancias del chat. |
-| `!escaneo` | Ejecuta un escaneo inmediato. |
+| `!escaneo [SteamID64, vanity o URL]` | Ejecuta un escaneo inmediato de todas las vigilancias o del objetivo indicado. |
 | `!ai <pregunta>` | Busca contexto web y responde con IA. |
 | `!tono <estilo>` | Cambia el tono de la IA. |
 | `!idioma <código o país>` | Cambia el idioma de la IA. |
@@ -201,7 +201,9 @@ ALLOW_PRIVATE_SERVERS=true
 
 ## Vigilancia de jugadores
 
-`!vigilar` acepta un nombre, SteamID64 o URL de perfil. El bot consulta la Steam Web API cuando está disponible y usa el Master Server de Steam y A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
+`!vigilar` acepta un nickname, SteamID64, vanity o URL de perfil. `!escaneo` admite los mismos identificadores; sin argumento revisa todas las vigilancias y con un argumento revisa únicamente ese objetivo. El bot consulta la Steam Web API cuando está disponible y usa el Master Server de Steam y A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
+
+La vigilancia automática se ejecuta cada 50 segundos como mínimo. Puedes aumentar el intervalo con `WATCH_INTERVAL_SECONDS`, pero no reducirlo por debajo de 50 segundos.
 
 La vigilancia puede consumir batería, datos y CPU, especialmente con muchos servidores y un intervalo corto. En Termux, aumenta `WATCH_INTERVAL_SECONDS` si el teléfono se calienta o consume demasiados datos.
 

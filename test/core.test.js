@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import { parseAddress, serverInfo } from "../src/a2s.js";
+import { SCAN_INTERVAL_MS } from "../src/watcher.js";
 import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
 import { detectStyle } from "../src/ai.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
@@ -93,6 +94,10 @@ test("A2S sends queries with an explicit UDP destination", async (t) => {
   const info = await serverInfo("127.0.0.1", address.port);
   assert.equal(info.name, "Test server");
   assert.equal(info.map, "de_dust2");
+});
+
+test("watcher never scans more often than every 50 seconds", () => {
+  assert.ok(SCAN_INTERVAL_MS >= 50_000);
 });
 
 test("environment loader applies values from the configured .env file", (t) => {

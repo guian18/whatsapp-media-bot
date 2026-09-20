@@ -7,10 +7,10 @@ const MAX_SERVERS = Math.min(500, Math.max(1, Number(process.env.WATCH_MAX_SERVE
 const configuredSeconds = Number(process.env.WATCH_INTERVAL_SECONDS);
 const legacyMinutes = Number(process.env.WATCH_INTERVAL_MINUTES);
 const SCAN_INTERVAL_MS = Number.isFinite(configuredSeconds)
-  ? Math.max(1_000, configuredSeconds * 1000)
+  ? Math.max(50_000, configuredSeconds * 1000)
   : Number.isFinite(legacyMinutes)
-    ? Math.max(1_000, legacyMinutes * 60_000)
-    : 1_000;
+    ? Math.max(50_000, legacyMinutes * 60_000)
+    : 50_000;
 const CONCURRENCY = 20;
 const BASE_STEAM_ID = 76561197960265728n;
 
@@ -55,16 +55,18 @@ async function resolveTarget(input) {
   const classic = value.match(/^STEAM_[0-5]:([01]):(\d+)$/i);
   const steam3 = value.match(/^\[U:1:(\d+)\]$/i);
   const converted = classic ? String(BASE_STEAM_ID + BigInt(classic[2]) * 2n + BigInt(classic[1])) : steam3 ? String(BASE_STEAM_ID + BigInt(steam3[1])) : null;
-  const looksLikeSteam = Boolean(converted) || /^\d{17,20}$/.test(value) || /^https?:\/\//i.test(value);
+  const looksLikeSteam = Boolean(converted) || /^\d{17,20}$/.test(value) || /^https?:\/\//i.test(value) || /^[\w-]{1,64}$/.test(value);
   if (looksLikeSteam) {
     const steamId = converted || await extractIdentifier(value);
-    if (!steamId) return null;
-    let label = steamId;
-    try {
-      const { player } = await getPlayerInfo(steamId);
-      if (player?.personaname) label = player.personaname;
-    } catch {}
-    return { key: `steam:${steamId}`, label, steamId };
+    if (steamId) {
+      let label = steamId;
+      try {
+        const { player } = await getPlayerInfo(steamId);
+        if (player?.personaname) label = player.personaname;
+      } catch {}
+      return { key: `steam:${steamId}`, label, steamId };
+    }
+    if (converted || /^\d{17,20}$/.test(value) || /^https?:\/\//i.test(value)) return null;
   }
   return { key: `nick:${value.toLowerCase()}`, label: value };
 }
@@ -116,13 +118,15 @@ async function queryServer(addr) {
   }
 }
 
-async function scanWatched() {
+async function scanWatched(targetKey = null) {
   const targets = new Map();
   const found = new Map();
   for (const key of Object.keys(state.watchlist)) {
+    if (targetKey && key !== targetKey) continue;
     if (key.startsWith("nick:")) targets.set(key.slice(5), key);
   }
   for (const key of Object.keys(state.watchlist)) {
+    if (targetKey && key !== targetKey) continue;
     if (!key.startsWith("steam:")) continue;
     const steamId = key.slice(6);
     const { player } = await getPlayerInfo(steamId).catch(() => ({ player: null }));
@@ -170,14 +174,24 @@ function notificationText(key, result) {
   ].filter(Boolean).join("\n");
 }
 
-export async function scanAndNotify(sendMessage) {
+export async function scanAndNotify(sendMessage, input = null) {
   if (scanInFlight || !Object.keys(state.watchlist).length) return { found: 0, notified: 0 };
+  let targetKey = null;
+  if (input) {
+    const target = await resolveTarget(input);
+    if (!target) return { found: 0, notified: 0, error: "No pude resolver ese SteamID, vanity o URL." };
+    targetKey = target.key;
+    if (!state.watchlist[targetKey]?.length) {
+      return { found: 0, notified: 0, error: `No hay una vigilancia activa para ${target.label}.` };
+    }
+  }
   scanInFlight = true;
   try {
-    const found = await scanWatched();
+    const found = await scanWatched(targetKey);
     let notified = 0;
     let changed = false;
-    for (const key of Object.keys(state.watchlist)) {
+    const keys = targetKey ? [targetKey] : Object.keys(state.watchlist);
+    for (const key of keys) {
       const result = found.get(key);
       const current = result?.addr || null;
       const previous = state.lastSeen[key] || null;
