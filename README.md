@@ -4,6 +4,18 @@ Bot de WhatsApp para consultar perfiles de Steam, buscar jugadores y consultar s
 
 Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyecto se ejecuta localmente; no incluye hosting, panel web ni despliegue remoto.
 
+## Novedades incluidas
+
+- Soporte directo para **Anthropic Claude** mediante la Messages API oficial. Se selecciona con `!proveedor claude` y usa `ANTHROPIC_API_KEY`.
+- Memoria conversacional privada por chat para `!ai`, configurable con `AI_MEMORY_FILE` y excluida de Git.
+- Detección básica de frases asociadas a crisis emocionales, con una respuesta de apoyo que no requiere consultar una API.
+- Comando `!anime` para enviar imágenes de anime **SFW** desde Nekos.best, sin API key y sin fuentes NSFW.
+- Proxy opcional de OpenRouter en `api/chat.js`, separado del arranque normal de WhatsApp.
+- `!escaneo` manual e inmediato basado en la lista creada con `!vigilar`, con selección numérica.
+- Vigilancia automática con un intervalo mínimo de 50 segundos.
+- Guardado automático de direcciones oficiales completas en formato `IP:puerto` para Termux.
+- Consultas A2S con validación de host y puerto, compatibles con servidores públicos, oficiales, locales y privados.
+
 ## Características
 
 - Consulta de perfiles mediante Steam Web API.
@@ -152,7 +164,9 @@ Este archivo no modifica el arranque de WhatsApp. Si lo despliegas como función
 
 ### Funciones de IA adaptadas
 
-`!ai` conserva las funciones compatibles del asistente de escritorio: usa el proveedor configurado en OpenRouter, recuerda las últimas interacciones de cada chat en `AI_MEMORY_FILE`, aplica los estilos configurables con `!tono` y responde con una advertencia de apoyo cuando detecta frases asociadas a una posible crisis. La memoria se guarda localmente y se excluye de Git mediante `.gitignore`.
+`!ai` usa el proveedor configurado mediante `AI_PROVIDER`, recuerda las últimas interacciones de cada chat en `AI_MEMORY_FILE`, aplica los estilos configurables con `!tono` y responde con una advertencia de apoyo cuando detecta frases asociadas a una posible crisis. La memoria se guarda localmente y se excluye de Git mediante `.gitignore`.
+
+La integración de Claude utiliza `https://api.anthropic.com/v1/messages`, el encabezado `x-api-key`, `anthropic-version: 2023-06-01` y el formato de respuesta `content[].text`. También conserva la memoria y el contexto de conversación del bot.
 
 ## Vincular WhatsApp
 
@@ -277,6 +291,8 @@ El bot responderá, por ejemplo:
 1. NombreDelJugador
 2. 76561198000000000
 ```
+
+La lista se basa en las vigilancias activas del chat. Si eliges `1`, `2`, etc., el bot consulta en ese momento la información del objetivo correspondiente y no espera al ciclo automático.
 
 Responde con el número elegido:
 
