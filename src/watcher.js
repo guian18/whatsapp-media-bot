@@ -7,14 +7,14 @@ const MAX_SERVERS = Math.min(500, Math.max(1, Number(process.env.WATCH_MAX_SERVE
 const configuredSeconds = Number(process.env.WATCH_INTERVAL_SECONDS);
 const legacyMinutes = Number(process.env.WATCH_INTERVAL_MINUTES);
 const SCAN_INTERVAL_MS = Number.isFinite(configuredSeconds)
-  ? Math.max(10_000, configuredSeconds * 1000)
+  ? Math.max(1_000, configuredSeconds * 1000)
   : Number.isFinite(legacyMinutes)
-    ? Math.max(10_000, legacyMinutes * 60_000)
-    : 10_000;
+    ? Math.max(1_000, legacyMinutes * 60_000)
+    : 1_000;
 const CONCURRENCY = 20;
 const BASE_STEAM_ID = 76561197960265728n;
 
-let state = { watchlist: {}, lastSeen: {}, meta: {} };
+let state = { watchlist: {}, lastSeen: {}, meta: {}, notified: {} };
 let scanInFlight = false;
 let timer = null;
 
@@ -26,6 +26,7 @@ function loadState() {
       watchlist: parsed.watchlist && typeof parsed.watchlist === "object" ? parsed.watchlist : {},
       lastSeen: parsed.lastSeen && typeof parsed.lastSeen === "object" ? parsed.lastSeen : {},
       meta: parsed.meta && typeof parsed.meta === "object" ? parsed.meta : {},
+      notified: parsed.notified && typeof parsed.notified === "object" ? parsed.notified : {},
     };
   } catch (error) {
     console.error("No se pudo cargar watchlist.json:", error?.message || error);
@@ -89,6 +90,7 @@ export async function unwatchPlayer(input, jid) {
     delete state.watchlist[target.key];
     delete state.lastSeen[target.key];
     delete state.meta[target.key];
+    delete state.notified[target.key];
   }
   saveState();
   return `Dejé de vigilar a ${target.label} en este chat.`;
@@ -179,7 +181,14 @@ export async function scanAndNotify(sendMessage) {
       const result = found.get(key);
       const current = result?.addr || null;
       const previous = state.lastSeen[key] || null;
-      if (current && current !== previous) {
+      if (!current && previous) {
+        state.lastSeen[key] = null;
+        delete state.notified[key];
+        changed = true;
+        continue;
+      }
+      const alreadyNotified = Array.isArray(state.notified[key]) && state.notified[key].includes(current);
+      if (current && current !== previous && !alreadyNotified) {
         for (const jid of state.watchlist[key]) {
           try {
             await sendMessage(jid, { text: notificationText(key, result) });
@@ -188,6 +197,7 @@ export async function scanAndNotify(sendMessage) {
             console.error(`No se pudo enviar aviso a ${jid}:`, error?.message || error);
           }
         }
+        state.notified[key] = [...new Set([...(state.notified[key] || []), current])];
       }
       if (current !== previous) {
         state.lastSeen[key] = current;

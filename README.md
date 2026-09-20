@@ -82,7 +82,7 @@ ALLOW_SELF=true
 ALLOWED_GROUPS=
 AUTH_DIR=auth_info
 AUTO_RESET=false
-WATCH_INTERVAL_SECONDS=10
+WATCH_INTERVAL_SECONDS=1
 WATCH_MAX_SERVERS=200
 WATCH_STATE_FILE=watchlist.json
 ```
@@ -265,7 +265,7 @@ Ejemplo:
 !novigilar tímidok7
 ```
 
-El escaneo usa `STEAM_API_KEY` cuando está disponible y consulta el Master Server/A2S como respaldo. `WATCH_INTERVAL_SECONDS=10` revisa cada 10 segundos; `WATCH_MAX_SERVERS` limita el número de servidores consultados. Escanear muchos servidores cada 10 segundos puede consumir más batería, datos y CPU en Termux.
+El escaneo usa `STEAM_API_KEY` cuando está disponible y consulta el Master Server/A2S como respaldo. `WATCH_INTERVAL_SECONDS=1` revisa cada segundo como mínimo práctico; Steam no ofrece un evento público instantáneo, por lo que el aviso real depende del tiempo de respuesta del Master Server y de los servidores. El bot deduplica el mismo jugador y servidor, no repite avisos durante la misma conexión y permite avisar de nuevo después de detectar que el jugador salió. Escanear muchos servidores cada segundo puede consumir bastante batería, datos y CPU en Termux; reduce el valor si el teléfono se calienta.
 
 Para cambiar manualmente el idioma:
 

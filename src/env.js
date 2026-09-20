@@ -53,7 +53,7 @@ if (existsSync(file)) {
     setEnvLine("AI_DEFAULT_STYLE", "insultos");
   }
   if (!/^WATCH_INTERVAL_SECONDS\s*=/m.test(content)) {
-    setEnvLine("WATCH_INTERVAL_SECONDS", "10");
+    setEnvLine("WATCH_INTERVAL_SECONDS", "1");
   }
   if (migrated) {
     try {
