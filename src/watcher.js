@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { masterServerList, parseAddress, serverInfo, serverPlayers } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
+import { saveOfficialAddresses } from "./official-addresses.js";
 
 const STATE_FILE = process.env.WATCH_STATE_FILE || "watchlist.json";
 const MAX_SERVERS = Math.min(500, Math.max(1, Number(process.env.WATCH_MAX_SERVERS || 200)));
@@ -230,13 +231,27 @@ export async function scanAndNotify(sendMessage, input = null, { manual = false 
 
 export function startWatcher(sendMessage) {
   loadState();
+  refreshOfficialAddresses().catch((error) => console.error("No se pudieron guardar las direcciones oficiales:", error?.message || error));
   if (timer) clearInterval(timer);
-  timer = setInterval(() => scanAndNotify(sendMessage).catch((error) => console.error("Error en escaneo de vigilancia:", error?.message || error)), SCAN_INTERVAL_MS);
+  timer = setInterval(async () => {
+    await refreshOfficialAddresses();
+    await scanAndNotify(sendMessage).catch((error) => console.error("Error en escaneo de vigilancia:", error?.message || error));
+  }, SCAN_INTERVAL_MS);
   timer.unref?.();
   return () => {
     if (timer) clearInterval(timer);
     timer = null;
   };
+}
+
+async function refreshOfficialAddresses() {
+  try {
+    const servers = await masterServerList({ limit: MAX_SERVERS });
+    const result = saveOfficialAddresses(servers);
+    if (result.count) console.log(`Direcciones oficiales guardadas: ${result.count} en ${result.path}`);
+  } catch (error) {
+    console.error("No se pudieron guardar las direcciones oficiales:", error?.message || error);
+  }
 }
 
 export { STATE_FILE, SCAN_INTERVAL_MS };

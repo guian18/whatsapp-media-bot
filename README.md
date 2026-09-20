@@ -172,7 +172,6 @@ Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El códi
 | `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
 | `!lista` | Muestra las vigilancias del chat. |
 | `!escaneo [SteamID64, vanity o URL]` | Ejecuta un escaneo manual inmediato y envía la información actual. |
-| `!direcciones` | Guarda las direcciones públicas oficiales completas en formato `IP:puerto`. |
 | `!ai <pregunta>` | Busca contexto web y responde con IA. |
 | `!tono <estilo>` | Cambia el tono de la IA. |
 | `!idioma <código o país>` | Cambia el idioma de la IA. |
@@ -209,9 +208,9 @@ Si quieres bloquear las consultas locales o privadas, configura:
 ALLOW_PRIVATE_SERVERS=false
 ```
 
-### Exportar direcciones oficiales a un archivo
+### Guardado automático de direcciones oficiales
 
-El comando manual `!direcciones` consulta el Master Server de Steam y guarda únicamente las direcciones públicas oficiales de L4D2 en formato `IP:puerto`, una por línea. No incluye `0.0.0.0:0000`, que es el marcador de fin de la respuesta, ni dominios, `localhost` o direcciones privadas.
+El bot consulta el Master Server de Steam automáticamente al iniciar y después de cada ciclo de vigilancia. Guarda únicamente las direcciones públicas oficiales de L4D2 en formato `IP:puerto`, una por línea. No incluye `0.0.0.0:0000`, que es el marcador de fin de la respuesta, ni dominios, `localhost` o direcciones privadas.
 
 En Termux, el archivo se guarda por defecto en:
 
@@ -225,13 +224,7 @@ Antes de utilizar el comando en Termux, concede acceso al almacenamiento una sol
 termux-setup-storage
 ```
 
-Después, envía en WhatsApp:
-
-```text
-!direcciones
-```
-
-Puedes cambiar la ubicación mediante `OFFICIAL_ADDRESSES_FILE`. Por ejemplo:
+No necesitas enviar ningún comando de WhatsApp. Puedes cambiar la ubicación mediante `OFFICIAL_ADDRESSES_FILE`. Por ejemplo:
 
 ```env
 OFFICIAL_ADDRESSES_FILE=/sdcard/Download/l4d2-official-addresses.txt

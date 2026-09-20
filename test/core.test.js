@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import { parseAddress, serverInfo } from "../src/a2s.js";
+import { formatOfficialAddresses } from "../src/official-addresses.js";
 import { SCAN_INTERVAL_MS } from "../src/watcher.js";
 import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
 import { detectStyle } from "../src/ai.js";
@@ -106,6 +107,15 @@ test("A2S sends queries with an explicit UDP destination", async (t) => {
 
 test("watcher never scans more often than every 50 seconds", () => {
   assert.ok(SCAN_INTERVAL_MS >= 50_000);
+});
+
+test("official address export keeps public IP and port only", () => {
+  assert.deepEqual(formatOfficialAddresses([
+    { ip: "8.8.8.8", port: 27015 },
+    { ip: "8.8.8.8", port: 27015 },
+    { ip: "192.168.1.20", port: 27015 },
+    { ip: "0.0.0.0", port: 0 },
+  ]), ["8.8.8.8:27015"]);
 });
 
 test("environment loader applies values from the configured .env file", (t) => {
