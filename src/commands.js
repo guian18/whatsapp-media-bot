@@ -11,6 +11,33 @@ const MAX_RESULTS = 8;
 const MAX_NICKNAME_LENGTH = 64;
 let searchInFlight = false;
 const pendingScans = new Map();
+const ANIME_API = "https://nekos.best/api/v2/neko?amount=1";
+
+async function sendSfwAnimeImage(context) {
+  if (!context.jid || typeof context.sendMessage !== "function") {
+    return "Este comando solo está disponible desde WhatsApp.";
+  }
+  try {
+    const response = await fetch(ANIME_API, {
+      headers: {
+        accept: "application/json",
+        "user-agent": "InfoPlayerLeft/1.0 (https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)",
+      },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) throw new Error(`API respondió HTTP ${response.status}`);
+    const body = await response.json();
+    const image = body?.results?.[0];
+    if (!image?.url || !/^https:\/\//i.test(image.url)) throw new Error("respuesta SFW sin imagen válida");
+    await context.sendMessage(context.jid, {
+      image: { url: image.url },
+      caption: `Anime SFW${image.anime_name ? ` — ${image.anime_name}` : ""}`,
+    });
+    return null;
+  } catch (error) {
+    return `No pude obtener una imagen SFW de anime ahora: ${error.message}`;
+  }
+}
 
 function pingResponse() {
   const dead = Number(process.env.PING_DEAD_CHANCE ?? "0.10");
@@ -69,6 +96,7 @@ export function ayuda() {
     "`!tono <estilo>` — cambia y guarda el tono de la IA",
     "`!idioma <país|código>` — cambia y guarda el idioma de la IA",
     "`!proveedor <nombre>` — cambia la IA y el modelo",
+    "`!anime` — envía una imagen SFW de anime",
     "`!vigilar <nick|SteamID|URL>` — avisa cuando un jugador se conecta a L4D2",
     "`!novigilar <nick|SteamID|URL>` — cancela una vigilancia",
     "`!lista` — muestra los jugadores vigilados en este chat",
@@ -231,6 +259,8 @@ export async function handleCommand(text, context = {}) {
       return cmdIdioma(args);
     case "proveedor":
       return cmdProveedor(args);
+    case "anime":
+      return sendSfwAnimeImage(context);
     case "vigilar":
     case "vigilarnick":
       return watchPlayer(args, context.jid);

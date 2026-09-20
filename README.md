@@ -176,8 +176,13 @@ Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El códi
 | `!tono <estilo>` | Cambia el tono de la IA. |
 | `!idioma <código o país>` | Cambia el idioma de la IA. |
 | `!proveedor <nombre>` | Cambia el proveedor y el modelo de IA. |
+| `!anime` | Envía una imagen SFW de anime; no requiere API key. |
 
 Los estilos disponibles incluyen `tranquilo`, `agresivo`, `insultos`, `formal`, `divertido`, `sarcastico`, `breve` y `amable`. Usa `!tono lista`, `!idioma lista` o `!proveedor lista` para ver las opciones disponibles.
+
+### Imágenes SFW de anime
+
+El comando `!anime` envía una imagen de anime apta para todo público usando [Nekos.best](https://nekos.best/). La fuente indica que sus imágenes son SFW y no requiere autenticación ni API key. Si la API no responde, el bot muestra un error y no envía contenido alternativo.
 
 ## Consultas A2S
 
