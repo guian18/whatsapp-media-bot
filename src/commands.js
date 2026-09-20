@@ -1,4 +1,7 @@
 // Lógica de comandos, independiente de WhatsApp: cada uno devuelve texto plano.
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
@@ -10,6 +13,33 @@ const A2S_TIMEOUT = 2000;
 const MAX_RESULTS = 8;
 const MAX_NICKNAME_LENGTH = 64;
 let searchInFlight = false;
+
+function officialIpsPath() {
+  const configured = String(process.env.OFFICIAL_IPS_FILE || "").trim();
+  if (configured) return configured;
+  const isTermux = Boolean(process.env.TERMUX_VERSION) || String(process.env.PREFIX || "").includes("com.termux");
+  return isTermux
+    ? join(homedir(), "storage", "downloads", "l4d2-official-ips.txt")
+    : join(process.cwd(), "l4d2-official-ips.txt");
+}
+
+function isPublicIpv4(ip) {
+  return /^(?!10\.)(?!127\.)(?!169\.254\.)(?!192\.168\.)(?!172\.(1[6-9]|2\d|3[01])\.)(?!224\.)(?!0\.)(?:\d{1,3}\.){3}\d{1,3}$/.test(ip);
+}
+
+async function exportOfficialIps() {
+  const servers = await masterServerList({ limit: MAX_SERVERS });
+  const ips = [...new Set(servers.map(({ ip }) => ip).filter(isPublicIpv4))].sort();
+  if (!ips.length) return "No se encontraron IPs oficiales en el Master Server de Steam.";
+  const file = officialIpsPath();
+  try {
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, `${ips.join("\n")}\n`, { mode: 0o600 });
+  } catch (error) {
+    return `No pude crear el archivo de IPs en ${file}. En Termux ejecuta primero: termux-setup-storage. Detalle: ${error.message}`;
+  }
+  return `Guardé ${ips.length} IPs oficiales, una por línea y sin puertos, en: ${file}`;
+}
 
 function pingResponse() {
   const dead = Number(process.env.PING_DEAD_CHANCE ?? "0.10");
@@ -72,6 +102,7 @@ export function ayuda() {
     "`!novigilar <nick|SteamID|URL>` — cancela una vigilancia",
     "`!lista` — muestra los jugadores vigilados en este chat",
     "`!escaneo [SteamID64|vanity|URL]` — fuerza un escaneo global o de un objetivo",
+    "`!ips` — guarda las IPs oficiales en Descargas (Termux)",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }
@@ -231,6 +262,9 @@ export async function handleCommand(text, context = {}) {
       if (result.error) return result.error;
       return `Escaneo completado: ${result.found} conectado(s), ${result.notified} aviso(s) enviado(s).`;
     }
+    case "ips":
+    case "guardarips":
+      return exportOfficialIps();
     case "ayuda":
     case "help":
       return ayuda();

@@ -49,6 +49,7 @@ Instala Termux desde [F-Droid][1] y ejecuta:
 ```bash
 pkg update && pkg upgrade
 pkg install nodejs-lts git
+termux-setup-storage
 
 git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
 cd infoplayerleft
@@ -107,6 +108,8 @@ El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias
 | `ALLOW_PRIVATE_SERVERS` | Permite consultar servidores locales, privados y públicos. Usa `false` para bloquear los locales. | `true` |
 | `WATCH_INTERVAL_SECONDS` | Intervalo del escaneo de vigilancia; nunca es inferior a 50 segundos. | `50` |
 | `WATCH_MAX_SERVERS` | Número máximo de servidores revisados. | `200` |
+| `WATCH_STATE_FILE` | Archivo donde se guarda la lista de vigilancia. | `watchlist.json` |
+| `OFFICIAL_IPS_FILE` | Ruta opcional del archivo de IPs oficiales. | Descargas de Termux |
 
 ## APIs y enlaces directos
 
@@ -169,6 +172,7 @@ Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El códi
 | `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
 | `!lista` | Muestra las vigilancias del chat. |
 | `!escaneo [SteamID64, vanity o URL]` | Ejecuta un escaneo manual inmediato y envía la información actual. |
+| `!ips` | Guarda las IPs públicas oficiales en un archivo de Descargas. |
 | `!ai <pregunta>` | Busca contexto web y responde con IA. |
 | `!tono <estilo>` | Cambia el tono de la IA. |
 | `!idioma <código o país>` | Cambia el idioma de la IA. |
@@ -203,6 +207,34 @@ Si quieres bloquear las consultas locales o privadas, configura:
 
 ```env
 ALLOW_PRIVATE_SERVERS=false
+```
+
+### Exportar IPs oficiales a un archivo
+
+El comando manual `!ips` consulta el Master Server de Steam y guarda únicamente las IPs públicas oficiales de L4D2. Escribe una IP por línea y no incluye puertos, dominios, `localhost` ni direcciones privadas.
+
+En Termux, el archivo se guarda por defecto en:
+
+```text
+~/storage/downloads/l4d2-official-ips.txt
+```
+
+Antes de utilizar el comando en Termux, concede acceso al almacenamiento una sola vez:
+
+```bash
+termux-setup-storage
+```
+
+Después, envía en WhatsApp:
+
+```text
+!ips
+```
+
+Puedes cambiar la ubicación mediante `OFFICIAL_IPS_FILE`. Por ejemplo:
+
+```env
+OFFICIAL_IPS_FILE=/sdcard/Download/l4d2-official-ips.txt
 ```
 
 ## Vigilancia de jugadores
