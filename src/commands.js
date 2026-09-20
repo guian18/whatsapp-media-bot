@@ -1,7 +1,8 @@
 // Lógica de comandos, independiente de WhatsApp: cada uno devuelve texto plano.
 import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
-import { cmdIA, cmdIdioma, cmdTono } from "./ai.js";
+import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
+import { listWatched, scanAndNotify, unwatchPlayer, watchPlayer } from "./watcher.js";
 
 const MAX_SERVERS = 200;
 const CONCURRENCY = 20;
@@ -65,7 +66,12 @@ export function ayuda() {
     "`!ping` — comprueba que el bot responde",
     "`!ai` / `!ia` `<pregunta>` — consulta Internet y responde con IA",
     "`!tono <estilo>` — cambia y guarda el tono de la IA",
-    "`!idioma <código>` — cambia y guarda el idioma de la IA",
+    "`!idioma <país|código>` — cambia y guarda el idioma de la IA",
+    "`!proveedor <nombre>` — cambia la IA y el modelo",
+    "`!vigilar <nick|SteamID|URL>` — avisa cuando un jugador se conecta a L4D2",
+    "`!novigilar <nick|SteamID|URL>` — cancela una vigilancia",
+    "`!lista` — muestra los jugadores vigilados en este chat",
+    "`!escaneo` — fuerza un escaneo de vigilancias",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }
@@ -193,7 +199,7 @@ async function cmdBuscarInterno(nickname) {
   return lines.join("\n");
 }
 
-export async function handleCommand(text) {
+export async function handleCommand(text, context = {}) {
   const match = (text || "").trim().match(/^!(\w+)\s*([\s\S]*)$/);
   if (!match) return null;
 
@@ -210,6 +216,20 @@ export async function handleCommand(text) {
       return cmdTono(args);
     case "idioma":
       return cmdIdioma(args);
+    case "proveedor":
+      return cmdProveedor(args);
+    case "vigilar":
+    case "vigilarnick":
+      return watchPlayer(args, context.jid);
+    case "novigilar":
+      return unwatchPlayer(args, context.jid);
+    case "lista":
+      return listWatched(context.jid);
+    case "escaneo": {
+      if (typeof context.sendMessage !== "function") return "El escaneo solo está disponible desde WhatsApp.";
+      const result = await scanAndNotify(context.sendMessage);
+      return `Escaneo completado: ${result.found} conectado(s), ${result.notified} aviso(s) enviado(s).`;
+    }
     case "ayuda":
     case "help":
       return ayuda();

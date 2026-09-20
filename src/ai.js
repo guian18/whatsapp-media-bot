@@ -4,6 +4,10 @@ const SEARCH_URL = "https://html.duckduckgo.com/html/";
 const DEFAULT_AI_URL = "https://api.openai.com/v1/chat/completions";
 const DEFAULT_AI_MODEL = "gpt-4o-mini";
 const AI_PRESETS = {
+  openai: {
+    url: "https://api.openai.com/v1/chat/completions",
+    model: "gpt-4o-mini",
+  },
   gemini: {
     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     model: "gemini-2.5-flash",
@@ -12,7 +16,25 @@ const AI_PRESETS = {
     url: "https://api.groq.com/openai/v1/chat/completions",
     model: "openai/gpt-oss-20b",
   },
+  xai: {
+    url: "https://api.x.ai/v1/responses",
+    model: "grok-4.6",
+  },
+  deepseek: {
+    url: "https://api.deepseek.com/v1/chat/completions",
+    model: "deepseek-chat",
+  },
+  mistral: {
+    url: "https://api.mistral.ai/v1/chat/completions",
+    model: "mistral-small-4-0-26-03",
+  },
+  openrouter: {
+    url: "https://openrouter.ai/api/v1/chat/completions",
+    model: "openrouter/auto",
+  },
 };
+const PROVIDER_ALIASES = { chatgpt: "openai", openai: "openai", grok: "xai", xai: "xai", gemini: "gemini", google: "gemini", groq: "groq", deepseek: "deepseek", mistral: "mistral", openrouter: "openrouter" };
+const PROVIDER_KEY_ENV = { openai: "OPENAI_API_KEY", xai: "XAI_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", deepseek: "DEEPSEEK_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
@@ -106,16 +128,17 @@ async function webSearch(question) {
 }
 
 function aiConfig() {
-  const key = (process.env.AI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
-  const provider = (process.env.AI_PROVIDER || "openai").trim().toLowerCase();
+  const provider = PROVIDER_ALIASES[(process.env.AI_PROVIDER || "openai").trim().toLowerCase()] || "openai";
+  const providerKey = PROVIDER_KEY_ENV[provider];
+  const key = (process.env[providerKey] || process.env.AI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
   const preset = AI_PRESETS[provider];
   const url = (process.env.AI_API_URL || preset?.url || DEFAULT_AI_URL).trim();
   const model = (process.env.AI_MODEL || preset?.model || DEFAULT_AI_MODEL).trim();
-  return { key, url, model };
+  return { key, url, model, provider };
 }
 
 async function askModel(question, style, sources, includeSources) {
-  const { key, url, model } = aiConfig();
+  const { key, url, model, provider } = aiConfig();
   if (!key) return null;
   const context = sources.length
     ? sources.map((s, i) => `[${i + 1}] ${s.title}\nURL: ${s.url}\n${s.snippet}`).join("\n\n")
@@ -128,21 +151,15 @@ async function askModel(question, style, sources, includeSources) {
   const languageName = languageInfo.name;
   const locale = LANGUAGES[language] ? language : "es-ES";
   const dateContext = new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(new Date());
+  const systemPrompt = `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`;
+  const userPrompt = `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}`;
+  const requestBody = provider === "xai"
+    ? { model, input: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], max_output_tokens: 700, store: false }
+    : { model, temperature: 0.2, max_tokens: 700, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }] };
   const response = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      max_tokens: 700,
-      messages: [
-        {
-          role: "system",
-          content: `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`,
-        },
-        { role: "user", content: `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}` },
-      ],
-    }),
+    body: JSON.stringify(requestBody),
     signal: timeoutSignal(REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) {
@@ -150,7 +167,12 @@ async function askModel(question, style, sources, includeSources) {
     throw new Error(`API de IA HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
   }
   const data = await response.json();
-  return data?.choices?.[0]?.message?.content?.trim() || "La IA no devolvió una respuesta.";
+  const outputItems = Array.isArray(data?.output) ? data.output.flatMap((item) => item.content || []) : [];
+  const responseText = data?.output_text || outputItems
+    .filter((item) => item.type === "output_text" || typeof item.text === "string")
+    .map((item) => item.text)
+    .join("\n") || data?.choices?.[0]?.message?.content;
+  return responseText?.trim() || "La IA no devolvió una respuesta.";
 }
 
 export function aiConfigured() {
@@ -213,6 +235,33 @@ export function cmdIdioma(value) {
     console.error("No se pudo guardar el idioma en .env:", error?.message || error);
   }
   return `Idioma cambiado a: ${LANGUAGES[requested].name}`;
+}
+
+export function cmdProveedor(value) {
+  const input = String(value || "").trim().toLowerCase();
+  const available = ["openai", "xai", "gemini", "groq", "deepseek", "mistral", "openrouter"];
+  if (!input || input === "lista") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
+  const provider = PROVIDER_ALIASES[input];
+  if (!provider || !AI_PRESETS[provider]) return `Proveedor no válido. Usa: ${available.join(", ")}`;
+  const model = AI_PRESETS[provider].model;
+  process.env.AI_PROVIDER = provider;
+  process.env.AI_MODEL = model;
+  process.env.AI_API_URL = "";
+  const file = process.env.ENV_FILE || ".env";
+  try {
+    if (existsSync(file)) {
+      let content = readFileSync(file, "utf8");
+      for (const [key, valueToSave] of [["AI_PROVIDER", provider], ["AI_MODEL", model], ["AI_API_URL", ""]]) {
+        const pattern = new RegExp(`^${key}\\s*=.*$`, "m");
+        if (pattern.test(content)) content = content.replace(pattern, `${key}=${valueToSave}`);
+        else content += `\n${key}=${valueToSave}\n`;
+      }
+      writeFileSync(file, content, { mode: 0o600 });
+    }
+  } catch (error) {
+    console.error("No se pudo guardar el proveedor en .env:", error?.message || error);
+  }
+  return `Proveedor cambiado a: ${provider}. Modelo: ${model}`;
 }
 
 export function detectStyle(question) {

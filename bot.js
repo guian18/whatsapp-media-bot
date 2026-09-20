@@ -28,6 +28,7 @@ import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 import { ensureSteamApiKey } from "./src/steamkey.js";
 import { getAuthDir } from "./src/config.js";
+import { startWatcher } from "./src/watcher.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
@@ -241,6 +242,7 @@ async function start() {
     browser: Browsers.macOS("Chrome"),
   });
   sockActual = sock;
+  startWatcher((jid, payload) => sock.sendMessage(jid, payload));
   pairingReconnecting = false;
 
   sock.ev.on("creds.update", () => {
@@ -360,7 +362,10 @@ async function start() {
 
       try {
         await sock.sendPresenceUpdate("composing", jid);
-        const reply = await handleCommand(text);
+        const reply = await handleCommand(text, {
+          jid,
+          sendMessage: (targetJid, payload) => sock.sendMessage(targetJid, payload),
+        });
         if (reply) {
           await sock.sendMessage(jid, { text: reply }, { quoted: msg });
         }

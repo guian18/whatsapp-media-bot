@@ -82,6 +82,9 @@ ALLOW_SELF=true
 ALLOWED_GROUPS=
 AUTH_DIR=auth_info
 AUTO_RESET=false
+WATCH_INTERVAL_MINUTES=3
+WATCH_MAX_SERVERS=200
+WATCH_STATE_FILE=watchlist.json
 ```
 
 Para ver todas las opciones comentadas en Termux, vuelve a copiar la plantilla solo si todavía no tienes datos propios:
@@ -113,8 +116,13 @@ Para `!ai` sin pagar, usa uno de estos niveles gratuitos oficiales:
 |---|---|---|
 | Groq Free tier | [Crear Groq API Key](https://console.groq.com/keys) | `AI_PROVIDER=groq` y `AI_MODEL=openai/gpt-oss-20b` |
 | Google Gemini Free tier | [Crear Gemini API Key](https://aistudio.google.com/apikey) | `AI_PROVIDER=gemini` y `AI_MODEL=gemini-2.5-flash` |
+| ChatGPT / OpenAI | [Crear OpenAI API Key](https://platform.openai.com/api-keys) | `AI_PROVIDER=openai` y `AI_MODEL=gpt-4o-mini` |
+| Grok / xAI | [Crear xAI API Key](https://console.x.ai/) | `AI_PROVIDER=xai` y `AI_MODEL=grok-4.6` |
+| DeepSeek | [Crear DeepSeek API Key](https://platform.deepseek.com/api_keys) | `AI_PROVIDER=deepseek` y `AI_MODEL=deepseek-chat` |
+| Mistral | [Crear Mistral API Key](https://console.mistral.ai/api-keys/) | `AI_PROVIDER=mistral` y `AI_MODEL=mistral-small-4-0-26-03` |
+| OpenRouter | [Crear OpenRouter API Key](https://openrouter.ai/keys) | `AI_PROVIDER=openrouter` y `AI_MODEL=openrouter/auto` |
 
-Google y Groq publican cuotas gratuitas, no ilimitadas. Sus límites pueden cambiar por modelo, cuenta y día. No se necesita añadir Google Custom Search ni Brave: las búsquedas del bot siguen usando DuckDuckGo sin API.
+Groq y Gemini pueden ofrecer cuotas gratuitas, pero no son ilimitadas. OpenAI, xAI, DeepSeek, Mistral y OpenRouter tienen sus propios precios, créditos o límites. No se necesita añadir Google Custom Search ni Brave: las búsquedas del bot siguen usando DuckDuckGo sin API.
 
 ### Enlaces gratuitos
 
@@ -170,6 +178,11 @@ Escanea el QR mostrado en la terminal desde **WhatsApp → Dispositivos vinculad
 | `!ayuda` | Muestra los comandos. |
 | `!tono <estilo>` | Cambia y guarda el tono de la IA. |
 | `!idioma <código>` | Cambia y guarda el idioma de la IA. |
+| `!proveedor <nombre>` | Cambia y guarda el proveedor y el modelo de IA. |
+| `!vigilar <nick|SteamID|URL>` | Avisa en este chat cuando el jugador se conecte a un servidor público de L4D2. |
+| `!novigilar <nick|SteamID|URL>` | Cancela una vigilancia. |
+| `!lista` | Muestra las vigilancias de este chat. |
+| `!escaneo` | Fuerza un escaneo inmediato. |
 | `!info <SteamID, vanity o URL>` | Consulta un perfil de Steam. |
 | `!buscar <nickname>` | Busca un jugador en servidores públicos de L4D2. |
 | `!servidor <IP:puerto>` | Consulta un servidor. |
@@ -221,6 +234,38 @@ Para cambiarlo manualmente y guardarlo para los siguientes reinicios:
 ```
 
 Con `!tono lista` se muestran los estilos disponibles.
+
+Para cambiar de proveedor sin editar `.env`:
+
+```text
+!proveedor lista
+!proveedor groq
+!proveedor gemini
+!proveedor openai
+!proveedor xai
+!proveedor deepseek
+!proveedor mistral
+!proveedor openrouter
+```
+
+El comando cambia automáticamente el modelo y la URL predeterminados. Debes tener la clave correspondiente en `AI_API_KEY`; el bot no comparte ni mueve las claves entre proveedores.
+
+También puedes guardar varias claves a la vez usando `OPENAI_API_KEY`, `XAI_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `DEEPSEEK_API_KEY`, `MISTRAL_API_KEY` y `OPENROUTER_API_KEY`. Al cambiar con `!proveedor`, el bot selecciona automáticamente la variable correspondiente.
+
+## Notificaciones de jugadores conectados
+
+El bot incorpora el notificador del ZIP proporcionado, adaptado de Discord a WhatsApp. Usa `!vigilar nick`, un SteamID64 o una URL de perfil de Steam. El bot escanea servidores públicos de Left 4 Dead 2 y envía un aviso al chat donde se creó la vigilancia cuando detecta una conexión nueva o un cambio de servidor. La lista y el último estado se guardan en `watchlist.json`, que está excluido de Git.
+
+Ejemplo:
+
+```text
+!vigilar tímidok7
+!lista
+!escaneo
+!novigilar tímidok7
+```
+
+El escaneo usa `STEAM_API_KEY` cuando está disponible y consulta el Master Server/A2S como respaldo. `WATCH_INTERVAL_MINUTES` define el intervalo mínimo (por defecto, 3 minutos); `WATCH_MAX_SERVERS` limita el número de servidores consultados para evitar saturar Termux.
 
 Para cambiar manualmente el idioma:
 

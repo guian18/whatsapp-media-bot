@@ -33,6 +33,9 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!tono desconocido"), /Tono no válido/);
   assert.match(await handleCommand("!idioma"), /Idiomas:/);
   assert.match(await handleCommand("!idioma klingon"), /Idioma no válido/);
+  assert.match(await handleCommand("!proveedor"), /Proveedores:/);
+  assert.match(await handleCommand("!proveedor desconocido"), /Proveedor no válido/);
+  assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
   if (previousAiKey === undefined) delete process.env.AI_API_KEY;
   else process.env.AI_API_KEY = previousAiKey;
   if (previousOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
