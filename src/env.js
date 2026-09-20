@@ -38,8 +38,10 @@ if (existsSync(file)) {
     migrated = true;
   };
 
-  // Una clave gsk_ identifica Groq aunque el .env provenga de una versión vieja.
-  if (apiKey.startsWith("gsk_") && provider !== "groq") {
+  // Solo inferimos Groq cuando no hay proveedor configurado. Una clave de Groq
+  // puede conservarse en .env como respaldo sin cambiar la elección explícita
+  // de `AI_PROVIDER=local`.
+  if (apiKey.startsWith("gsk_") && !provider) {
     provider = "groq";
     setEnvLine("AI_PROVIDER", "groq");
   }
@@ -58,7 +60,7 @@ if (existsSync(file)) {
   if (migrated) {
     try {
       writeFileSync(file, content, { mode: 0o600 });
-      console.log("Configuración de Groq migrada automáticamente.");
+      console.log("Configuración de IA migrada automáticamente.");
     } catch (error) {
       console.warn("No se pudo guardar la migración de .env; se usará durante esta ejecución:", error?.message || error);
     }
