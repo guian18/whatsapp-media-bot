@@ -98,6 +98,7 @@ El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias
 | `STEAM_API_KEY` | Clave para perfiles y funciones de Steam. | Vacío hasta configurarla |
 | `AI_PROVIDER` | Proveedor usado por `!ai`. | `groq` |
 | `AI_MODEL` | Modelo usado por el proveedor. | `openai/gpt-oss-20b` |
+| `AI_MEMORY_FILE` | Archivo privado con las últimas interacciones de `!ai` por chat. | `ai-memory.json` |
 | `SEARCH_PROVIDERS` | Proveedor de búsqueda web. | `duckduckgo` |
 | `WHATSAPP_NUMBER` | Número para vinculación directa, solo dígitos y código de país. | Vacío para usar QR |
 | `PAIRING_CODE` | Activa el código de vinculación cuando corresponde. | `false` |
@@ -144,6 +145,10 @@ OPENROUTER_APP_NAME=InfoPlayer Left
 ```
 
 Este archivo no modifica el arranque de WhatsApp. Si lo despliegas como función serverless, configura `OPENROUTER_API_KEY` como secreto del proveedor y limita el acceso del endpoint para evitar que terceros consuman tu saldo. No se añadió el `vercel.json` original porque sus rutas globales reemplazarían el funcionamiento normal de este bot.
+
+### Funciones de IA adaptadas
+
+`!ai` conserva las funciones compatibles del asistente de escritorio: usa el proveedor configurado en OpenRouter, recuerda las últimas interacciones de cada chat en `AI_MEMORY_FILE`, aplica los estilos configurables con `!tono` y responde con una advertencia de apoyo cuando detecta frases asociadas a una posible crisis. La memoria se guarda localmente y se excluye de Git mediante `.gitignore`.
 
 ## Vincular WhatsApp
 

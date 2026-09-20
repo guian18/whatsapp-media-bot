@@ -4,3 +4,4 @@ auth_info/
 *.log
 .steam_key
 watchlist.json
+ai-memory.json

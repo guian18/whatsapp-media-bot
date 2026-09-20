@@ -10,7 +10,7 @@ import { parseAddress, serverInfo } from "../src/a2s.js";
 import { formatOfficialAddresses } from "../src/official-addresses.js";
 import { SCAN_INTERVAL_MS } from "../src/watcher.js";
 import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
-import { detectStyle } from "../src/ai.js";
+import { containsRisk, detectStyle } from "../src/ai.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
@@ -116,6 +116,11 @@ test("official address export keeps public IP and port only", () => {
     { ip: "192.168.1.20", port: 27015 },
     { ip: "0.0.0.0", port: 0 },
   ]), ["8.8.8.8:27015"]);
+});
+
+test("AI detects crisis-risk phrases without requiring an API", () => {
+  assert.equal(containsRisk("no quiero vivir"), true);
+  assert.equal(containsRisk("quiero consultar el mapa"), false);
 });
 
 test("environment loader applies values from the configured .env file", (t) => {

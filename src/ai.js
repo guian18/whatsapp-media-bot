@@ -67,6 +67,39 @@ let requestInFlight = false;
 let lastRequestAt = 0;
 let manualStyle = null;
 let manualLanguage = null;
+let memoryLoaded = false;
+let memory = {};
+
+const RISK_KEYWORDS = ["suicid", "matarme", "me quiero morir", "no quiero vivir", "lastimarme", "quitarme la vida"];
+
+function memoryFile() {
+  return process.env.AI_MEMORY_FILE || "ai-memory.json";
+}
+
+function loadMemory() {
+  if (memoryLoaded) return memory;
+  memoryLoaded = true;
+  try {
+    const file = memoryFile();
+    if (existsSync(file)) memory = JSON.parse(readFileSync(file, "utf8")) || {};
+  } catch {
+    memory = {};
+  }
+  return memory;
+}
+
+function saveMemory() {
+  try {
+    writeFileSync(memoryFile(), JSON.stringify(memory, null, 2), { mode: 0o600 });
+  } catch (error) {
+    console.error("No se pudo guardar la memoria de IA:", error?.message || error);
+  }
+}
+
+export function containsRisk(text) {
+  const value = String(text || "").toLowerCase();
+  return RISK_KEYWORDS.some((keyword) => value.includes(keyword));
+}
 
 function envNumber(name, fallback) {
   const value = Number(process.env[name]);
@@ -153,7 +186,7 @@ function providerKeyMismatch(provider, key) {
   return null;
 }
 
-async function askModel(question, style, sources, includeSources) {
+async function askModel(question, style, sources, includeSources, history = []) {
   const { key, url, model, provider } = aiConfig();
   if (!key) return null;
   const context = sources.length
@@ -169,9 +202,10 @@ async function askModel(question, style, sources, includeSources) {
   const dateContext = new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(new Date());
   const systemPrompt = `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`;
   const userPrompt = `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}`;
+  const messages = [{ role: "system", content: systemPrompt }, ...history.slice(-8), { role: "user", content: userPrompt }];
   const requestBody = provider === "xai"
-    ? { model, input: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], max_output_tokens: 700, store: false }
-    : { model, temperature: 0.2, max_tokens: 700, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }] };
+    ? { model, input: messages, max_output_tokens: 700, store: false }
+    : { model, temperature: 0.2, max_tokens: 700, messages };
   const response = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
@@ -304,7 +338,7 @@ function requestsSources(question) {
   return /\b(fuente|fuentes|enlace|enlaces|link|links|url|urls|referencia|referencias|origen|orígenes|cita|citas)\b/i.test(question);
 }
 
-export async function cmdIA(question) {
+export async function cmdIA(question, chatId = null) {
   const query = String(question || "").trim();
   const configured = configuredStyle();
   const styleName = manualStyle || detectStyle(query) || configured.styleName;
@@ -312,6 +346,9 @@ export async function cmdIA(question) {
   const includeSources = requestsSources(query);
   if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;
+  if (containsRisk(query)) {
+    return "Siento que estés pasando por esto. Si estás en peligro inmediato, contacta a emergencias de tu país o a una persona de confianza ahora mismo. No tienes que afrontar esta situación a solas.";
+  }
   if (!aiConfigured()) {
     return "La IA no está configurada. Añade `AI_API_KEY` (o `OPENAI_API_KEY`) en el entorno y vuelve a intentarlo.";
   }
@@ -333,8 +370,13 @@ export async function cmdIA(question) {
       // DuckDuckGo está lento, bloqueado o no disponible en Termux.
       console.error("Búsqueda web no disponible; se continuará sin fuentes:", error?.message || error);
     }
-    const answer = await askModel(query, style, sources, includeSources);
+    const history = chatId ? (loadMemory()[chatId] || []) : [];
+    const answer = await askModel(query, style, sources, includeSources, history);
     if (!answer) return "No se pudo consultar la IA.";
+    if (chatId) {
+      memory[chatId] = [...history, { role: "user", content: query }, { role: "assistant", content: answer }].slice(-20);
+      saveMemory();
+    }
     const sourceLines = includeSources && sources.length
       ? `\n\nFuentes:\n${sources.map((s, i) => `[${i + 1}] ${s.url}`).join("\n")}`
       : "";

@@ -252,7 +252,7 @@ export async function handleCommand(text, context = {}) {
       return pingResponse();
     case "ai":
     case "ia":
-      return cmdIA(args);
+      return cmdIA(args, context.jid || null);
     case "tono":
       return cmdTono(args);
     case "idioma":
