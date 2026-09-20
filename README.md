@@ -109,7 +109,7 @@ El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias
 | `WATCH_INTERVAL_SECONDS` | Intervalo del escaneo de vigilancia; nunca es inferior a 50 segundos. | `50` |
 | `WATCH_MAX_SERVERS` | Número máximo de servidores revisados. | `200` |
 | `WATCH_STATE_FILE` | Archivo donde se guarda la lista de vigilancia. | `watchlist.json` |
-| `OFFICIAL_IPS_FILE` | Ruta opcional del archivo de IPs oficiales. | Descargas de Termux |
+| `OFFICIAL_ADDRESSES_FILE` | Ruta opcional del archivo de direcciones oficiales completas. | Descargas de Termux |
 
 ## APIs y enlaces directos
 
@@ -172,7 +172,7 @@ Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El códi
 | `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
 | `!lista` | Muestra las vigilancias del chat. |
 | `!escaneo [SteamID64, vanity o URL]` | Ejecuta un escaneo manual inmediato y envía la información actual. |
-| `!ips` | Guarda las direcciones públicas oficiales en formato `IP:puerto` en un archivo de Descargas. |
+| `!direcciones` | Guarda las direcciones públicas oficiales completas en formato `IP:puerto`. |
 | `!ai <pregunta>` | Busca contexto web y responde con IA. |
 | `!tono <estilo>` | Cambia el tono de la IA. |
 | `!idioma <código o país>` | Cambia el idioma de la IA. |
@@ -209,14 +209,14 @@ Si quieres bloquear las consultas locales o privadas, configura:
 ALLOW_PRIVATE_SERVERS=false
 ```
 
-### Exportar IPs oficiales a un archivo
+### Exportar direcciones oficiales a un archivo
 
-El comando manual `!ips` consulta el Master Server de Steam y guarda únicamente las direcciones públicas oficiales de L4D2 en formato `IP:puerto`, una por línea. No incluye `0.0.0.0:0000`, que es el marcador de fin de la respuesta, ni dominios, `localhost` o direcciones privadas.
+El comando manual `!direcciones` consulta el Master Server de Steam y guarda únicamente las direcciones públicas oficiales de L4D2 en formato `IP:puerto`, una por línea. No incluye `0.0.0.0:0000`, que es el marcador de fin de la respuesta, ni dominios, `localhost` o direcciones privadas.
 
 En Termux, el archivo se guarda por defecto en:
 
 ```text
-~/storage/downloads/l4d2-official-ips.txt
+~/storage/downloads/l4d2-official-addresses.txt
 ```
 
 Antes de utilizar el comando en Termux, concede acceso al almacenamiento una sola vez:
@@ -228,13 +228,13 @@ termux-setup-storage
 Después, envía en WhatsApp:
 
 ```text
-!ips
+!direcciones
 ```
 
-Puedes cambiar la ubicación mediante `OFFICIAL_IPS_FILE`. Por ejemplo:
+Puedes cambiar la ubicación mediante `OFFICIAL_ADDRESSES_FILE`. Por ejemplo:
 
 ```env
-OFFICIAL_IPS_FILE=/sdcard/Download/l4d2-official-ips.txt
+OFFICIAL_ADDRESSES_FILE=/sdcard/Download/l4d2-official-addresses.txt
 ```
 
 ## Vigilancia de jugadores

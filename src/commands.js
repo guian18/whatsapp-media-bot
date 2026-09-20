@@ -14,20 +14,20 @@ const MAX_RESULTS = 8;
 const MAX_NICKNAME_LENGTH = 64;
 let searchInFlight = false;
 
-function officialIpsPath() {
-  const configured = String(process.env.OFFICIAL_IPS_FILE || "").trim();
+function officialAddressesPath() {
+  const configured = String(process.env.OFFICIAL_ADDRESSES_FILE || "").trim();
   if (configured) return configured;
   const isTermux = Boolean(process.env.TERMUX_VERSION) || String(process.env.PREFIX || "").includes("com.termux");
   return isTermux
-    ? join(homedir(), "storage", "downloads", "l4d2-official-ips.txt")
-    : join(process.cwd(), "l4d2-official-ips.txt");
+    ? join(homedir(), "storage", "downloads", "l4d2-official-addresses.txt")
+    : join(process.cwd(), "l4d2-official-addresses.txt");
 }
 
 function isPublicIpv4(ip) {
   return /^(?!10\.)(?!127\.)(?!169\.254\.)(?!192\.168\.)(?!172\.(1[6-9]|2\d|3[01])\.)(?!224\.)(?!0\.)(?:\d{1,3}\.){3}\d{1,3}$/.test(ip);
 }
 
-async function exportOfficialIps() {
+async function exportOfficialAddresses() {
   const servers = await masterServerList({ limit: MAX_SERVERS });
   const addresses = [...new Set(
     servers
@@ -35,12 +35,12 @@ async function exportOfficialIps() {
       .map(({ ip, port }) => `${ip}:${port}`)
   )].sort();
   if (!addresses.length) return "No se encontraron servidores oficiales en el Master Server de Steam.";
-  const file = officialIpsPath();
+  const file = officialAddressesPath();
   try {
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, `${addresses.join("\n")}\n`, { mode: 0o600 });
   } catch (error) {
-    return `No pude crear el archivo de IPs en ${file}. En Termux ejecuta primero: termux-setup-storage. Detalle: ${error.message}`;
+    return `No pude crear el archivo de direcciones en ${file}. En Termux ejecuta primero: termux-setup-storage. Detalle: ${error.message}`;
   }
   return `Guardé ${addresses.length} servidores oficiales en formato IP:puerto, en: ${file}`;
 }
@@ -106,7 +106,7 @@ export function ayuda() {
     "`!novigilar <nick|SteamID|URL>` — cancela una vigilancia",
     "`!lista` — muestra los jugadores vigilados en este chat",
     "`!escaneo [SteamID64|vanity|URL]` — fuerza un escaneo global o de un objetivo",
-    "`!ips` — guarda direcciones oficiales IP:puerto en Descargas (Termux)",
+    "`!direcciones` — guarda direcciones oficiales IP:puerto en Descargas (Termux)",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }
@@ -266,9 +266,8 @@ export async function handleCommand(text, context = {}) {
       if (result.error) return result.error;
       return `Escaneo completado: ${result.found} conectado(s), ${result.notified} aviso(s) enviado(s).`;
     }
-    case "ips":
-    case "guardarips":
-      return exportOfficialIps();
+    case "direcciones":
+      return exportOfficialAddresses();
     case "ayuda":
     case "help":
       return ayuda();
