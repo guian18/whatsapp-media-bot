@@ -137,6 +137,22 @@ function aiConfig() {
   return { key, url, model, provider };
 }
 
+function providerKeyStatus(provider) {
+  const variable = PROVIDER_KEY_ENV[provider] || "AI_API_KEY";
+  const specific = Boolean((process.env[variable] || "").trim());
+  const generic = Boolean((process.env.AI_API_KEY || "").trim());
+  return { variable, specific, generic };
+}
+
+function providerKeyMismatch(provider, key) {
+  const value = String(key || "").trim();
+  if (value.startsWith("gsk_") && provider !== "groq") return "La clave parece de Groq; usa !proveedor groq o configura la clave del proveedor seleccionado.";
+  if (value.startsWith("AIza") && provider !== "gemini") return "La clave parece de Gemini; usa !proveedor gemini o configura la clave del proveedor seleccionado.";
+  if (value.startsWith("xai-") && provider !== "xai") return "La clave parece de xAI; usa !proveedor xai o configura la clave del proveedor seleccionado.";
+  if (value.startsWith("sk-or-") && provider !== "openrouter") return "La clave parece de OpenRouter; usa !proveedor openrouter o configura la clave del proveedor seleccionado.";
+  return null;
+}
+
 async function askModel(question, style, sources, includeSources) {
   const { key, url, model, provider } = aiConfig();
   if (!key) return null;
@@ -261,7 +277,13 @@ export function cmdProveedor(value) {
   } catch (error) {
     console.error("No se pudo guardar el proveedor en .env:", error?.message || error);
   }
-  return `Proveedor cambiado a: ${provider}. Modelo: ${model}`;
+  const keyStatus = providerKeyStatus(provider);
+  const keyMessage = keyStatus.specific
+    ? `Clave detectada en ${keyStatus.variable}.`
+    : keyStatus.generic
+      ? `Se usará AI_API_KEY; comprueba que sea una clave de ${provider}.`
+      : `Falta ${keyStatus.variable} (o AI_API_KEY).`;
+  return `Proveedor cambiado a: ${provider}. Modelo: ${model}. ${keyMessage}`;
 }
 
 export function detectStyle(question) {
@@ -293,6 +315,8 @@ export async function cmdIA(question) {
   if (!aiConfigured()) {
     return "La IA no está configurada. Añade `AI_API_KEY` (o `OPENAI_API_KEY`) en el entorno y vuelve a intentarlo.";
   }
+  const mismatch = providerKeyMismatch(aiConfig().provider, aiConfig().key);
+  if (mismatch) return mismatch;
   if (requestInFlight) return "Ya hay una consulta de IA en curso. Intenta de nuevo en unos segundos.";
   const now = Date.now();
   const interval = envNumber("AI_MIN_INTERVAL_MS", MIN_INTERVAL_MS);
@@ -317,7 +341,10 @@ export async function cmdIA(question) {
     return `_${styleName}_\n${answer}${sourceLines}`.slice(0, 3900);
   } catch (error) {
     console.error("Error en !ai:", error?.message || error);
-    return "No pude consultar Internet o la IA ahora. Intenta de nuevo más tarde.";
+    const detail = String(error?.message || "error desconocido")
+      .replace(/(?:sk-|gsk_|AIza|xai-|sk-or-v1-)[A-Za-z0-9_\-]+/g, "[clave oculta]")
+      .slice(0, 220);
+    return `No pude consultar Internet o la IA ahora. Detalle: ${detail}`;
   } finally {
     requestInFlight = false;
   }
