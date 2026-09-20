@@ -205,6 +205,26 @@ ALLOW_PRIVATE_SERVERS=true
 
 La vigilancia automática se ejecuta cada 50 segundos como mínimo. Puedes aumentar el intervalo con `WATCH_INTERVAL_SECONDS`, pero no reducirlo por debajo de 50 segundos.
 
+### Escaneo manual inmediato
+
+`!escaneo` no activa una vigilancia nueva ni espera al siguiente ciclo automático. Ejecuta una consulta en ese momento y envía la información actual del jugador y del servidor, incluso si ya se había enviado un aviso anteriormente.
+
+Para revisar todas las vigilancias:
+
+```text
+!escaneo
+```
+
+Para revisar únicamente una vigilancia concreta:
+
+```text
+!escaneo 76561198000000000
+!escaneo nombre_de_usuario
+!escaneo https://steamcommunity.com/id/nombre_de_usuario
+```
+
+El objetivo indicado debe existir previamente en la lista de `!vigilar`. Si no hay una vigilancia para ese identificador, el bot lo informa sin crear una nueva.
+
 La vigilancia puede consumir batería, datos y CPU, especialmente con muchos servidores y un intervalo corto. En Termux, aumenta `WATCH_INTERVAL_SECONDS` si el teléfono se calienta o consume demasiados datos.
 
 ## Sesión y reinicio
