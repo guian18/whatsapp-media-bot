@@ -256,6 +256,14 @@ function configuredStyle() {
   return { styleName, style: STYLES[styleName] };
 }
 
+function nicknameRoast(question) {
+  if (!/\b(?:dile|di|manda|escribe)\b[\s\S]*\b(?:apodo|nickname)\b/i.test(question)) return null;
+  const match = question.match(/\b(?:apodo|nickname)\s+["“']?([^"”'\n,!?]+?)["”']?\s*$/i);
+  const nickname = match?.[1]?.trim();
+  if (!nickname || nickname.length > 64) return null;
+  return `${nickname}, eres más despistado que un bot sin conexión: mucho apodo y poco juego, campeón 😄`;
+}
+
 export function cmdTono(value) {
   const requested = String(value || "").trim().toLowerCase();
   if (!requested || requested === "lista") {
@@ -368,12 +376,14 @@ export async function cmdIA(question, chatId = null) {
   const style = styleName === "insultos"
     ? `${STYLES[styleName]}; si piden decirle algo a alguien o a un apodo, responde con una burla juguetona y al menos un insulto genérico leve, no con un saludo amable. Manténlo breve y amistoso.`
     : STYLES[styleName];
+  const quickRoast = styleName === "insultos" ? nicknameRoast(query) : null;
   const includeSources = requestsSources(query);
   if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;
   if (containsRisk(query)) {
     return "Siento que estés pasando por esto. Si estás en peligro inmediato, contacta a emergencias de tu país o a una persona de confianza ahora mismo. No tienes que afrontar esta situación a solas.";
   }
+  if (quickRoast) return `_${styleName}_\n${quickRoast}`;
   if (!aiConfigured()) {
     return "La IA no está configurada. Añade `AI_API_KEY` o la clave específica del proveedor gratuito seleccionado en el entorno y vuelve a intentarlo.";
   }

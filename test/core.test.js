@@ -306,6 +306,16 @@ test("ai detects the tone used in the question", () => {
   assert.equal(detectStyle("consulta normal"), null);
 });
 
+test("insult mode roasts a nickname request without waiting for the model", async () => {
+  const previousStyle = process.env.AI_DEFAULT_STYLE;
+  process.env.AI_DEFAULT_STYLE = "insultos";
+  const answer = await cmdIA("dile algo a alguien con apodo PruebaNick");
+  assert.match(answer, /PruebaNick/);
+  assert.match(answer, /despistado|poco juego/);
+  if (previousStyle === undefined) delete process.env.AI_DEFAULT_STYLE;
+  else process.env.AI_DEFAULT_STYLE = previousStyle;
+});
+
 test("environment loader migrates the deprecated Groq model", (t) => {
   const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-migration-"));
   const envFile = path.join(dir, ".env");
