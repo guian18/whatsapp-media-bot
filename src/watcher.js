@@ -103,9 +103,9 @@ export async function unwatchPlayer(input, jid) {
 export function listWatched(jid) {
   const rows = Object.keys(state.watchlist)
     .filter((key) => state.watchlist[key].includes(jid))
-    .map((key) => {
+    .map((key, index) => {
       const seen = state.lastSeen[key];
-      return `• ${labelFor(key)} — ${seen ? `🟢 ${seen}` : "⚪ no visto ahora"}`;
+      return `${index + 1}. ${labelFor(key)} — ${seen ? `🟢 ${seen}` : "⚪ no visto ahora"}`;
     });
   return rows.length ? `Jugadores vigilados:\n${rows.join("\n")}` : "No vigilas jugadores aquí. Usa !vigilar <nickname|SteamID|URL>.";
 }

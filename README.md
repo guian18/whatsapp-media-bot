@@ -259,6 +259,8 @@ Responde con el número elegido:
 1
 ```
 
+También puedes escribir directamente `!escaneo 1`; el bot usará la primera vigilancia actual del chat aunque no hayas enviado antes `!escaneo`.
+
 El número debe corresponder a una vigilancia creada previamente con `!vigilar`. Si no hay vigilancias en el chat, el bot lo informa sin crear una nueva.
 
 La vigilancia puede consumir batería, datos y CPU, especialmente con muchos servidores y un intervalo corto. En Termux, aumenta `WATCH_INTERVAL_SECONDS` si el teléfono se calienta o consume demasiados datos.

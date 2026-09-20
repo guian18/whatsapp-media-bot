@@ -247,10 +247,19 @@ export async function handleCommand(text, context = {}) {
         return ["Selecciona el jugador del que quieres información enviando solo el número:", ...options.map((item, index) => `${index + 1}. ${item.label}`)].join("\n");
       }
       if (/^\d+$/.test(args) && context.jid && pendingScans.has(context.jid)) {
-        const options = pendingScans.get(context.jid);
+        const options = pendingScans.get(context.jid) || watchedTargets(context.jid);
         const selected = options[Number(args) - 1];
         if (!selected) return `Número no válido. Elige uno entre 1 y ${options.length}.`;
         pendingScans.delete(context.jid);
+        const selectedResult = await scanAndNotify(context.sendMessage, null, { manual: true, targetKey: selected.key });
+        if (selectedResult.error) return selectedResult.error;
+        return `Escaneo de ${selected.label}: ${selectedResult.found} conectado(s), ${selectedResult.notified} información enviada.`;
+      }
+      if (/^\d+$/.test(args) && context.jid) {
+        const options = watchedTargets(context.jid);
+        const selected = options[Number(args) - 1];
+        if (!options.length) return "No vigilas jugadores aquí. Usa !vigilar <SteamID64|vanity|URL>.";
+        if (!selected) return `Número no válido. Elige uno entre 1 y ${options.length}.`;
         const selectedResult = await scanAndNotify(context.sendMessage, null, { manual: true, targetKey: selected.key });
         if (selectedResult.error) return selectedResult.error;
         return `Escaneo de ${selected.label}: ${selectedResult.found} conectado(s), ${selectedResult.notified} información enviada.`;
