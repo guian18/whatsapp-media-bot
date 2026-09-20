@@ -45,6 +45,7 @@ const ALLOW_SELF = true;
 const AUTO_RESET = process.env.AUTO_RESET === "true";
 
 const AUTH_DIR = getAuthDir();
+const BOT_STARTED_AT = new Date().toISOString();
 
 let yaReseteado = false;
 let reiniciando = false;
@@ -63,6 +64,9 @@ startControlServer({
     whatsapp: connectionState === "online" ? "online" : connectionState,
     provider: process.env.AI_PROVIDER || "local",
     model: process.env.AI_MODEL || "local-model",
+    pid: process.pid,
+    startedAt: BOT_STARTED_AT,
+    uptimeSeconds: Math.floor(process.uptime()),
     controlApi: true,
   }),
   testAI: (question) => cmdIA(question),
