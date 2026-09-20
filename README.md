@@ -103,7 +103,7 @@ PAIRING_CODE=false
 
 El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias claves, es preferible configurar la variable específica de cada proveedor, como `GROQ_API_KEY` o `OPENAI_API_KEY`.
 
-Para usar Claude directamente, crea una clave en la [consola oficial de Anthropic](https://platform.claude.com/settings/keys), guárdala como `ANTHROPIC_API_KEY` y ejecuta `!proveedor claude` o `!proveedor anthropic`. La integración usa la Messages API oficial (`/v1/messages`), el encabezado `x-api-key` y `anthropic-version: 2023-06-01`. El modelo predeterminado es `claude-sonnet-5`; puedes reemplazarlo con `AI_MODEL` si tu cuenta tiene acceso a otro modelo.
+La lista principal de esta guía contiene solo proveedores con modalidad gratuita verificada. El código mantiene compatibilidad opcional con otros proveedores, pero no se incluyen aquí como alternativas sin coste.
 
 ### Opciones frecuentes
 
@@ -113,7 +113,6 @@ Para usar Claude directamente, crea una clave en la [consola oficial de Anthropi
 | `AI_PROVIDER` | Proveedor usado por `!ai`. | `groq` |
 | `AI_MODEL` | Modelo usado por el proveedor. | `openai/gpt-oss-20b` |
 | `AI_MEMORY_FILE` | Archivo privado con las últimas interacciones de `!ai` por chat. | `ai-memory.json` |
-| `ANTHROPIC_API_KEY` | Clave de la API oficial de Claude. | Vacío hasta configurarla |
 | `SEARCH_PROVIDERS` | Proveedor de búsqueda web. | `duckduckgo` |
 | `WHATSAPP_NUMBER` | Número para vinculación directa, solo dígitos y código de país. | Vacío para usar QR |
 | `PAIRING_CODE` | Activa el código de vinculación cuando corresponde. | `false` |
@@ -134,22 +133,20 @@ Para usar Claude directamente, crea una clave en la [consola oficial de Anthropi
 - [Crear Steam Web API Key][2] — variable `STEAM_API_KEY`.
 - DuckDuckGo funciona sin clave mediante `SEARCH_PROVIDERS=duckduckgo`.
 
-### Proveedores de IA
+### Proveedores de IA gratuitos
 
-Elige un proveedor, crea la clave desde su enlace oficial y configura la variable correspondiente. También puedes cambiar el proveedor desde WhatsApp con `!proveedor <nombre>`.
+Elige un proveedor gratuito, crea la clave desde su enlace oficial y configura la variable correspondiente. También puedes cambiar el proveedor desde WhatsApp con `!proveedor <nombre>`. Las cuotas y los modelos gratuitos pueden cambiar; revisa siempre la página oficial antes de usar el bot.
 
 | Proveedor | Enlace oficial | Configuración predeterminada | Variable |
 |---|---|---|---|
-| Groq | [Crear API key][3] | `groq` / `openai/gpt-oss-20b` | `GROQ_API_KEY` |
-| Google Gemini | [Crear API key][4] | `gemini` / `gemini-2.5-flash` | `GEMINI_API_KEY` |
-| OpenAI | [Crear API key][5] | `openai` / `gpt-4o-mini` | `OPENAI_API_KEY` |
-| xAI | [Crear API key][6] | `xai` / `grok-4.6` | `XAI_API_KEY` |
-| DeepSeek | [Crear API key][7] | `deepseek` / `deepseek-chat` | `DEEPSEEK_API_KEY` |
-| Mistral | [Crear API key][8] | `mistral` / `mistral-small-4-0-26-03` | `MISTRAL_API_KEY` |
-| OpenRouter | [Crear API key][9] | `openrouter` / `openrouter/auto` | `OPENROUTER_API_KEY` |
-| Anthropic Claude | [Crear API key](https://platform.claude.com/settings/keys) | `anthropic` / `claude-sonnet-5` | `ANTHROPIC_API_KEY` |
+| Groq | [Crear API key](https://console.groq.com/keys) · [límites gratuitos](https://console.groq.com/docs/rate-limits) | `groq` / `openai/gpt-oss-20b` | `GROQ_API_KEY` |
+| Google Gemini | [Crear API key](https://aistudio.google.com/apikey) · [cuotas Free](https://ai.google.dev/gemini-api/docs/rate-limits) | `gemini` / `gemini-2.5-flash` | `GEMINI_API_KEY` |
+| Mistral | [Mistral Docs](https://docs.mistral.ai/) · [uso y límites](https://docs.mistral.ai/admin/billing-usage/usage-limits) | `mistral` / `mistral-small-4-0-26-03` | `MISTRAL_API_KEY` |
+| OpenRouter | [Crear API key](https://openrouter.ai/keys) · [modelos gratuitos](https://openrouter.ai/docs/guides/overview/models) | `openrouter` / selecciona un modelo `:free` | `OPENROUTER_API_KEY` |
 
-Las cuotas, precios y límites dependen de cada proveedor. Comprueba sus condiciones antes de usar una clave de pago. Consulta la [documentación oficial de Claude](https://platform.claude.com/docs/en/api/messages) y la [guía de modelos](https://platform.claude.com/docs/en/models/overview) para conocer disponibilidad, precios y retiros.
+OpenRouter tiene modelos gratuitos concretos, no todo su catálogo es gratuito. En Mistral, activa el modo gratuito de Studio si está disponible para tu cuenta. Ninguna modalidad gratuita garantiza disponibilidad ilimitada.
+
+> **Proveedores no incluidos en la lista gratuita:** OpenAI, xAI, DeepSeek y Anthropic Claude requieren normalmente facturación o solo ofrecen créditos iniciales de prueba. Su compatibilidad puede permanecer en el código, pero no se recomiendan aquí como opciones gratuitas.
 
 ### Proxy opcional de OpenRouter
 
@@ -355,10 +352,3 @@ Consulta el historial del repositorio para conocer los cambios y las condiciones
 
 [1]: https://f-droid.org/packages/com.termux/ "Termux en F-Droid"
 [2]: https://steamcommunity.com/dev/apikey "Steam Web API Key"
-[3]: https://console.groq.com/keys "Groq API Keys"
-[4]: https://aistudio.google.com/apikey "Google AI Studio API Keys"
-[5]: https://platform.openai.com/api-keys "OpenAI API Keys"
-[6]: https://console.x.ai/team/default/api-keys "xAI API Keys"
-[7]: https://platform.deepseek.com/api_keys "DeepSeek API Keys"
-[8]: https://console.mistral.ai/api-keys/ "Mistral API Keys"
-[9]: https://openrouter.ai/keys "OpenRouter API Keys"
