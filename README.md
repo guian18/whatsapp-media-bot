@@ -131,6 +131,11 @@ Groq y Gemini pueden ofrecer cuotas gratuitas, pero no son ilimitadas. OpenAI, x
 | Steam | [Crear Steam Web API Key](https://steamcommunity.com/dev/apikey) | `STEAM_API_KEY` |
 | Groq | [Crear Groq API Key](https://console.groq.com/keys) | `AI_API_KEY` |
 | Gemini | [Crear Gemini API Key](https://aistudio.google.com/apikey) | `AI_API_KEY` |
+| ChatGPT / OpenAI | [Crear OpenAI API Key](https://platform.openai.com/api-keys) | `OPENAI_API_KEY` |
+| Grok / xAI | [Crear xAI API Key](https://console.x.ai/team/default/api-keys) | `XAI_API_KEY` |
+| DeepSeek | [Crear DeepSeek API Key](https://platform.deepseek.com/api_keys) | `DEEPSEEK_API_KEY` |
+| Mistral | [Crear Mistral API Key](https://console.mistral.ai/api-keys/) | `MISTRAL_API_KEY` |
+| OpenRouter | [Crear OpenRouter API Key](https://openrouter.ai/keys) | `OPENROUTER_API_KEY` |
 
 Documentación oficial: [Steam Web API](https://steamcommunity.com/dev), [DuckDuckGo](https://duckduckgo.com/), [Groq Quickstart](https://console.groq.com/docs/quickstart), [Groq límites](https://console.groq.com/docs/rate-limits), [Gemini OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai), [Gemini precios](https://ai.google.dev/gemini-api/docs/pricing) y [Gemini límites](https://ai.google.dev/gemini-api/docs/rate-limits).
 
