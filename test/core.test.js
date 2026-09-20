@@ -15,9 +15,11 @@ import { aiConfigured, cmdIA, containsRisk, detectStyle } from "../src/ai.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
+  const previousProvider = process.env.AI_PROVIDER;
   const previousAiKey = process.env.AI_API_KEY;
   const previousPingDeadChance = process.env.PING_DEAD_CHANCE;
   const previousPingTripChance = process.env.PING_TRIP_CHANCE;
+  process.env.AI_PROVIDER = "groq";
   process.env.AI_API_KEY = "";
   process.env.PING_DEAD_CHANCE = "0";
   process.env.PING_TRIP_CHANCE = "0";
@@ -46,6 +48,8 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!escaneo"), /solo está disponible desde WhatsApp/);
   assert.match(await handleCommand("!help"), /!proveedor/);
   assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
+  if (previousProvider === undefined) delete process.env.AI_PROVIDER;
+  else process.env.AI_PROVIDER = previousProvider;
   if (previousAiKey === undefined) delete process.env.AI_API_KEY;
   else process.env.AI_API_KEY = previousAiKey;
   if (previousPingDeadChance === undefined) delete process.env.PING_DEAD_CHANCE;
@@ -185,6 +189,38 @@ test("local AI provider accepts an OpenAI-compatible response", async (t) => {
   }
 });
 
+test("local AI timeout returns an actionable message", async () => {
+  const previousProvider = process.env.AI_PROVIDER;
+  const previousUrl = process.env.AI_LOCAL_URL;
+  const previousInterval = process.env.AI_MIN_INTERVAL_MS;
+  const previousTimeout = process.env.AI_LOCAL_TIMEOUT_MS;
+  const previousFetch = globalThis.fetch;
+  process.env.AI_PROVIDER = "local";
+  process.env.AI_LOCAL_URL = "http://127.0.0.1:8080/v1/chat/completions";
+  process.env.AI_MIN_INTERVAL_MS = "0";
+  process.env.AI_LOCAL_TIMEOUT_MS = "3000";
+  globalThis.fetch = async (url) => {
+    if (String(url).startsWith("https://html.duckduckgo.com/")) return new Response("", { status: 200 });
+    throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+  };
+
+  try {
+    const response = await cmdIA("prueba de tiempo de espera");
+    assert.match(response, /llama\.cpp tardó más de 3 segundos/);
+    assert.match(response, /AI_LOCAL_TIMEOUT_MS/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousProvider === undefined) delete process.env.AI_PROVIDER;
+    else process.env.AI_PROVIDER = previousProvider;
+    if (previousUrl === undefined) delete process.env.AI_LOCAL_URL;
+    else process.env.AI_LOCAL_URL = previousUrl;
+    if (previousInterval === undefined) delete process.env.AI_MIN_INTERVAL_MS;
+    else process.env.AI_MIN_INTERVAL_MS = previousInterval;
+    if (previousTimeout === undefined) delete process.env.AI_LOCAL_TIMEOUT_MS;
+    else process.env.AI_LOCAL_TIMEOUT_MS = previousTimeout;
+  }
+});
+
 test("environment loader applies values from the configured .env file", (t) => {
   const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-env-"));
   const envFile = path.join(dir, ".env");
@@ -231,4 +267,24 @@ test("environment loader migrates the deprecated Groq model", (t) => {
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(readFileSync(envFile, "utf8"), /AI_MODEL=openai\/gpt-oss-20b/);
+});
+
+test("environment loader preserves explicit local provider with a Groq key", (t) => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-local-provider-"));
+  const envFile = path.join(dir, ".env");
+  writeFileSync(envFile, "AI_PROVIDER=local\nAI_API_KEY=gsk_preserved\nAI_MODEL=local-model\n", "utf8");
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+  const childEnv = { ...process.env, ENV_FILE: envFile, TEST_ENV_LOAD: "loaded-from-file" };
+  delete childEnv.AI_PROVIDER;
+  delete childEnv.AI_API_KEY;
+  delete childEnv.AI_MODEL;
+  const result = spawnSync(process.execPath, ["fixtures/env-loader-child.js"], {
+    cwd: process.cwd(),
+    env: childEnv,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(readFileSync(envFile, "utf8"), /AI_PROVIDER=local/);
+  assert.match(readFileSync(envFile, "utf8"), /AI_API_KEY=gsk_preserved/);
 });
