@@ -92,7 +92,7 @@ export function ayuda() {
     "`!servidor <ip:puerto>` — información detallada de un servidor",
     "`!jugadores <ip:puerto>` — lista los jugadores conectados",
     "`!ping` — comprueba que el bot responde",
-    "`!ai` / `!ia` `<pregunta>` — consulta Internet y responde con IA",
+    "`!ai` / `!ia` `<pregunta>` — responde con IA; añade `fuentes` si necesitas buscar en Internet",
     "`!tono <estilo>` — cambia y guarda el tono de la IA",
     "`!idioma <país|código>` — cambia y guarda el idioma de la IA",
     "`!proveedor <nombre>` — cambia la IA y el modelo",
