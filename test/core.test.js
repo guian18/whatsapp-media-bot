@@ -160,7 +160,7 @@ test("control API protects status and preserves secret keys", async (t) => {
   const previousPort = process.env.CONTROL_API_PORT;
   const previousHost = process.env.CONTROL_API_HOST;
   const previousEnvFile = process.env.ENV_FILE;
-  const aiEnvKeys = ["AI_PROVIDER", "AI_MODEL", "AI_LOCAL_URL", "AI_MAX_TOKENS", "AI_LOCAL_TIMEOUT_MS", "AI_LANGUAGE", "AI_DEFAULT_STYLE", "AI_LOCAL_SKIP_SEARCH", "AI_LOCAL_FAST"];
+  const aiEnvKeys = ["AI_PROVIDER", "AI_MODEL", "AI_API_URL", "AI_LOCAL_URL", "AI_MAX_TOKENS", "AI_LOCAL_TIMEOUT_MS", "AI_LANGUAGE", "AI_DEFAULT_STYLE", "AI_LOCAL_SKIP_SEARCH", "AI_LOCAL_FAST"];
   const previousAiEnv = Object.fromEntries(aiEnvKeys.map((key) => [key, process.env[key]]));
   process.env.CONTROL_API_TOKEN = "test-control-token";
   process.env.CONTROL_API_PORT = "0";
@@ -199,6 +199,13 @@ test("control API protects status and preserves secret keys", async (t) => {
   assert.match(saved, /GROQ_API_KEY=keep-this-secret/);
   assert.match(saved, /AI_MAX_TOKENS=64/);
   assert.doesNotMatch(saved, /overwrite-attempt/);
+  const remoteResponse = await fetch(`${base}/api/control/settings`, {
+    method: "POST",
+    headers: { authorization: "Bearer test-control-token", "content-type": "application/json" },
+    body: JSON.stringify({ provider: "openrouter", model: "openrouter/auto", llamaUrl: "https://openrouter.ai/api/v1/chat/completions", maxTokens: 64, timeoutMs: 120000, language: "es-ES", tone: "breve", skipSearch: true, fastMode: true }),
+  });
+  assert.equal(remoteResponse.status, 200);
+  assert.match(readFileSync(envFile, "utf8"), /AI_API_URL=https:\/\/openrouter\.ai\/api\/v1\/chat\/completions/);
 });
 
 test("local AI provider accepts an OpenAI-compatible response", async (t) => {

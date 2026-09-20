@@ -4,6 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 const ALLOWED_SETTINGS = new Set([
   "AI_PROVIDER",
   "AI_MODEL",
+  "AI_API_URL",
   "AI_LOCAL_URL",
   "AI_MAX_TOKENS",
   "AI_LOCAL_TIMEOUT_MS",
@@ -68,7 +69,7 @@ function validSettings(body) {
   return {
     AI_PROVIDER: provider,
     AI_MODEL: String(body.model || "local-model").trim().slice(0, 160),
-    AI_LOCAL_URL: url.slice(0, 500),
+    ...(provider === "local" ? { AI_LOCAL_URL: url.slice(0, 500), AI_API_URL: "" } : { AI_API_URL: url.slice(0, 500) }),
     AI_MAX_TOKENS: maxTokens,
     AI_LOCAL_TIMEOUT_MS: timeoutMs,
     AI_LANGUAGE: String(body.language || "es-ES").trim().slice(0, 20),
