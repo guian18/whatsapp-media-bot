@@ -97,6 +97,9 @@ AI_PROVIDER=local
 AI_MODEL=local-model
 AI_LOCAL_URL=http://127.0.0.1:8080/v1/chat/completions
 AI_LOCAL_TIMEOUT_MS=120000
+CONTROL_API_TOKEN=cambia-este-token-largo
+CONTROL_API_HOST=0.0.0.0
+CONTROL_API_PORT=8787
 SEARCH_PROVIDERS=duckduckgo
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
@@ -121,6 +124,9 @@ La lista principal de esta guía contiene solo proveedores con modalidad gratuit
 | `AI_LOCAL_SKIP_SEARCH` | Evita la búsqueda web antes de consultar el modelo local, para reducir la latencia. Usa `false` si quieres buscar fuentes con `!ai`. | `true` |
 | `AI_LOCAL_FAST` | Usa un prompt y una memoria más cortos para acelerar las respuestas locales. | `true` |
 | `AI_MAX_TOKENS` | Límite de longitud de la respuesta; un valor menor responde más rápido en teléfonos. | `256` |
+| `CONTROL_API_TOKEN` | Token obligatorio para que la app móvil controle el bot. No lo compartas. | Vacío: API desactivada |
+| `CONTROL_API_HOST` | Interfaz donde escucha la API de control. | `127.0.0.1` |
+| `CONTROL_API_PORT` | Puerto de la API de control. | `8787` |
 | `AI_MEMORY_FILE` | Archivo privado con las últimas interacciones de `!ai` por chat. | `ai-memory.json` |
 | `SEARCH_PROVIDERS` | Proveedor de búsqueda web. | `duckduckgo` |
 | `WHATSAPP_NUMBER` | Número para vinculación directa, solo dígitos y código de país. | Vacío para usar QR |

@@ -12,6 +12,7 @@ import { formatOfficialAddresses } from "../src/official-addresses.js";
 import { SCAN_INTERVAL_MS } from "../src/watcher.js";
 import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
 import { aiConfigured, cmdIA, containsRisk, detectStyle } from "../src/ai.js";
+import { startControlServer } from "../src/control-server.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
@@ -146,6 +147,55 @@ test("local AI provider does not require an API key", () => {
   else process.env.AI_API_KEY = previousKey;
   if (previousLocalKey === undefined) delete process.env.AI_LOCAL_API_KEY;
   else process.env.AI_LOCAL_API_KEY = previousLocalKey;
+});
+
+test("control API protects status and preserves secret keys", async (t) => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-control-"));
+  const envFile = path.join(dir, ".env");
+  writeFileSync(envFile, "GROQ_API_KEY=keep-this-secret\nAI_PROVIDER=local\n", "utf8");
+  const previousToken = process.env.CONTROL_API_TOKEN;
+  const previousPort = process.env.CONTROL_API_PORT;
+  const previousHost = process.env.CONTROL_API_HOST;
+  const previousEnvFile = process.env.ENV_FILE;
+  const aiEnvKeys = ["AI_PROVIDER", "AI_MODEL", "AI_LOCAL_URL", "AI_MAX_TOKENS", "AI_LOCAL_TIMEOUT_MS", "AI_LANGUAGE", "AI_DEFAULT_STYLE", "AI_LOCAL_SKIP_SEARCH", "AI_LOCAL_FAST"];
+  const previousAiEnv = Object.fromEntries(aiEnvKeys.map((key) => [key, process.env[key]]));
+  process.env.CONTROL_API_TOKEN = "test-control-token";
+  process.env.CONTROL_API_PORT = "0";
+  process.env.CONTROL_API_HOST = "127.0.0.1";
+  process.env.ENV_FILE = envFile;
+  const server = startControlServer({ getStatus: () => ({ whatsapp: "online" }), testAI: async () => "OK" });
+  assert.ok(server);
+  await new Promise((resolve) => server.once("listening", resolve));
+  t.after(() => {
+    server.close();
+    rmSync(dir, { recursive: true, force: true });
+    if (previousToken === undefined) delete process.env.CONTROL_API_TOKEN;
+    else process.env.CONTROL_API_TOKEN = previousToken;
+    if (previousPort === undefined) delete process.env.CONTROL_API_PORT;
+    else process.env.CONTROL_API_PORT = previousPort;
+    if (previousHost === undefined) delete process.env.CONTROL_API_HOST;
+    else process.env.CONTROL_API_HOST = previousHost;
+    if (previousEnvFile === undefined) delete process.env.ENV_FILE;
+    else process.env.ENV_FILE = previousEnvFile;
+    for (const key of aiEnvKeys) {
+      if (previousAiEnv[key] === undefined) delete process.env[key];
+      else process.env[key] = previousAiEnv[key];
+    }
+  });
+  const address = server.address();
+  const base = `http://127.0.0.1:${address.port}`;
+  const denied = await fetch(`${base}/api/control/status`);
+  assert.equal(denied.status, 401);
+  const response = await fetch(`${base}/api/control/settings`, {
+    method: "POST",
+    headers: { authorization: "Bearer test-control-token", "content-type": "application/json" },
+    body: JSON.stringify({ provider: "local", model: "local-model", llamaUrl: "http://127.0.0.1:8080/v1/chat/completions", maxTokens: 64, timeoutMs: 120000, language: "es-ES", tone: "breve", skipSearch: true, fastMode: true, GROQ_API_KEY: "overwrite-attempt" }),
+  });
+  assert.equal(response.status, 200);
+  const saved = readFileSync(envFile, "utf8");
+  assert.match(saved, /GROQ_API_KEY=keep-this-secret/);
+  assert.match(saved, /AI_MAX_TOKENS=64/);
+  assert.doesNotMatch(saved, /overwrite-attempt/);
 });
 
 test("local AI provider accepts an OpenAI-compatible response", async (t) => {

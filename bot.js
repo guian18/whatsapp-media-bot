@@ -26,9 +26,11 @@ import readline from "node:readline/promises";
 import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
+import { cmdIA } from "./src/ai.js";
 import { ensureSteamApiKey } from "./src/steamkey.js";
 import { getAuthDir } from "./src/config.js";
 import { startWatcher } from "./src/watcher.js";
+import { startControlServer } from "./src/control-server.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
@@ -52,7 +54,19 @@ let pairingPendiente = null;
 let pairingEnCurso = false;
 let pairingReconnecting = false;
 let guardarCredsPendiente = Promise.resolve();
+let connectionState = "starting";
 const mensajesProcesados = new Map();
+
+startControlServer({
+  getStatus: () => ({
+    ok: true,
+    whatsapp: connectionState === "online" ? "online" : connectionState,
+    provider: process.env.AI_PROVIDER || "local",
+    model: process.env.AI_MODEL || "local-model",
+    controlApi: true,
+  }),
+  testAI: (question) => cmdIA(question),
+});
 
 function borrarSesion() {
   if (existsSync(AUTH_DIR)) {
@@ -242,6 +256,7 @@ async function start() {
     browser: Browsers.macOS("Chrome"),
   });
   sockActual = sock;
+  connectionState = "connecting";
   startWatcher((jid, payload) => sock.sendMessage(jid, payload));
   pairingReconnecting = false;
 
@@ -274,11 +289,13 @@ async function start() {
     }
 
     if (connection === "open") {
+      connectionState = "online";
       console.log("Conectado a WhatsApp ✅");
       pairingEnCurso = false;
     }
 
     if (connection === "close") {
+      connectionState = "offline";
       if (cerrandoManual) {
         cerrandoManual = false;
         return;
