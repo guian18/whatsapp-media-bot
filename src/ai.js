@@ -365,7 +365,9 @@ export async function cmdIA(question, chatId = null) {
   const query = String(question || "").trim();
   const configured = configuredStyle();
   const styleName = manualStyle || detectStyle(query) || configured.styleName;
-  const style = STYLES[styleName];
+  const style = styleName === "insultos"
+    ? `${STYLES[styleName]}; si piden decirle algo a alguien o a un apodo, responde con una burla juguetona y al menos un insulto genérico leve, no con un saludo amable. Manténlo breve y amistoso.`
+    : STYLES[styleName];
   const includeSources = requestsSources(query);
   if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;
