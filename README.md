@@ -10,7 +10,7 @@ Funciona localmente en **Linux, macOS, Windows y Termux** con Node.js 20+. No in
 - WhatsApp en un teléfono para vincular el bot.
 - Conexión a Internet.
 - Steam Web API Key para los comandos de Steam.
-- OpenAI API Key opcional para `!ai`.
+- API Key opcional del proveedor de IA elegido para `!ai`.
 
 ## Instalación en PC
 
@@ -181,6 +181,17 @@ Escanea el QR mostrado en la terminal desde **WhatsApp → Dispositivos vinculad
 
 `!ping` tiene tres resultados: 10% responde `Pong fallido: el bot falleció 💀`, 30% responde `El bot se tropezó y falló el Pong 🤕` y el 60% restante responde `Pong! 🏓`. Las probabilidades se pueden cambiar con `PING_DEAD_CHANCE` y `PING_TRIP_CHANCE`.
 
+### Dirección de los servidores A2S
+
+Los comandos `!servidor` y `!jugadores` requieren una dirección con el formato `IP_o_dominio:puerto`, por ejemplo:
+
+```text
+!servidor 1.2.3.4:27015
+!jugadores 1.2.3.4:27015
+```
+
+El puerto es obligatorio y debe ser un número entre `1` y `65535`. Si falta el puerto o no es válido, el bot rechaza la consulta antes de abrir el socket UDP para evitar errores `ERR_SOCKET_BAD_PORT`. Por seguridad, las direcciones locales y privadas se bloquean por defecto; para habilitarlas explícitamente, configura `ALLOW_PRIVATE_SERVERS=true` en `.env`.
+
 ## Comando `!ai`
 
 Ejemplo:
@@ -238,7 +249,7 @@ Para cambiar de proveedor sin editar `.env`:
 !proveedor openrouter
 ```
 
-El comando cambia automáticamente el modelo y la URL predeterminados. Debes tener la clave correspondiente en `AI_API_KEY`; el bot no comparte ni mueve las claves entre proveedores.
+El comando cambia automáticamente el modelo y la URL predeterminados. Debes tener configurada la clave del proveedor seleccionado; el bot no comparte ni mueve las claves entre proveedores.
 
 También puedes guardar varias claves a la vez usando `OPENAI_API_KEY`, `XAI_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `DEEPSEEK_API_KEY`, `MISTRAL_API_KEY` y `OPENROUTER_API_KEY`. Al cambiar con `!proveedor`, el bot selecciona automáticamente la variable correspondiente.
 
@@ -274,7 +285,7 @@ Para cambiar manualmente el idioma:
 
 También puedes usar el nombre del país, por ejemplo `!idioma Italia`, `!idioma México`, `!idioma USA` o `!idioma Brasil`. Usa `!idioma lista` para mostrar los códigos disponibles. La selección se guarda en `.env` y se conserva al reiniciar.
 
-Puede usar humor adulto, doble sentido y palabrotas entre amigos adultos cuando el contexto sea consensuado y amistoso. No permite sexualizar menores, coerción, amenazas, slurs, discriminación ni acoso dirigido.
+La IA puede usar humor adulto, doble sentido y palabrotas entre amigos adultos cuando el contexto sea consensuado y amistoso. No permite sexualizar menores, coerción, amenazas, slurs, discriminación ni acoso dirigido.
 
 `ALLOW_SELF` está activado permanentemente para que puedas probar el bot desde la misma cuenta vinculada. Si no quieres usar una API de IA, deja `AI_API_KEY` vacío; las búsquedas y los demás comandos seguirán funcionando.
 
@@ -305,7 +316,7 @@ npm ci
 npm test
 ```
 
-La suite actual debe terminar con **3 tests passed**.
+La suite actual debe terminar con **7 tests passed**.
 
 ## Scripts
 
