@@ -1,51 +1,64 @@
 # InfoPlayer Left
 
-Bot de WhatsApp para consultar jugadores y servidores de **Left 4 Dead 2**.
+Bot de WhatsApp para consultar perfiles de Steam, buscar jugadores y consultar servidores públicos de **Left 4 Dead 2** mediante Steam Web API y consultas A2S.
 
-Funciona localmente en **Linux, macOS, Windows y Termux** con Node.js 20+. No incluye hosting, servidor web, panel web ni despliegue remoto.
+Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyecto se ejecuta localmente; no incluye hosting, panel web ni despliegue remoto.
+
+## Características
+
+- Consulta de perfiles mediante Steam Web API.
+- Consulta de información y jugadores de servidores L4D2.
+- Búsqueda de jugadores en servidores públicos.
+- Vigilancia de jugadores y avisos cuando cambian de servidor.
+- Integración opcional con DuckDuckGo y varios proveedores de IA.
+- Soporte para código QR o código de vinculación de WhatsApp.
+- Compatible con grupos y conversaciones privadas según la configuración elegida.
 
 ## Requisitos
 
 - Node.js 20 o superior.
-- WhatsApp en un teléfono para vincular el bot.
+- Git.
+- Un teléfono con WhatsApp para vincular la sesión.
 - Conexión a Internet.
-- Steam Web API Key para los comandos de Steam.
-- API Key opcional del proveedor de IA elegido para `!ai`.
+- Una Steam Web API Key para las funciones de Steam.
+- Una clave del proveedor de IA elegido para usar `!ai`.
 
-## Instalación en PC
+## Instalación rápida
 
 ```bash
 git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
 cd infoplayerleft
-npm install
+npm ci
 cp .env.example .env
+nano .env
 npm start
 ```
 
-En Windows, copia `.env.example` como `.env` manualmente si no tienes `cp`:
+En Windows PowerShell, sustituye la copia del archivo de entorno por:
 
 ```powershell
 Copy-Item .env.example .env
-npm install
+npm ci
 npm start
 ```
 
-## Instalación en Termux
+### Termux
 
-Instala [Termux desde F-Droid](https://f-droid.org/packages/com.termux/), abre Termux y ejecuta:
+Instala Termux desde [F-Droid][1] y ejecuta:
 
 ```bash
 pkg update && pkg upgrade
 pkg install nodejs-lts git
+
 git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
 cd infoplayerleft
-npm install
+npm ci
 cp .env.example .env
 nano .env
 npm run start:termux
 ```
 
-Para mantenerlo activo, puedes usar `tmux`:
+Para mantener el proceso activo dentro de Termux:
 
 ```bash
 pkg install tmux
@@ -53,292 +66,198 @@ tmux new -s infoplayerleft
 npm start
 ```
 
-Pulsa `Ctrl+B`, después `D` para salir sin cerrar el bot. Para volver:
+Pulsa `Ctrl+B` y después `D` para salir de la sesión sin detener el bot. Para volver a abrirla:
 
 ```bash
 tmux attach -t infoplayerleft
 ```
 
-## Configuración `.env`
+## Configuración
 
-Configuración mínima:
+Copia `.env.example` como `.env` y completa las variables necesarias. Nunca compartas ese archivo.
+
+### Configuración mínima
 
 ```env
 STEAM_API_KEY=tu_steam_api_key
-AI_API_KEY=tu_clave_groq_o_gemini
 AI_PROVIDER=groq
 AI_MODEL=openai/gpt-oss-20b
-AI_API_URL=
-AI_DEFAULT_STYLE=insultos
-AI_LANGUAGE=es-ES
+GROQ_API_KEY=tu_clave_de_groq
 SEARCH_PROVIDERS=duckduckgo
-PING_DEAD_CHANCE=0.10
-PING_TRIP_CHANCE=0.30
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
-GROUPS_ENABLED=true
-REPLY_IN_PRIVATE=true
-ALLOW_SELF=true
-ALLOWED_GROUPS=
-AUTH_DIR=auth_info
-AUTO_RESET=false
-WATCH_INTERVAL_SECONDS=1
-WATCH_MAX_SERVERS=200
-WATCH_STATE_FILE=watchlist.json
 ```
 
-Para ver todas las opciones comentadas en Termux, vuelve a copiar la plantilla solo si todavía no tienes datos propios:
+El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias claves, es preferible configurar la variable específica de cada proveedor, como `GROQ_API_KEY` o `OPENAI_API_KEY`.
 
-```bash
-cp .env.example .env
-nano .env
-```
+### Opciones frecuentes
 
-Si ya tienes un `.env` con claves, no lo sobrescribas: abre `nano .env` y copia únicamente las líneas de proveedor que necesites desde `.env.example`.
-
-El bot responde en grupos privados cuando `GROUPS_ENABLED=true`. Deja `ALLOWED_GROUPS=` vacío para permitir todos los grupos; si escribes IDs separados por comas, responderá únicamente en esos grupos.
+| Variable | Descripción | Valor habitual |
+|---|---|---|
+| `STEAM_API_KEY` | Clave para perfiles y funciones de Steam. | Vacío hasta configurarla |
+| `AI_PROVIDER` | Proveedor usado por `!ai`. | `groq` |
+| `AI_MODEL` | Modelo usado por el proveedor. | `openai/gpt-oss-20b` |
+| `SEARCH_PROVIDERS` | Proveedor de búsqueda web. | `duckduckgo` |
+| `WHATSAPP_NUMBER` | Número para vinculación directa, solo dígitos y código de país. | Vacío para usar QR |
+| `PAIRING_CODE` | Activa el código de vinculación cuando corresponde. | `false` |
+| `GROUPS_ENABLED` | Permite responder en grupos. | `true` |
+| `ALLOWED_GROUPS` | IDs de grupos permitidos, separados por comas. | Vacío para permitir todos |
+| `REPLY_IN_PRIVATE` | Permite respuestas en chats privados. | `true` |
+| `AUTH_DIR` | Carpeta de la sesión de WhatsApp. | `auth_info` |
+| `ALLOW_PRIVATE_SERVERS` | Permite consultar IP privadas o locales. | `false` |
+| `WATCH_INTERVAL_SECONDS` | Intervalo mínimo del escaneo de vigilancia. | `1` |
+| `WATCH_MAX_SERVERS` | Número máximo de servidores revisados. | `200` |
 
 ## APIs y enlaces directos
 
-### Servicios integrados sin clave
+### Steam y búsqueda web
 
-La búsqueda web usa DuckDuckGo y no requiere una cuenta ni una API de pago:
+- [Crear Steam Web API Key][2] — variable `STEAM_API_KEY`.
+- DuckDuckGo funciona sin clave mediante `SEARCH_PROVIDERS=duckduckgo`.
 
-```env
-SEARCH_PROVIDERS=duckduckgo
-```
+### Proveedores de IA
 
-DuckDuckGo puede aplicar límites o cambiar el formato de sus resultados. La [Steam Web API Key](https://steamcommunity.com/dev/apikey) es gratuita y se necesita para consultar perfiles y vigilar jugadores.
+Elige un proveedor, crea la clave desde su enlace oficial y configura la variable correspondiente. También puedes cambiar el proveedor desde WhatsApp con `!proveedor <nombre>`.
 
-### Claves de Steam e inteligencia artificial
-
-Elige un proveedor, crea la clave desde su enlace oficial y guarda la variable indicada en `.env`. El modelo se selecciona automáticamente al usar `!proveedor <nombre>`.
-
-| Servicio | Enlace oficial | Configuración | Variable de clave |
+| Proveedor | Enlace oficial | Configuración predeterminada | Variable |
 |---|---|---|---|
-| Steam Web API | [Crear clave](https://steamcommunity.com/dev/apikey) | — | `STEAM_API_KEY` |
-| Groq | [Crear API key](https://console.groq.com/keys) | `AI_PROVIDER=groq`<br>`AI_MODEL=openai/gpt-oss-20b` | `GROQ_API_KEY` |
-| Google Gemini | [Crear API key](https://aistudio.google.com/apikey) | `AI_PROVIDER=gemini`<br>`AI_MODEL=gemini-2.5-flash` | `GEMINI_API_KEY` |
-| OpenAI / ChatGPT | [Crear API key](https://platform.openai.com/api-keys) | `AI_PROVIDER=openai`<br>`AI_MODEL=gpt-4o-mini` | `OPENAI_API_KEY` |
-| xAI / Grok | [Crear API key](https://console.x.ai/team/default/api-keys) | `AI_PROVIDER=xai`<br>`AI_MODEL=grok-4.6` | `XAI_API_KEY` |
-| DeepSeek | [Crear API key](https://platform.deepseek.com/api_keys) | `AI_PROVIDER=deepseek`<br>`AI_MODEL=deepseek-chat` | `DEEPSEEK_API_KEY` |
-| Mistral | [Crear API key](https://console.mistral.ai/api-keys/) | `AI_PROVIDER=mistral`<br>`AI_MODEL=mistral-small-4-0-26-03` | `MISTRAL_API_KEY` |
-| OpenRouter | [Crear API key](https://openrouter.ai/keys) | `AI_PROVIDER=openrouter`<br>`AI_MODEL=openrouter/auto` | `OPENROUTER_API_KEY` |
+| Groq | [Crear API key][3] | `groq` / `openai/gpt-oss-20b` | `GROQ_API_KEY` |
+| Google Gemini | [Crear API key][4] | `gemini` / `gemini-2.5-flash` | `GEMINI_API_KEY` |
+| OpenAI | [Crear API key][5] | `openai` / `gpt-4o-mini` | `OPENAI_API_KEY` |
+| xAI | [Crear API key][6] | `xai` / `grok-4.6` | `XAI_API_KEY` |
+| DeepSeek | [Crear API key][7] | `deepseek` / `deepseek-chat` | `DEEPSEEK_API_KEY` |
+| Mistral | [Crear API key][8] | `mistral` / `mistral-small-4-0-26-03` | `MISTRAL_API_KEY` |
+| OpenRouter | [Crear API key][9] | `openrouter` / `openrouter/auto` | `OPENROUTER_API_KEY` |
 
-También puedes usar la variable genérica `AI_API_KEY` si solo vas a configurar un proveedor. Groq y Gemini pueden ofrecer cuotas gratuitas, pero no son ilimitadas; los demás servicios tienen sus propios precios, créditos y límites.
-
-> **Seguridad:** nunca publiques `.env`, `.steam_key`, las claves de API ni `auth_info/`.
+Las cuotas, precios y límites dependen de cada proveedor. Comprueba sus condiciones antes de usar una clave de pago.
 
 ## Vincular WhatsApp
 
-### Código de vinculación
-
-1. Configura el número con código de país, solo dígitos:
-
-   ```env
-   WHATSAPP_NUMBER=51987654321
-   PAIRING_CODE=false
-   ```
-
-2. Ejecuta `npm start`.
-3. En WhatsApp abre **Dispositivos vinculados → Vincular un dispositivo → Vincular con el número de teléfono**.
-4. Introduce el código real mostrado en la terminal.
-
-El código lo entrega WhatsApp. El bot no genera códigos falsos.
-
 ### Código QR
 
-Deja estas variables vacías o en `false`:
+Deja vacías estas variables:
 
 ```env
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
 ```
 
-Ejecuta:
+Ejecuta `npm start` y escanea el código QR desde **WhatsApp → Dispositivos vinculados**.
 
-```bash
-npm start
+### Código de vinculación
+
+Configura el número con código de país, solo dígitos:
+
+```env
+WHATSAPP_NUMBER=51987654321
+PAIRING_CODE=false
 ```
 
-Escanea el QR mostrado en la terminal desde **WhatsApp → Dispositivos vinculados**.
+Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El código lo entrega WhatsApp; el bot no genera códigos ficticios.
 
-## Comandos de WhatsApp
+## Comandos
 
 | Comando | Función |
 |---|---|
 | `!ping` | Comprueba que el bot responde. |
-| `!ayuda` | Muestra los comandos. |
-| `!tono <estilo>` | Cambia y guarda el tono de la IA. |
-| `!idioma <código>` | Cambia y guarda el idioma de la IA. |
-| `!proveedor <nombre>` | Cambia y guarda el proveedor y el modelo de IA. |
-| `!vigilar <nick|SteamID|URL>` | Avisa en este chat cuando el jugador se conecte a un servidor público de L4D2. |
-| `!novigilar <nick|SteamID|URL>` | Cancela una vigilancia. |
-| `!lista` | Muestra las vigilancias de este chat. |
-| `!escaneo` | Fuerza un escaneo inmediato. |
+| `!ayuda` | Muestra la ayuda disponible. |
 | `!info <SteamID, vanity o URL>` | Consulta un perfil de Steam. |
 | `!buscar <nickname>` | Busca un jugador en servidores públicos de L4D2. |
 | `!servidor <IP:puerto>` | Consulta un servidor. |
-| `!jugadores <IP:puerto>` | Consulta los jugadores de un servidor. |
-| `!ai`, `!AI`, `!ia`, `!IA` `<pregunta>` | Busca información en Internet y responde con IA. |
+| `!jugadores <IP:puerto>` | Consulta los jugadores conectados. |
+| `!vigilar <nick, SteamID o URL>` | Crea una vigilancia en el chat actual. |
+| `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
+| `!lista` | Muestra las vigilancias del chat. |
+| `!escaneo` | Ejecuta un escaneo inmediato. |
+| `!ai <pregunta>` | Busca contexto web y responde con IA. |
+| `!tono <estilo>` | Cambia el tono de la IA. |
+| `!idioma <código o país>` | Cambia el idioma de la IA. |
+| `!proveedor <nombre>` | Cambia el proveedor y el modelo de IA. |
 
-`!ping` tiene tres resultados: 10% responde `Pong fallido: el bot falleció 💀`, 30% responde `El bot se tropezó y falló el Pong 🤕` y el 60% restante responde `Pong! 🏓`. Las probabilidades se pueden cambiar con `PING_DEAD_CHANCE` y `PING_TRIP_CHANCE`.
+Los estilos disponibles incluyen `tranquilo`, `agresivo`, `insultos`, `formal`, `divertido`, `sarcastico`, `breve` y `amable`. Usa `!tono lista`, `!idioma lista` o `!proveedor lista` para ver las opciones disponibles.
 
-### Dirección de los servidores A2S
+## Consultas A2S
 
-Los comandos `!servidor` y `!jugadores` requieren una dirección con el formato `IP_o_dominio:puerto`, por ejemplo:
+Los comandos `!servidor` y `!jugadores` requieren siempre una dirección con este formato:
+
+```text
+IP_o_dominio:puerto
+```
+
+Ejemplo:
 
 ```text
 !servidor 1.2.3.4:27015
 !jugadores 1.2.3.4:27015
 ```
 
-El puerto es obligatorio y debe ser un número entre `1` y `65535`. Si falta el puerto o no es válido, el bot rechaza la consulta antes de abrir el socket UDP para evitar errores `ERR_SOCKET_BAD_PORT`. Por seguridad, las direcciones locales y privadas se bloquean por defecto; para habilitarlas explícitamente, configura `ALLOW_PRIVATE_SERVERS=true` en `.env`.
+El puerto debe ser un número entero entre `1` y `65535`. Si falta o no es válido, la consulta se rechaza antes de abrir el socket UDP para evitar `ERR_SOCKET_BAD_PORT`.
 
-## Comando `!ai`
-
-Ejemplo:
-
-```text
-!ai ¿Cuál es la versión más reciente de Left 4 Dead 2?
-```
-
-El tono se configura en `.env`:
+Por seguridad, el bot bloquea por defecto `localhost`, `127.0.0.1`, redes privadas y otras direcciones no públicas. Solo habilita estas direcciones si tienes una razón concreta:
 
 ```env
-AI_DEFAULT_STYLE=insultos
+ALLOW_PRIVATE_SERVERS=true
 ```
 
-Tonos disponibles:
+## Vigilancia de jugadores
 
-- `tranquilo`
-- `agresivo`
-- `insultos`
-- `formal`
-- `divertido`
-- `sarcastico`
-- `breve`
-- `amable`
+`!vigilar` acepta un nombre, SteamID64 o URL de perfil. El bot consulta la Steam Web API cuando está disponible y usa el Master Server de Steam y A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
 
-El tono `insultos` permite lenguaje vulgar e insultos genéricos dirigidos a errores, ideas o situaciones. No genera amenazas, discriminación, slurs ni acoso dirigido.
-
-La IA detecta el tono de cada pregunta y procura responder en el mismo estilo: formal, amable, divertido, sarcástico, agresivo, vulgar o breve. Si el mensaje no da una señal clara, utiliza `AI_DEFAULT_STYLE=insultos` como respaldo. También reconoce frases como “usa el tono de insulto”.
-
-Para cambiarlo manualmente y guardarlo para los siguientes reinicios:
-
-```text
-!tono insultos
-!tono tranquilo
-!tono formal
-!tono divertido
-!tono sarcastico
-!tono agresivo
-!tono amable
-!tono breve
-```
-
-Con `!tono lista` se muestran los estilos disponibles.
-
-Para cambiar de proveedor sin editar `.env`:
-
-```text
-!proveedor lista
-!proveedor groq
-!proveedor gemini
-!proveedor openai
-!proveedor xai
-!proveedor deepseek
-!proveedor mistral
-!proveedor openrouter
-```
-
-El comando cambia automáticamente el modelo y la URL predeterminados. Debes tener configurada la clave del proveedor seleccionado; el bot no comparte ni mueve las claves entre proveedores.
-
-También puedes guardar varias claves a la vez usando `OPENAI_API_KEY`, `XAI_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `DEEPSEEK_API_KEY`, `MISTRAL_API_KEY` y `OPENROUTER_API_KEY`. Al cambiar con `!proveedor`, el bot selecciona automáticamente la variable correspondiente.
-
-## Notificaciones de jugadores conectados
-
-El bot incorpora el notificador del ZIP proporcionado, adaptado de Discord a WhatsApp. Usa `!vigilar nick`, un SteamID64 o una URL de perfil de Steam. El bot escanea servidores públicos de Left 4 Dead 2 y envía un aviso al chat donde se creó la vigilancia cuando detecta una conexión nueva o un cambio de servidor. La lista y el último estado se guardan en `watchlist.json`, que está excluido de Git.
-
-Ejemplo:
-
-```text
-!vigilar nombre_del_jugador
-!lista
-!escaneo
-!novigilar nombre_del_jugador
-```
-
-El escaneo usa `STEAM_API_KEY` cuando está disponible y consulta el Master Server/A2S como respaldo. `WATCH_INTERVAL_SECONDS=1` revisa cada segundo como mínimo práctico; Steam no ofrece un evento público instantáneo, por lo que el aviso real depende del tiempo de respuesta del Master Server y de los servidores. El bot deduplica el mismo jugador y servidor, no repite avisos durante la misma conexión y permite avisar de nuevo después de detectar que el jugador salió. Escanear muchos servidores cada segundo puede consumir bastante batería, datos y CPU en Termux; reduce el valor si el teléfono se calienta.
-
-Para cambiar manualmente el idioma:
-
-```text
-!idioma es-ES
-!idioma es-MX
-!idioma es-AR
-!idioma en-US
-!idioma en-GB
-!idioma it-IT
-!idioma pt-BR
-!idioma pt-PT
-!idioma fr-FR
-!idioma de-DE
-```
-
-También puedes usar el nombre del país, por ejemplo `!idioma Italia`, `!idioma México`, `!idioma USA` o `!idioma Brasil`. Usa `!idioma lista` para mostrar los códigos disponibles. La selección se guarda en `.env` y se conserva al reiniciar.
-
-La IA puede usar humor adulto, doble sentido y palabrotas entre amigos adultos cuando el contexto sea consensuado y amistoso. No permite sexualizar menores, coerción, amenazas, slurs, discriminación ni acoso dirigido.
-
-`ALLOW_SELF` está activado permanentemente para que puedas probar el bot desde la misma cuenta vinculada. Si no quieres usar una API de IA, deja `AI_API_KEY` vacío; las búsquedas y los demás comandos seguirán funcionando.
-
-### Búsqueda web
-
-`!ai` consulta DuckDuckGo sin una API de búsqueda de pago. Para generar la respuesta, configura Groq o Gemini con su nivel gratuito. Si dejas `AI_API_KEY` vacía, `!ai` mostrará que la IA no está configurada.
-
-Tor no es un buscador ni un navegador que el bot pueda invocar por nombre: es una red/proxy. El bot no incluye un proxy Tor automático. Si necesitas Tor, debes ejecutar un servicio Tor local y configurar una integración de proxy compatible; las búsquedas normales no lo requieren.
+La vigilancia puede consumir batería, datos y CPU, especialmente con muchos servidores y un intervalo corto. En Termux, aumenta `WATCH_INTERVAL_SECONDS` si el teléfono se calienta o consume demasiados datos.
 
 ## Sesión y reinicio
 
-La sesión se guarda en `auth_info/`. Para volver a vincular desde cero:
+La sesión de WhatsApp se guarda en `auth_info/`. Para eliminarla y volver a vincular el bot:
 
 ```bash
 npm run reset
 ```
 
-Para borrar la sesión y arrancar de nuevo:
+Para eliminar la sesión y arrancar inmediatamente:
 
 ```bash
 npm run relink
 ```
 
-## Pruebas
+## Pruebas y scripts
+
+Ejecuta la suite con:
 
 ```bash
 npm ci
 npm test
 ```
 
-La suite actual debe terminar con **7 tests passed**.
-
-## Scripts
+Scripts disponibles:
 
 ```text
 npm start              Inicia el bot.
-npm run start:termux   Inicia el bot en Termux.
+npm run start:termux   Inicia el bot con el bloqueo de suspensión de Termux.
 npm test               Ejecuta las pruebas.
-npm run reset          Borra la sesión local.
-npm run relink         Borra la sesión y vuelve a iniciar.
+npm run reset          Elimina la sesión local.
+npm run relink         Elimina la sesión y vuelve a iniciar.
 ```
 
 ## Seguridad
 
-- No compartas códigos de vinculación.
-- No publiques tus API Keys.
-- No subas `.env`, `.steam_key` ni `auth_info/`.
-- Usa `REPLY_IN_PRIVATE=false` solo si no quieres responder en chats privados.
+- No compartas códigos de vinculación ni sesiones de WhatsApp.
+- No publiques `.env`, `.steam_key`, claves de API, `auth_info/` ni `watchlist.json`.
+- Mantén `ALLOW_PRIVATE_SERVERS=false` salvo que necesites consultar una red privada.
+- Revisa los permisos y límites del proveedor antes de usar una API de pago.
 - Baileys no es una librería oficial de WhatsApp.
 
 ## Licencia
 
-Repositorio privado del propietario. Consulta el historial de Git para ver los cambios.
+Consulta el historial del repositorio para conocer los cambios y las condiciones de uso definidas por el propietario.
+
+## Referencias
+
+[1]: https://f-droid.org/packages/com.termux/ "Termux en F-Droid"
+[2]: https://steamcommunity.com/dev/apikey "Steam Web API Key"
+[3]: https://console.groq.com/keys "Groq API Keys"
+[4]: https://aistudio.google.com/apikey "Google AI Studio API Keys"
+[5]: https://platform.openai.com/api-keys "OpenAI API Keys"
+[6]: https://console.x.ai/team/default/api-keys "xAI API Keys"
+[7]: https://platform.deepseek.com/api_keys "DeepSeek API Keys"
+[8]: https://console.mistral.ai/api-keys/ "Mistral API Keys"
+[9]: https://openrouter.ai/keys "OpenRouter API Keys"
