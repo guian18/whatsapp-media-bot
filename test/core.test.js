@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import dgram from "node:dgram";
 import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -73,6 +74,25 @@ test("A2S rejects an undefined or invalid port before sending UDP", async () => 
     name: "RangeError",
     message: "puerto A2S inválido: 0",
   });
+});
+
+test("A2S sends queries with an explicit UDP destination", async (t) => {
+  const socket = dgram.createSocket("udp4");
+  t.after(() => socket.close());
+  socket.on("message", (_message, remote) => {
+    const response = Buffer.concat([
+      Buffer.from([0xff, 0xff, 0xff, 0xff, 0x49, 17]),
+      Buffer.from("Test server\0de_dust2\0left4dead2\0Left 4 Dead 2\0"),
+      Buffer.from([0x2f, 0x09, 0x00, 0x00, 0x00, 0x04, 0x10, 0x00]),
+    ]);
+    socket.send(response, remote.port, remote.address);
+  });
+  await new Promise((resolve) => socket.bind(0, "127.0.0.1", resolve));
+  const address = socket.address();
+
+  const info = await serverInfo("127.0.0.1", address.port);
+  assert.equal(info.name, "Test server");
+  assert.equal(info.map, "de_dust2");
 });
 
 test("environment loader applies values from the configured .env file", (t) => {

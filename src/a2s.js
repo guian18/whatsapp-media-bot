@@ -38,7 +38,7 @@ function sendUdp(host, port, payload, timeout = 2000) {
       try { sock.close(); } catch {}
       reject(err);
     });
-    sock.connect(port, host, () => sock.send(payload));
+    sock.send(payload, 0, payload.length, port, host);
   });
 }
 
