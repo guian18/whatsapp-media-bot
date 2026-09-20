@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const SEARCH_URL = "https://html.duckduckgo.com/html/";
-const DEFAULT_AI_URL = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_AI_MODEL = "openai/gpt-oss-20b";
+const DEFAULT_AI_URL = "http://127.0.0.1:8080/v1/chat/completions";
+const DEFAULT_AI_MODEL = "local-model";
 const AI_PRESETS = {
   local: {
     url: "http://127.0.0.1:8080/v1/chat/completions",
@@ -170,7 +170,7 @@ async function webSearch(question) {
 }
 
 function aiConfig() {
-  const provider = PROVIDER_ALIASES[(process.env.AI_PROVIDER || "groq").trim().toLowerCase()] || "groq";
+  const provider = PROVIDER_ALIASES[(process.env.AI_PROVIDER || "local").trim().toLowerCase()] || "local";
   const providerKey = PROVIDER_KEY_ENV[provider];
   const key = (providerKey ? process.env[providerKey] : "")?.trim() || (provider === "local" ? "" : (process.env.AI_API_KEY || "").trim());
   const preset = AI_PRESETS[provider];

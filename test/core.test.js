@@ -15,9 +15,11 @@ import { aiConfigured, cmdIA, containsRisk, detectStyle } from "../src/ai.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
+  const previousProvider = process.env.AI_PROVIDER;
   const previousAiKey = process.env.AI_API_KEY;
   const previousPingDeadChance = process.env.PING_DEAD_CHANCE;
   const previousPingTripChance = process.env.PING_TRIP_CHANCE;
+  process.env.AI_PROVIDER = "groq";
   process.env.AI_API_KEY = "";
   process.env.PING_DEAD_CHANCE = "0";
   process.env.PING_TRIP_CHANCE = "0";
@@ -46,6 +48,8 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!escaneo"), /solo está disponible desde WhatsApp/);
   assert.match(await handleCommand("!help"), /!proveedor/);
   assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
+  if (previousProvider === undefined) delete process.env.AI_PROVIDER;
+  else process.env.AI_PROVIDER = previousProvider;
   if (previousAiKey === undefined) delete process.env.AI_API_KEY;
   else process.env.AI_API_KEY = previousAiKey;
   if (previousPingDeadChance === undefined) delete process.env.PING_DEAD_CHANCE;

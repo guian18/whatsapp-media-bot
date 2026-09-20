@@ -93,9 +93,10 @@ Copia `.env.example` como `.env` y completa las variables necesarias. Nunca comp
 
 ```env
 STEAM_API_KEY=tu_steam_api_key
-AI_PROVIDER=groq
-AI_MODEL=openai/gpt-oss-20b
-GROQ_API_KEY=tu_clave_de_groq
+AI_PROVIDER=local
+AI_MODEL=local-model
+AI_LOCAL_URL=http://127.0.0.1:8080/v1/chat/completions
+AI_LOCAL_TIMEOUT_MS=120000
 SEARCH_PROVIDERS=duckduckgo
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
@@ -110,8 +111,8 @@ La lista principal de esta guía contiene solo proveedores con modalidad gratuit
 | Variable | Descripción | Valor habitual |
 |---|---|---|
 | `STEAM_API_KEY` | Clave para perfiles y funciones de Steam. | Vacío hasta configurarla |
-| `AI_PROVIDER` | Proveedor usado por `!ai`. | `groq` |
-| `AI_MODEL` | Modelo usado por el proveedor. | `openai/gpt-oss-20b` |
+| `AI_PROVIDER` | Proveedor usado por `!ai`. | `local` |
+| `AI_MODEL` | Modelo usado por el proveedor. | `local-model` |
 | `AI_LOCAL_URL` | Endpoint OpenAI-compatible del servidor local `llama.cpp`. | `http://127.0.0.1:8080/v1/chat/completions` |
 | `AI_LOCAL_API_KEY` | Clave opcional si el servidor local está protegido. | Vacío |
 | `AI_TIMEOUT_MS` | Tiempo máximo para una API de IA remota. | `15000` |
