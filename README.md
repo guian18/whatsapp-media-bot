@@ -134,6 +134,17 @@ Elige un proveedor, crea la clave desde su enlace oficial y configura la variabl
 
 Las cuotas, precios y límites dependen de cada proveedor. Comprueba sus condiciones antes de usar una clave de pago.
 
+### Proxy opcional de OpenRouter
+
+El repositorio incluye `api/chat.js`, una función compatible con el proxy público de [proxy-openrouter](https://github.com/dexter-666/proxy-openrouter). Recibe peticiones `POST` y reenvía el cuerpo a OpenRouter usando `OPENROUTER_API_KEY`, sin enviar la clave al cliente. También admite estas variables opcionales:
+
+```env
+OPENROUTER_SITE_URL=https://tu-dominio.example
+OPENROUTER_APP_NAME=InfoPlayer Left
+```
+
+Este archivo no modifica el arranque de WhatsApp. Si lo despliegas como función serverless, configura `OPENROUTER_API_KEY` como secreto del proveedor y limita el acceso del endpoint para evitar que terceros consuman tu saldo. No se añadió el `vercel.json` original porque sus rutas globales reemplazarían el funcionamiento normal de este bot.
+
 ## Vincular WhatsApp
 
 ### Código QR
