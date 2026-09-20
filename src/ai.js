@@ -30,7 +30,9 @@ const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", gemini: "GEMINI_API_KEY", 
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
-const REQUEST_TIMEOUT_MS = 15_000;
+const REMOTE_AI_TIMEOUT_MS = 15_000;
+const LOCAL_AI_TIMEOUT_MS = 120_000;
+const SEARCH_TIMEOUT_MS = 8_000;
 const MIN_INTERVAL_MS = 4_000;
 const STYLES = {
   tranquilo: "sereno, paciente y fácil de entender",
@@ -99,7 +101,20 @@ function envNumber(name, fallback) {
 }
 
 function timeoutSignal(ms) {
-  return AbortSignal.timeout(envNumber("AI_TIMEOUT_MS", ms));
+  return AbortSignal.timeout(ms);
+}
+
+function modelTimeoutMs(provider) {
+  if (provider === "local") {
+    return envNumber("AI_LOCAL_TIMEOUT_MS", LOCAL_AI_TIMEOUT_MS);
+  }
+  return envNumber("AI_TIMEOUT_MS", REMOTE_AI_TIMEOUT_MS);
+}
+
+function isTimeoutError(error) {
+  const name = String(error?.name || "");
+  const message = String(error?.message || "");
+  return name === "TimeoutError" || name === "AbortError" || /timeout|timed out|aborted/i.test(message);
 }
 
 function cleanText(value) {
@@ -137,7 +152,9 @@ async function duckDuckGoSearch(question) {
   const url = `${SEARCH_URL}?q=${encodeURIComponent(question)}`;
   const response = await fetch(url, {
     headers: { "user-agent": "InfoPlayerLeft/1.0 (web search)" },
-    signal: timeoutSignal(REQUEST_TIMEOUT_MS),
+    // La búsqueda aporta contexto, pero no debe demorar una consulta local si
+    // DuckDuckGo está lento, bloqueado o no disponible en Termux.
+    signal: timeoutSignal(envNumber("AI_SEARCH_TIMEOUT_MS", SEARCH_TIMEOUT_MS)),
   });
   if (!response.ok) throw new Error(`búsqueda web HTTP ${response.status}`);
   return searchResultsFromHtml(await response.text());
@@ -202,7 +219,9 @@ async function askModel(question, style, sources, includeSources, history = []) 
     method: "POST",
     headers,
     body: JSON.stringify(requestBody),
-    signal: timeoutSignal(REQUEST_TIMEOUT_MS),
+    // La primera respuesta de llama.cpp en Termux puede tardar más que una API
+    // remota, especialmente mientras carga el modelo GGUF en memoria.
+    signal: timeoutSignal(modelTimeoutMs(provider)),
   });
   if (!response.ok) {
     const detail = (await response.text()).slice(0, 180);
@@ -378,7 +397,12 @@ export async function cmdIA(question, chatId = null) {
     return `_${styleName}_\n${answer}${sourceLines}`.slice(0, 3900);
   } catch (error) {
     console.error("Error en !ai:", error?.message || error);
-    if (aiConfig().provider === "local" && /fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(String(error?.message || ""))) {
+    const config = aiConfig();
+    if (config.provider === "local" && isTimeoutError(error)) {
+      const seconds = Math.ceil(modelTimeoutMs("local") / 1000);
+      return `llama.cpp tardó más de ${seconds} segundos en responder. Comprueba que llama-server siga activo en ${config.url}; si tu teléfono es lento, aumenta AI_LOCAL_TIMEOUT_MS en .env y reinicia el bot.`;
+    }
+    if (config.provider === "local" && /fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(String(error?.message || ""))) {
       return "No pude conectar con llama.cpp. Inicia `llama-server` en 127.0.0.1:8080 y vuelve a intentarlo con `!ai <pregunta>`.";
     }
     const detail = String(error?.message || "error desconocido")

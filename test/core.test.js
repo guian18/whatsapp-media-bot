@@ -185,6 +185,38 @@ test("local AI provider accepts an OpenAI-compatible response", async (t) => {
   }
 });
 
+test("local AI timeout returns an actionable message", async () => {
+  const previousProvider = process.env.AI_PROVIDER;
+  const previousUrl = process.env.AI_LOCAL_URL;
+  const previousInterval = process.env.AI_MIN_INTERVAL_MS;
+  const previousTimeout = process.env.AI_LOCAL_TIMEOUT_MS;
+  const previousFetch = globalThis.fetch;
+  process.env.AI_PROVIDER = "local";
+  process.env.AI_LOCAL_URL = "http://127.0.0.1:8080/v1/chat/completions";
+  process.env.AI_MIN_INTERVAL_MS = "0";
+  process.env.AI_LOCAL_TIMEOUT_MS = "3000";
+  globalThis.fetch = async (url) => {
+    if (String(url).startsWith("https://html.duckduckgo.com/")) return new Response("", { status: 200 });
+    throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+  };
+
+  try {
+    const response = await cmdIA("prueba de tiempo de espera");
+    assert.match(response, /llama\.cpp tardó más de 3 segundos/);
+    assert.match(response, /AI_LOCAL_TIMEOUT_MS/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousProvider === undefined) delete process.env.AI_PROVIDER;
+    else process.env.AI_PROVIDER = previousProvider;
+    if (previousUrl === undefined) delete process.env.AI_LOCAL_URL;
+    else process.env.AI_LOCAL_URL = previousUrl;
+    if (previousInterval === undefined) delete process.env.AI_MIN_INTERVAL_MS;
+    else process.env.AI_MIN_INTERVAL_MS = previousInterval;
+    if (previousTimeout === undefined) delete process.env.AI_LOCAL_TIMEOUT_MS;
+    else process.env.AI_LOCAL_TIMEOUT_MS = previousTimeout;
+  }
+});
+
 test("environment loader applies values from the configured .env file", (t) => {
   const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-env-"));
   const envFile = path.join(dir, ".env");
