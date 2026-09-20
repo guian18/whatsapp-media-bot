@@ -242,6 +242,32 @@ test("local AI provider accepts an OpenAI-compatible response", async (t) => {
   }
 });
 
+test("AI replaces a violent model response with safe advice", async () => {
+  const previousProvider = process.env.AI_PROVIDER;
+  const previousUrl = process.env.AI_LOCAL_URL;
+  const previousInterval = process.env.AI_MIN_INTERVAL_MS;
+  const previousSkipSearch = process.env.AI_LOCAL_SKIP_SEARCH;
+  const previousStyle = process.env.AI_DEFAULT_STYLE;
+  const previousFetch = globalThis.fetch;
+  process.env.AI_PROVIDER = "local";
+  process.env.AI_LOCAL_URL = "http://127.0.0.1:8080/v1/chat/completions";
+  process.env.AI_MIN_INTERVAL_MS = "0";
+  process.env.AI_LOCAL_SKIP_SEARCH = "true";
+  process.env.AI_DEFAULT_STYLE = "insultos";
+  globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ message: { content: "¡Te voy a dar un tiro en la cabeza!" } }] }), { status: 200, headers: { "content-type": "application/json" } });
+  try {
+    const response = await cmdIA("qué debo hacer para negociar mi salario");
+    assert.doesNotMatch(response, /tiro|matar|disparar|apuñalar/i);
+    assert.match(response, /revisión salarial|logros/i);
+  } finally {
+    globalThis.fetch = previousFetch;
+    for (const [key, value] of [["AI_PROVIDER", previousProvider], ["AI_LOCAL_URL", previousUrl], ["AI_MIN_INTERVAL_MS", previousInterval], ["AI_LOCAL_SKIP_SEARCH", previousSkipSearch], ["AI_DEFAULT_STYLE", previousStyle]]) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
 test("local AI timeout returns an actionable message", async () => {
   const previousProvider = process.env.AI_PROVIDER;
   const previousUrl = process.env.AI_LOCAL_URL;

@@ -66,6 +66,14 @@ let memoryLoaded = false;
 let memory = {};
 
 const RISK_KEYWORDS = ["suicid", "matarme", "me quiero morir", "no quiero vivir", "lastimarme", "quitarme la vida"];
+const VIOLENT_OUTPUT_PATTERNS = [
+  /te voy a (?:dar|pegar|meter) un tiro/i,
+  /te voy a matar/i,
+  /voy a matarte/i,
+  /te (?:voy a )?(?:disparar|apuñalar)/i,
+  /(?:tiro|disparo|bala) en la cabeza/i,
+  /amenaz[ao]/i,
+];
 
 function memoryFile() {
   return process.env.AI_MEMORY_FILE || "ai-memory.json";
@@ -264,6 +272,12 @@ function nicknameRoast(question) {
   return `${nickname}, eres más despistado que un bot sin conexión: mucho apodo y poco juego, campeón 😄`;
 }
 
+function sanitizeModelAnswer(answer) {
+  const text = String(answer || "").trim();
+  if (!VIOLENT_OUTPUT_PATTERNS.some((pattern) => pattern.test(text))) return text;
+  return "No hace falta amenazar: puedes decirlo así — *Pide una revisión salarial con datos concretos, logros y una fecha clara para negociar.*";
+}
+
 function saveEnvValues(values, errorLabel) {
   const file = process.env.ENV_FILE || ".env";
   try {
@@ -391,7 +405,7 @@ export async function cmdIA(question, chatId = null) {
       }
     }
     const history = chatId ? (loadMemory()[chatId] || []) : [];
-    const answer = await askModel(query, style, sources, includeSources, history);
+    const answer = sanitizeModelAnswer(await askModel(query, style, sources, includeSources, history));
     if (!answer) return "No se pudo consultar la IA.";
     if (chatId) {
       memory[chatId] = [...history, { role: "user", content: query }, { role: "assistant", content: answer }].slice(-20);
