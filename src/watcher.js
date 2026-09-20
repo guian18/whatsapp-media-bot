@@ -87,6 +87,7 @@ export async function watchPlayer(input, jid) {
 }
 
 export async function unwatchPlayer(input, jid) {
+  if (!jid) return "No se pudo identificar este chat.";
   const target = await resolveTarget(input);
   if (!target || !state.watchlist[target.key]?.includes(jid)) return "No estaba vigilando ese jugador en este chat.";
   state.watchlist[target.key] = state.watchlist[target.key].filter((chat) => chat !== jid);

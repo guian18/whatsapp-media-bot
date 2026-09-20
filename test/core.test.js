@@ -45,9 +45,11 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!proveedor claude"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor desconocido"), /Proveedor no válido/);
   assert.match(await handleCommand("!vigilar jugador"), /No se pudo identificar este chat/);
-  assert.match(await handleCommand("!novigilar"), /No estaba vigilando/);
+  assert.match(await handleCommand("!novigilar"), /No se pudo identificar este chat/);
+  assert.match(await handleCommand("!novigilar jugador"), /No se pudo identificar este chat/);
   assert.match(await handleCommand("!anime"), /solo está disponible desde WhatsApp/);
   assert.match(await handleCommand("!escaneo"), /solo está disponible desde WhatsApp/);
+  assert.match(await handleCommand("1", { jid: "test@s.whatsapp.net" }), /No hay un escaneo pendiente/);
   assert.match(await handleCommand("!help"), /!proveedor/);
   assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
   if (previousProvider === undefined) delete process.env.AI_PROVIDER;

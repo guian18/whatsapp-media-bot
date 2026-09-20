@@ -241,6 +241,9 @@ export async function handleCommand(text, context = {}) {
     if (result.error) return result.error;
     return `Escaneo de ${selected.label}: ${result.found} conectado(s), ${result.notified} información enviada.`;
   }
+  if (/^\d+$/.test(rawText) && context.jid) {
+    return "No hay un escaneo pendiente. Usa `!escaneo` para ver la lista actual.";
+  }
   const match = rawText.match(/^!(\w+)\s*([\s\S]*)$/);
   if (!match) return null;
 
