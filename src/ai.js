@@ -33,6 +33,7 @@ const MAX_CONTEXT_LENGTH = 7000;
 const REMOTE_AI_TIMEOUT_MS = 15_000;
 const LOCAL_AI_TIMEOUT_MS = 120_000;
 const SEARCH_TIMEOUT_MS = 8_000;
+const LOCAL_MAX_TOKENS = 256;
 const MIN_INTERVAL_MS = 4_000;
 const STYLES = {
   tranquilo: "sereno, paciente y fácil de entender",
@@ -212,7 +213,8 @@ async function askModel(question, style, sources, includeSources, history = []) 
   const systemPrompt = `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`;
   const userPrompt = `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}`;
   const messages = [{ role: "system", content: systemPrompt }, ...history.slice(-8), { role: "user", content: userPrompt }];
-  const requestBody = { model, temperature: 0.2, max_tokens: 700, messages };
+  const maxTokens = envNumber("AI_MAX_TOKENS", provider === "local" ? LOCAL_MAX_TOKENS : 700);
+  const requestBody = { model, temperature: 0.2, max_tokens: maxTokens, messages };
   const headers = { "content-type": "application/json" };
   if (key) headers.authorization = `Bearer ${key}`;
   const response = await fetch(url, {
@@ -377,12 +379,16 @@ export async function cmdIA(question, chatId = null) {
   lastRequestAt = now;
   try {
     let sources = [];
-    try {
-      sources = await webSearch(query);
-    } catch (error) {
-      // La búsqueda aporta contexto, pero no debe impedir usar la IA cuando
-      // DuckDuckGo está lento, bloqueado o no disponible en Termux.
-      console.error("Búsqueda web no disponible; se continuará sin fuentes:", error?.message || error);
+    const provider = aiConfig().provider;
+    const skipLocalSearch = provider === "local" && process.env.AI_LOCAL_SKIP_SEARCH !== "false" && !includeSources;
+    if (!skipLocalSearch) {
+      try {
+        sources = await webSearch(query);
+      } catch (error) {
+        // La búsqueda aporta contexto, pero no debe impedir usar la IA cuando
+        // DuckDuckGo está lento, bloqueado o no disponible en Termux.
+        console.error("Búsqueda web no disponible; se continuará sin fuentes:", error?.message || error);
+      }
     }
     const history = chatId ? (loadMemory()[chatId] || []) : [];
     const answer = await askModel(query, style, sources, includeSources, history);

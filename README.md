@@ -118,6 +118,8 @@ La lista principal de esta guía contiene solo proveedores con modalidad gratuit
 | `AI_TIMEOUT_MS` | Tiempo máximo para una API de IA remota. | `15000` |
 | `AI_LOCAL_TIMEOUT_MS` | Tiempo máximo para que responda `llama.cpp`; se recomienda más margen al ejecutarlo en un teléfono. | `120000` |
 | `AI_SEARCH_TIMEOUT_MS` | Tiempo máximo de la búsqueda web opcional; si falla, la IA continúa sin fuentes. | `8000` |
+| `AI_LOCAL_SKIP_SEARCH` | Evita la búsqueda web antes de consultar el modelo local, para reducir la latencia. Usa `false` si quieres buscar fuentes con `!ai`. | `true` |
+| `AI_MAX_TOKENS` | Límite de longitud de la respuesta; un valor menor responde más rápido en teléfonos. | `256` |
 | `AI_MEMORY_FILE` | Archivo privado con las últimas interacciones de `!ai` por chat. | `ai-memory.json` |
 | `SEARCH_PROVIDERS` | Proveedor de búsqueda web. | `duckduckgo` |
 | `WHATSAPP_NUMBER` | Número para vinculación directa, solo dígitos y código de país. | Vacío para usar QR |
