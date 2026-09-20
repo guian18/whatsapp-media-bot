@@ -2,7 +2,7 @@
 import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
-import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchPlayer } from "./watcher.js";
+import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
 
 const MAX_SERVERS = 200;
 const CONCURRENCY = 20;
@@ -10,6 +10,7 @@ const A2S_TIMEOUT = 2000;
 const MAX_RESULTS = 8;
 const MAX_NICKNAME_LENGTH = 64;
 let searchInFlight = false;
+const pendingScans = new Map();
 
 function pingResponse() {
   const dead = Number(process.env.PING_DEAD_CHANCE ?? "0.10");
@@ -71,7 +72,7 @@ export function ayuda() {
     "`!vigilar <nick|SteamID|URL>` — avisa cuando un jugador se conecta a L4D2",
     "`!novigilar <nick|SteamID|URL>` — cancela una vigilancia",
     "`!lista` — muestra los jugadores vigilados en este chat",
-    "`!escaneo [SteamID64|vanity|URL]` — fuerza un escaneo global o de un objetivo",
+    "`!escaneo` — muestra las vigilancias numeradas para elegir una",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }
@@ -201,7 +202,18 @@ async function cmdBuscarInterno(nickname) {
 }
 
 export async function handleCommand(text, context = {}) {
-  const match = (text || "").trim().match(/^!(\w+)\s*([\s\S]*)$/);
+  const rawText = (text || "").trim();
+  if (/^\d+$/.test(rawText) && context.jid && pendingScans.has(context.jid)) {
+    if (typeof context.sendMessage !== "function") return "La selección solo está disponible desde WhatsApp.";
+    const options = pendingScans.get(context.jid);
+    const selected = options[Number(rawText) - 1];
+    if (!selected) return `Número no válido. Elige uno entre 1 y ${options.length}.`;
+    pendingScans.delete(context.jid);
+    const result = await scanAndNotify(context.sendMessage, null, { manual: true, targetKey: selected.key });
+    if (result.error) return result.error;
+    return `Escaneo de ${selected.label}: ${result.found} conectado(s), ${result.notified} información enviada.`;
+  }
+  const match = rawText.match(/^!(\w+)\s*([\s\S]*)$/);
   if (!match) return null;
 
   const cmd = match[1].toLowerCase();
@@ -228,7 +240,13 @@ export async function handleCommand(text, context = {}) {
       return listWatched(context.jid);
     case "escaneo": {
       if (typeof context.sendMessage !== "function") return "El escaneo solo está disponible desde WhatsApp.";
-      const result = await scanAndNotify(context.sendMessage, args || null, { manual: true });
+      if (!args) {
+        const options = watchedTargets(context.jid);
+        if (!options.length) return "No vigilas jugadores aquí. Usa !vigilar <SteamID64|vanity|URL>.";
+        pendingScans.set(context.jid, options);
+        return ["Selecciona el jugador del que quieres información enviando solo el número:", ...options.map((item, index) => `${index + 1}. ${item.label}`)].join("\n");
+      }
+      const result = await scanAndNotify(context.sendMessage, args, { manual: true });
       if (result.error) return result.error;
       return `Escaneo completado: ${result.found} conectado(s), ${result.notified} aviso(s) enviado(s).`;
     }

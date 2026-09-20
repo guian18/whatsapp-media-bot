@@ -110,6 +110,12 @@ export function listWatched(jid) {
   return rows.length ? `Jugadores vigilados:\n${rows.join("\n")}` : "No vigilas jugadores aquí. Usa !vigilar <nickname|SteamID|URL>.";
 }
 
+export function watchedTargets(jid) {
+  return Object.keys(state.watchlist)
+    .filter((key) => state.watchlist[key].includes(jid))
+    .map((key) => ({ key, label: labelFor(key) }));
+}
+
 async function queryServer(addr) {
   try {
     const info = await serverInfo(addr.ip, addr.port, 1800);
@@ -176,10 +182,9 @@ function notificationText(key, result, manual = false) {
   ].filter(Boolean).join("\n");
 }
 
-export async function scanAndNotify(sendMessage, input = null, { manual = false } = {}) {
+export async function scanAndNotify(sendMessage, input = null, { manual = false, targetKey = null } = {}) {
   if (scanInFlight || !Object.keys(state.watchlist).length) return { found: 0, notified: 0 };
-  let targetKey = null;
-  if (input) {
+  if (!targetKey && input) {
     const target = await resolveTarget(input);
     if (!target) return { found: 0, notified: 0, error: "No pude resolver ese SteamID, vanity o URL." };
     targetKey = target.key;

@@ -171,7 +171,7 @@ Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El códi
 | `!vigilar <nick, SteamID o URL>` | Crea una vigilancia en el chat actual. |
 | `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
 | `!lista` | Muestra las vigilancias del chat. |
-| `!escaneo [SteamID64, vanity o URL]` | Ejecuta un escaneo manual inmediato y envía la información actual. |
+| `!escaneo` | Muestra las vigilancias numeradas para elegir una y recibir información inmediata. |
 | `!ai <pregunta>` | Busca contexto web y responde con IA. |
 | `!tono <estilo>` | Cambia el tono de la IA. |
 | `!idioma <código o país>` | Cambia el idioma de la IA. |
@@ -232,29 +232,34 @@ OFFICIAL_ADDRESSES_FILE=/sdcard/Download/l4d2-official-addresses.txt
 
 ## Vigilancia de jugadores
 
-`!vigilar` acepta un nickname, SteamID64, vanity o URL de perfil. `!escaneo` admite los mismos identificadores; sin argumento revisa todas las vigilancias y con un argumento revisa únicamente ese objetivo. El escaneo manual envía la información aunque ya se haya enviado antes; no cambia el comportamiento de los avisos automáticos. El bot consulta la Steam Web API cuando está disponible y usa el Master Server de Steam y A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
+`!vigilar` acepta un nickname, SteamID64, vanity o URL de perfil. Al enviar `!escaneo`, el bot muestra las vigilancias de ese chat con números. Responde después con un número, por ejemplo `1`, para recibir información inmediata del objetivo elegido. La selección usa exactamente los datos registrados por `!vigilar`. El escaneo manual envía la información aunque ya se haya enviado antes y no cambia el comportamiento de los avisos automáticos. El bot consulta la Steam Web API cuando está disponible y usa el Master Server de Steam y A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
 
 La vigilancia automática se ejecuta cada 50 segundos como mínimo. Puedes aumentar el intervalo con `WATCH_INTERVAL_SECONDS`, pero no reducirlo por debajo de 50 segundos.
 
 ### Escaneo manual inmediato
 
-`!escaneo` no activa una vigilancia nueva ni espera al siguiente ciclo automático. Ejecuta una consulta en ese momento y envía la información actual del jugador y del servidor, incluso si ya se había enviado un aviso anteriormente.
+`!escaneo` no activa una vigilancia nueva ni espera al siguiente ciclo automático. Primero muestra una lista numerada basada en `!vigilar`; después debes responder con el número correspondiente. Ejecuta una consulta en ese momento y envía la información actual del jugador y del servidor, incluso si ya se había enviado un aviso anteriormente.
 
-Para revisar todas las vigilancias:
+Para iniciar la selección:
 
 ```text
 !escaneo
 ```
 
-Para revisar únicamente una vigilancia concreta:
+El bot responderá, por ejemplo:
 
 ```text
-!escaneo 76561198000000000
-!escaneo nombre_de_usuario
-!escaneo https://steamcommunity.com/id/nombre_de_usuario
+1. NombreDelJugador
+2. 76561198000000000
 ```
 
-El objetivo indicado debe existir previamente en la lista de `!vigilar`. Si no hay una vigilancia para ese identificador, el bot lo informa sin crear una nueva.
+Responde con el número elegido:
+
+```text
+1
+```
+
+El número debe corresponder a una vigilancia creada previamente con `!vigilar`. Si no hay vigilancias en el chat, el bot lo informa sin crear una nueva.
 
 La vigilancia puede consumir batería, datos y CPU, especialmente con muchos servidores y un intervalo corto. En Termux, aumenta `WATCH_INTERVAL_SECONDS` si el teléfono se calienta o consume demasiados datos.
 
