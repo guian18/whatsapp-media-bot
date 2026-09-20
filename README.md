@@ -89,6 +89,25 @@ tmux attach -t infoplayerleft
 
 Copia `.env.example` como `.env` y completa las variables necesarias. Nunca compartas ese archivo.
 
+### Actualización segura en Termux
+
+Este procedimiento actualiza el código y las dependencias sin reemplazar `.env`, las API keys, `.steam_key`, `auth_info` ni los archivos de vigilancia. No borres el directorio del proyecto ni ejecutes `git clean -fd`.
+
+```bash
+cd ~/infoplayerleft
+mkdir -p ~/.infoplayerleft-backups
+cp -p .env ~/.infoplayerleft-backups/env-$(date +%Y%m%d-%H%M%S).bak 2>/dev/null || true
+tar -czf ~/.infoplayerleft-backups/auth-$(date +%Y%m%d-%H%M%S).tar.gz auth_info 2>/dev/null || true
+pkg update
+pkg upgrade -y
+pkg install nodejs-lts git -y
+git pull --rebase origin main
+npm ci
+npm test
+```
+
+`npm ci` puede reconstruir `node_modules`, que es una carpeta de dependencias descartable; no modifica `.env` ni la sesión de WhatsApp. Las advertencias de npm sobre scripts bloqueados no son un error si las 19 pruebas pasan. No ejecutes `npm audit fix` como parte de esta actualización porque puede cambiar versiones y romper el bot.
+
 ### Configuración mínima
 
 ```env
@@ -159,22 +178,21 @@ ip -4 addr show wlan0 | awk '/inet / {print $2}'
 
 Usa la dirección antes de `/24`, por ejemplo `192.168.1.25`. Si `wlan0` no aparece, consulta todas las interfaces con `ip -4 addr` y utiliza la dirección privada de la interfaz Wi-Fi. La app y el bot deben estar en la misma red, y el router no debe aislar los dispositivos Wi-Fi.
 
-El token se define en el archivo `.env` del bot mediante `CONTROL_API_TOKEN`. No se puede recuperar desde la app ni desde el API, porque nunca se devuelve en las respuestas. Créalo una vez con un valor aleatorio largo:
+El token se define en el archivo `.env` del bot mediante `CONTROL_API_TOKEN`. No se puede recuperar desde la app ni desde el API, porque nunca se devuelve en las respuestas. En Termux, genera el token con Node.js, que ya es necesario para ejecutar el bot:
 
 ```bash
 cd ~/infoplayerleft
-TOKEN=$(openssl rand -hex 32)
-sed -i "s|^CONTROL_API_TOKEN=.*|CONTROL_API_TOKEN=$TOKEN|" .env
+TOKEN=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")
+test -n "$TOKEN" || { echo 'No se pudo generar el token'; exit 1; }
+if grep -q '^CONTROL_API_TOKEN=' .env; then
+  sed -i "s|^CONTROL_API_TOKEN=.*|CONTROL_API_TOKEN=$TOKEN|" .env
+else
+  printf '\nCONTROL_API_TOKEN=%s\n' "$TOKEN" >> .env
+fi
 printf 'Guarda este token en un lugar seguro; no lo publiques:\n%s\n' "$TOKEN"
 ```
 
-Si `openssl` no está instalado, usa Node.js:
-
-```bash
-node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-```
-
-En ese caso, copia el resultado manualmente después de `CONTROL_API_TOKEN=` en `.env`. Conserva las demás claves del archivo; no reemplaces `.env` completo. Después reinicia el bot para que lea el token:
+Este comando solo reemplaza o añade `CONTROL_API_TOKEN`; conserva las demás claves. Si ya tienes un token funcional, no lo regeneres: comprueba que no esté vacío con `grep -n '^CONTROL_API_TOKEN=' .env | sed 's/=.*/=<configurado>/'`. Después reinicia el bot para que lea el token:
 
 ```bash
 npm start
