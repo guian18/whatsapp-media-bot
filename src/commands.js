@@ -246,6 +246,15 @@ export async function handleCommand(text, context = {}) {
         pendingScans.set(context.jid, options);
         return ["Selecciona el jugador del que quieres información enviando solo el número:", ...options.map((item, index) => `${index + 1}. ${item.label}`)].join("\n");
       }
+      if (/^\d+$/.test(args) && context.jid && pendingScans.has(context.jid)) {
+        const options = pendingScans.get(context.jid);
+        const selected = options[Number(args) - 1];
+        if (!selected) return `Número no válido. Elige uno entre 1 y ${options.length}.`;
+        pendingScans.delete(context.jid);
+        const selectedResult = await scanAndNotify(context.sendMessage, null, { manual: true, targetKey: selected.key });
+        if (selectedResult.error) return selectedResult.error;
+        return `Escaneo de ${selected.label}: ${selectedResult.found} conectado(s), ${selectedResult.notified} información enviada.`;
+      }
       const result = await scanAndNotify(context.sendMessage, args, { manual: true });
       if (result.error) return result.error;
       return `Escaneo completado: ${result.found} conectado(s), ${result.notified} aviso(s) enviado(s).`;
