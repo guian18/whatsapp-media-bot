@@ -98,33 +98,36 @@ Si ya tienes un `.env` con claves, no lo sobrescribas: abre `nano .env` y copia 
 
 El bot responde en grupos privados cuando `GROUPS_ENABLED=true`. Deja `ALLOWED_GROUPS=` vacío para permitir todos los grupos; si escribes IDs separados por comas, responderá únicamente en esos grupos.
 
-## APIs y opciones de configuración
+## APIs y enlaces directos
 
-### Opciones sin pagar
+### Servicios integrados sin clave
 
-No necesitas crear ninguna API de búsqueda. Deja esta configuración:
+La búsqueda web usa DuckDuckGo y no requiere una cuenta ni una API de pago:
 
 ```env
 SEARCH_PROVIDERS=duckduckgo
 ```
 
-DuckDuckGo se consulta sin clave ni suscripción. Puede tener límites o cambiar su HTML, pero es la opción integrada sin coste. La [Steam Web API Key](https://steamcommunity.com/dev/apikey) también se obtiene gratuitamente para consultar perfiles públicos.
+DuckDuckGo puede aplicar límites o cambiar el formato de sus resultados. La [Steam Web API Key](https://steamcommunity.com/dev/apikey) es gratuita y se necesita para consultar perfiles y vigilar jugadores.
 
-### APIs y enlaces directos
+### Claves de Steam e inteligencia artificial
 
-- **Steam:** [crear Steam Web API Key](https://steamcommunity.com/dev/apikey) — `STEAM_API_KEY`
-- **Groq:** [crear Groq API Key](https://console.groq.com/keys) — `AI_PROVIDER=groq`, `AI_MODEL=openai/gpt-oss-20b`, `GROQ_API_KEY`
-- **Gemini:** [crear Gemini API Key](https://aistudio.google.com/apikey) — `AI_PROVIDER=gemini`, `AI_MODEL=gemini-2.5-flash`, `GEMINI_API_KEY`
-- **ChatGPT/OpenAI:** [crear OpenAI API Key](https://platform.openai.com/api-keys) — `AI_PROVIDER=openai`, `AI_MODEL=gpt-4o-mini`, `OPENAI_API_KEY`
-- **Grok/xAI:** [crear xAI API Key](https://console.x.ai/team/default/api-keys) — `AI_PROVIDER=xai`, `AI_MODEL=grok-4.6`, `XAI_API_KEY`
-- **DeepSeek:** [crear DeepSeek API Key](https://platform.deepseek.com/api_keys) — `AI_PROVIDER=deepseek`, `AI_MODEL=deepseek-chat`, `DEEPSEEK_API_KEY`
-- **Mistral:** [crear Mistral API Key](https://console.mistral.ai/api-keys/) — `AI_PROVIDER=mistral`, `AI_MODEL=mistral-small-4-0-26-03`, `MISTRAL_API_KEY`
-- **OpenRouter:** [crear OpenRouter API Key](https://openrouter.ai/keys) — `AI_PROVIDER=openrouter`, `AI_MODEL=openrouter/auto`, `OPENROUTER_API_KEY`
-- **Búsqueda web:** DuckDuckGo funciona sin API key mediante `SEARCH_PROVIDERS=duckduckgo`.
+Elige un proveedor, crea la clave desde su enlace oficial y guarda la variable indicada en `.env`. El modelo se selecciona automáticamente al usar `!proveedor <nombre>`.
 
-Groq y Gemini pueden ofrecer cuotas gratuitas, pero no son ilimitadas. Los demás proveedores tienen sus propios precios, créditos o límites.
+| Servicio | Enlace oficial | Configuración | Variable de clave |
+|---|---|---|---|
+| Steam Web API | [Crear clave](https://steamcommunity.com/dev/apikey) | — | `STEAM_API_KEY` |
+| Groq | [Crear API key](https://console.groq.com/keys) | `AI_PROVIDER=groq`<br>`AI_MODEL=openai/gpt-oss-20b` | `GROQ_API_KEY` |
+| Google Gemini | [Crear API key](https://aistudio.google.com/apikey) | `AI_PROVIDER=gemini`<br>`AI_MODEL=gemini-2.5-flash` | `GEMINI_API_KEY` |
+| OpenAI / ChatGPT | [Crear API key](https://platform.openai.com/api-keys) | `AI_PROVIDER=openai`<br>`AI_MODEL=gpt-4o-mini` | `OPENAI_API_KEY` |
+| xAI / Grok | [Crear API key](https://console.x.ai/team/default/api-keys) | `AI_PROVIDER=xai`<br>`AI_MODEL=grok-4.6` | `XAI_API_KEY` |
+| DeepSeek | [Crear API key](https://platform.deepseek.com/api_keys) | `AI_PROVIDER=deepseek`<br>`AI_MODEL=deepseek-chat` | `DEEPSEEK_API_KEY` |
+| Mistral | [Crear API key](https://console.mistral.ai/api-keys/) | `AI_PROVIDER=mistral`<br>`AI_MODEL=mistral-small-4-0-26-03` | `MISTRAL_API_KEY` |
+| OpenRouter | [Crear API key](https://openrouter.ai/keys) | `AI_PROVIDER=openrouter`<br>`AI_MODEL=openrouter/auto` | `OPENROUTER_API_KEY` |
 
-Nunca publiques `.env`, `.steam_key` ni `auth_info/`.
+También puedes usar la variable genérica `AI_API_KEY` si solo vas a configurar un proveedor. Groq y Gemini pueden ofrecer cuotas gratuitas, pero no son ilimitadas; los demás servicios tienen sus propios precios, créditos y límites.
+
+> **Seguridad:** nunca publiques `.env`, `.steam_key`, las claves de API ni `auth_info/`.
 
 ## Vincular WhatsApp
 
