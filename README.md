@@ -91,6 +91,8 @@ PAIRING_CODE=false
 
 El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias claves, es preferible configurar la variable específica de cada proveedor, como `GROQ_API_KEY` o `OPENAI_API_KEY`.
 
+Para usar Claude directamente, crea una clave en la [consola oficial de Anthropic](https://platform.claude.com/settings/keys), guárdala como `ANTHROPIC_API_KEY` y ejecuta `!proveedor claude` o `!proveedor anthropic`. La integración usa la Messages API oficial (`/v1/messages`), el encabezado `x-api-key` y `anthropic-version: 2023-06-01`. El modelo predeterminado es `claude-sonnet-5`; puedes reemplazarlo con `AI_MODEL` si tu cuenta tiene acceso a otro modelo.
+
 ### Opciones frecuentes
 
 | Variable | Descripción | Valor habitual |
@@ -99,6 +101,7 @@ El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias
 | `AI_PROVIDER` | Proveedor usado por `!ai`. | `groq` |
 | `AI_MODEL` | Modelo usado por el proveedor. | `openai/gpt-oss-20b` |
 | `AI_MEMORY_FILE` | Archivo privado con las últimas interacciones de `!ai` por chat. | `ai-memory.json` |
+| `ANTHROPIC_API_KEY` | Clave de la API oficial de Claude. | Vacío hasta configurarla |
 | `SEARCH_PROVIDERS` | Proveedor de búsqueda web. | `duckduckgo` |
 | `WHATSAPP_NUMBER` | Número para vinculación directa, solo dígitos y código de país. | Vacío para usar QR |
 | `PAIRING_CODE` | Activa el código de vinculación cuando corresponde. | `false` |
@@ -132,8 +135,9 @@ Elige un proveedor, crea la clave desde su enlace oficial y configura la variabl
 | DeepSeek | [Crear API key][7] | `deepseek` / `deepseek-chat` | `DEEPSEEK_API_KEY` |
 | Mistral | [Crear API key][8] | `mistral` / `mistral-small-4-0-26-03` | `MISTRAL_API_KEY` |
 | OpenRouter | [Crear API key][9] | `openrouter` / `openrouter/auto` | `OPENROUTER_API_KEY` |
+| Anthropic Claude | [Crear API key](https://platform.claude.com/settings/keys) | `anthropic` / `claude-sonnet-5` | `ANTHROPIC_API_KEY` |
 
-Las cuotas, precios y límites dependen de cada proveedor. Comprueba sus condiciones antes de usar una clave de pago.
+Las cuotas, precios y límites dependen de cada proveedor. Comprueba sus condiciones antes de usar una clave de pago. Consulta la [documentación oficial de Claude](https://platform.claude.com/docs/en/api/messages) y la [guía de modelos](https://platform.claude.com/docs/en/models/overview) para conocer disponibilidad, precios y retiros.
 
 ### Proxy opcional de OpenRouter
 
