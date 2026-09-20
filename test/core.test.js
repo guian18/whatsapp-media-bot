@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import dgram from "node:dgram";
+import http from "node:http";
 import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -10,7 +11,7 @@ import { parseAddress, serverInfo } from "../src/a2s.js";
 import { formatOfficialAddresses } from "../src/official-addresses.js";
 import { SCAN_INTERVAL_MS } from "../src/watcher.js";
 import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
-import { aiConfigured, containsRisk, detectStyle } from "../src/ai.js";
+import { aiConfigured, cmdIA, containsRisk, detectStyle } from "../src/ai.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
@@ -39,6 +40,11 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!proveedor openai"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor claude"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor desconocido"), /Proveedor no válido/);
+  assert.match(await handleCommand("!vigilar jugador"), /No se pudo identificar este chat/);
+  assert.match(await handleCommand("!novigilar"), /No estaba vigilando/);
+  assert.match(await handleCommand("!anime"), /solo está disponible desde WhatsApp/);
+  assert.match(await handleCommand("!escaneo"), /solo está disponible desde WhatsApp/);
+  assert.match(await handleCommand("!help"), /!proveedor/);
   assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
   if (previousAiKey === undefined) delete process.env.AI_API_KEY;
   else process.env.AI_API_KEY = previousAiKey;
@@ -136,6 +142,47 @@ test("local AI provider does not require an API key", () => {
   else process.env.AI_API_KEY = previousKey;
   if (previousLocalKey === undefined) delete process.env.AI_LOCAL_API_KEY;
   else process.env.AI_LOCAL_API_KEY = previousLocalKey;
+});
+
+test("local AI provider accepts an OpenAI-compatible response", async (t) => {
+  const server = http.createServer((request, response) => {
+    if (request.method !== "POST") {
+      response.writeHead(404).end();
+      return;
+    }
+    response.setHeader("content-type", "application/json");
+    response.end(JSON.stringify({ choices: [{ message: { content: "Respuesta local de prueba" } }] }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+
+  const previousProvider = process.env.AI_PROVIDER;
+  const previousUrl = process.env.AI_LOCAL_URL;
+  const previousKey = process.env.AI_LOCAL_API_KEY;
+  const previousInterval = process.env.AI_MIN_INTERVAL_MS;
+  const previousFetch = globalThis.fetch;
+  process.env.AI_PROVIDER = "local";
+  process.env.AI_LOCAL_URL = `http://127.0.0.1:${server.address().port}/v1/chat/completions`;
+  delete process.env.AI_LOCAL_API_KEY;
+  process.env.AI_MIN_INTERVAL_MS = "0";
+  globalThis.fetch = async (url, options) => {
+    if (String(url).startsWith("https://html.duckduckgo.com/")) return new Response("", { status: 200 });
+    return previousFetch(url, options);
+  };
+
+  try {
+    assert.match(await cmdIA("prueba local"), /Respuesta local de prueba/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousProvider === undefined) delete process.env.AI_PROVIDER;
+    else process.env.AI_PROVIDER = previousProvider;
+    if (previousUrl === undefined) delete process.env.AI_LOCAL_URL;
+    else process.env.AI_LOCAL_URL = previousUrl;
+    if (previousKey === undefined) delete process.env.AI_LOCAL_API_KEY;
+    else process.env.AI_LOCAL_API_KEY = previousKey;
+    if (previousInterval === undefined) delete process.env.AI_MIN_INTERVAL_MS;
+    else process.env.AI_MIN_INTERVAL_MS = previousInterval;
+  }
 });
 
 test("environment loader applies values from the configured .env file", (t) => {

@@ -180,7 +180,7 @@ function providerKeyMismatch(provider, key) {
 
 async function askModel(question, style, sources, includeSources, history = []) {
   const { key, url, model, provider } = aiConfig();
-  if (!key) return null;
+  if (!key && provider !== "local") return null;
   const context = sources.length
     ? sources.map((s, i) => `[${i + 1}] ${s.title}\nURL: ${s.url}\n${s.snippet}`).join("\n\n")
     : "No se encontraron resultados web verificables.";
