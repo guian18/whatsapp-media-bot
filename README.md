@@ -104,7 +104,7 @@ El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias
 | `ALLOWED_GROUPS` | IDs de grupos permitidos, separados por comas. | Vacío para permitir todos |
 | `REPLY_IN_PRIVATE` | Permite respuestas en chats privados. | `true` |
 | `AUTH_DIR` | Carpeta de la sesión de WhatsApp. | `auth_info` |
-| `ALLOW_PRIVATE_SERVERS` | Permite consultar IP privadas o locales. | `false` |
+| `ALLOW_PRIVATE_SERVERS` | Permite consultar servidores locales, privados y públicos. Usa `false` para bloquear los locales. | `true` |
 | `WATCH_INTERVAL_SECONDS` | Intervalo del escaneo de vigilancia; nunca es inferior a 50 segundos. | `50` |
 | `WATCH_MAX_SERVERS` | Número máximo de servidores revisados. | `200` |
 
@@ -193,10 +193,16 @@ Ejemplo:
 
 El puerto debe ser un número entero entre `1` y `65535`. Si falta o no es válido, la consulta se rechaza antes de abrir el socket UDP para evitar `ERR_SOCKET_BAD_PORT`.
 
-Por seguridad, el bot bloquea por defecto `localhost`, `127.0.0.1`, redes privadas y otras direcciones no públicas. Solo habilita estas direcciones si tienes una razón concreta:
+El bot puede consultar servidores oficiales, públicos, locales y privados. Esto permite usar direcciones como `localhost:27015`, `127.0.0.1:27015` o `192.168.1.20:27015`, además de IP públicas y dominios oficiales.
 
 ```env
 ALLOW_PRIVATE_SERVERS=true
+```
+
+Si quieres bloquear las consultas locales o privadas, configura:
+
+```env
+ALLOW_PRIVATE_SERVERS=false
 ```
 
 ## Vigilancia de jugadores
@@ -264,7 +270,7 @@ npm run relink         Elimina la sesión y vuelve a iniciar.
 
 - No compartas códigos de vinculación ni sesiones de WhatsApp.
 - No publiques `.env`, `.steam_key`, claves de API, `auth_info/` ni `watchlist.json`.
-- Mantén `ALLOW_PRIVATE_SERVERS=false` salvo que necesites consultar una red privada.
+- Mantén `ALLOW_PRIVATE_SERVERS=true` si necesitas consultar servidores locales o privados; usa `false` para bloquearlos.
 - Revisa los permisos y límites del proveedor antes de usar una API de pago.
 - Baileys no es una librería oficial de WhatsApp.
 

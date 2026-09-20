@@ -174,10 +174,10 @@ export function parseAddress(text) {
   const port = Number(text.trim().slice(idx + 1));
   if (!ip || !Number.isInteger(port) || port <= 0 || port > 65535) return null;
   if (/[\s/\\]/.test(ip) || ip.length > 253) return null;
-  if (ip === "localhost" || ip === "localhost.localdomain" || ip.endsWith(".local")) return null;
-  const allowPrivate = process.env.ALLOW_PRIVATE_SERVERS === "true";
+  const allowPrivate = process.env.ALLOW_PRIVATE_SERVERS !== "false";
   if (!allowPrivate && (/^127\./.test(ip) || /^10\./.test(ip) || /^192\.168\./.test(ip) ||
       /^169\.254\./.test(ip) || /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
-      /^224\./.test(ip) || ip === "0.0.0.0")) return null;
+      /^224\./.test(ip) || ip === "0.0.0.0" || ip === "localhost" ||
+      ip === "localhost.localdomain" || ip.endsWith(".local"))) return null;
   return { ip, port };
 }

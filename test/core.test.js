@@ -53,17 +53,25 @@ test("command dispatcher serves local commands without external services", async
 });
 
 test("address and Steam-key validation reject malformed input", () => {
+  const previousPrivateServers = process.env.ALLOW_PRIVATE_SERVERS;
+  process.env.ALLOW_PRIVATE_SERVERS = "true";
   assert.deepEqual(parseAddress("8.8.8.8:27015"), { ip: "8.8.8.8", port: 27015 });
   assert.deepEqual(parseAddress("server.example.org:12345"), {
     ip: "server.example.org",
     port: 12345,
   });
-  assert.equal(parseAddress("127.0.0.1"), null);
+  assert.deepEqual(parseAddress("localhost:27015"), { ip: "localhost", port: 27015 });
+  assert.deepEqual(parseAddress("127.0.0.1:27015"), { ip: "127.0.0.1", port: 27015 });
+  assert.deepEqual(parseAddress("192.168.1.20:27015"), { ip: "192.168.1.20", port: 27015 });
+  process.env.ALLOW_PRIVATE_SERVERS = "false";
   assert.equal(parseAddress("127.0.0.1:27015"), null);
+  assert.equal(parseAddress("localhost:27015"), null);
   assert.equal(parseAddress("127.0.0.1:0"), null);
   assert.equal(parseAddress("127.0.0.1:65536"), null);
   assert.equal(looksValidSteamKey("0123456789abcdef0123456789ABCDEF"), true);
   assert.equal(looksValidSteamKey("not-a-key"), false);
+  if (previousPrivateServers === undefined) delete process.env.ALLOW_PRIVATE_SERVERS;
+  else process.env.ALLOW_PRIVATE_SERVERS = previousPrivateServers;
 });
 
 test("A2S rejects an undefined or invalid port before sending UDP", async () => {
