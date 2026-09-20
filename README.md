@@ -232,7 +232,7 @@ OFFICIAL_ADDRESSES_FILE=/sdcard/Download/l4d2-official-addresses.txt
 
 ## Vigilancia de jugadores
 
-`!vigilar` acepta un nickname, SteamID64, vanity o URL de perfil. Al enviar `!escaneo`, el bot muestra las vigilancias de ese chat con números. Responde después con un número, por ejemplo `1`, para recibir información inmediata del objetivo elegido. La selección usa exactamente los datos registrados por `!vigilar`. El escaneo manual envía la información aunque ya se haya enviado antes y no cambia el comportamiento de los avisos automáticos. El bot consulta la Steam Web API cuando está disponible y usa el Master Server de Steam y A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
+`!vigilar` acepta un nickname, SteamID64, vanity o URL de perfil. Al enviar `!escaneo`, el bot muestra las vigilancias de ese chat con números. Responde después con un número, por ejemplo `1`, para recibir información inmediata del objetivo elegido. La selección usa exactamente los datos registrados por `!vigilar`. El escaneo manual envía la información aunque ya se haya enviado antes y no cambia el comportamiento de los avisos automáticos. El bot consulta la Steam Web API y usa la dirección de servidor que devuelve Steam; si no está disponible, busca el jugador en el Master Server de Steam y consulta A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
 
 La vigilancia automática se ejecuta cada 50 segundos como mínimo. Puedes aumentar el intervalo con `WATCH_INTERVAL_SECONDS`, pero no reducirlo por debajo de 50 segundos.
 

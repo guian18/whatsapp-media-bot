@@ -138,7 +138,7 @@ async function scanWatched(targetKey = null) {
     if (!key.startsWith("steam:")) continue;
     const steamId = key.slice(6);
     const { player } = await getPlayerInfo(steamId).catch(() => ({ player: null }));
-    const direct = player?.gameserverip && String(player.gameid) === "550" ? parseAddress(player.gameserverip) : null;
+    const direct = player?.gameserverip ? parseAddress(player.gameserverip) : null;
     if (direct) {
       const result = await queryServer(direct);
       found.set(key, { addr: `${direct.ip}:${direct.port}`, info: result.info, player: player.personaname || steamId });
@@ -147,7 +147,7 @@ async function scanWatched(targetKey = null) {
     if (player?.personaname) targets.set(player.personaname.toLowerCase(), key);
   }
   if (!targets.size) return found;
-  const servers = await masterServerList({ limit: MAX_SERVERS, timeout: 3500 });
+  const servers = await masterServerList({ limit: targetKey ? Math.max(MAX_SERVERS, 1000) : MAX_SERVERS, timeout: 3500 });
   let index = 0;
   const worker = async () => {
     while (index < servers.length) {
