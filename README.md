@@ -264,10 +264,10 @@ El bot incorpora el notificador del ZIP proporcionado, adaptado de Discord a Wha
 Ejemplo:
 
 ```text
-!vigilar tímidok7
+!vigilar nombre_del_jugador
 !lista
 !escaneo
-!novigilar tímidok7
+!novigilar nombre_del_jugador
 ```
 
 El escaneo usa `STEAM_API_KEY` cuando está disponible y consulta el Master Server/A2S como respaldo. `WATCH_INTERVAL_SECONDS=1` revisa cada segundo como mínimo práctico; Steam no ofrece un evento público instantáneo, por lo que el aviso real depende del tiempo de respuesta del Master Server y de los servidores. El bot deduplica el mismo jugador y servidor, no repite avisos durante la misma conexión y permite avisar de nuevo después de detectar que el jugador salió. Escanear muchos servidores cada segundo puede consumir bastante batería, datos y CPU en Termux; reduce el valor si el teléfono se calienta.
