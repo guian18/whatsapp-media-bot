@@ -172,7 +172,7 @@ Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El códi
 | `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
 | `!lista` | Muestra las vigilancias del chat. |
 | `!escaneo [SteamID64, vanity o URL]` | Ejecuta un escaneo manual inmediato y envía la información actual. |
-| `!ips` | Guarda las IPs públicas oficiales en un archivo de Descargas. |
+| `!ips` | Guarda las direcciones públicas oficiales en formato `IP:puerto` en un archivo de Descargas. |
 | `!ai <pregunta>` | Busca contexto web y responde con IA. |
 | `!tono <estilo>` | Cambia el tono de la IA. |
 | `!idioma <código o país>` | Cambia el idioma de la IA. |
@@ -211,7 +211,7 @@ ALLOW_PRIVATE_SERVERS=false
 
 ### Exportar IPs oficiales a un archivo
 
-El comando manual `!ips` consulta el Master Server de Steam y guarda únicamente las IPs públicas oficiales de L4D2. Escribe una IP por línea y no incluye puertos, dominios, `localhost` ni direcciones privadas.
+El comando manual `!ips` consulta el Master Server de Steam y guarda únicamente las direcciones públicas oficiales de L4D2 en formato `IP:puerto`, una por línea. No incluye `0.0.0.0:0000`, que es el marcador de fin de la respuesta, ni dominios, `localhost` o direcciones privadas.
 
 En Termux, el archivo se guarda por defecto en:
 

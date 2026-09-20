@@ -29,16 +29,20 @@ function isPublicIpv4(ip) {
 
 async function exportOfficialIps() {
   const servers = await masterServerList({ limit: MAX_SERVERS });
-  const ips = [...new Set(servers.map(({ ip }) => ip).filter(isPublicIpv4))].sort();
-  if (!ips.length) return "No se encontraron IPs oficiales en el Master Server de Steam.";
+  const addresses = [...new Set(
+    servers
+      .filter(({ ip, port }) => isPublicIpv4(ip) && Number.isInteger(port) && port > 0 && port <= 65535)
+      .map(({ ip, port }) => `${ip}:${port}`)
+  )].sort();
+  if (!addresses.length) return "No se encontraron servidores oficiales en el Master Server de Steam.";
   const file = officialIpsPath();
   try {
     mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, `${ips.join("\n")}\n`, { mode: 0o600 });
+    writeFileSync(file, `${addresses.join("\n")}\n`, { mode: 0o600 });
   } catch (error) {
     return `No pude crear el archivo de IPs en ${file}. En Termux ejecuta primero: termux-setup-storage. Detalle: ${error.message}`;
   }
-  return `Guardé ${ips.length} IPs oficiales, una por línea y sin puertos, en: ${file}`;
+  return `Guardé ${addresses.length} servidores oficiales en formato IP:puerto, en: ${file}`;
 }
 
 function pingResponse() {
@@ -102,7 +106,7 @@ export function ayuda() {
     "`!novigilar <nick|SteamID|URL>` — cancela una vigilancia",
     "`!lista` — muestra los jugadores vigilados en este chat",
     "`!escaneo [SteamID64|vanity|URL]` — fuerza un escaneo global o de un objetivo",
-    "`!ips` — guarda las IPs oficiales en Descargas (Termux)",
+    "`!ips` — guarda direcciones oficiales IP:puerto en Descargas (Termux)",
     "`!ayuda` — este mensaje",
   ].join("\n");
 }
