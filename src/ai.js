@@ -118,6 +118,10 @@ function isTimeoutError(error) {
   return name === "TimeoutError" || name === "AbortError" || /timeout|timed out|aborted/i.test(message);
 }
 
+function localFastMode(provider) {
+  return provider === "local" && process.env.AI_LOCAL_FAST !== "false";
+}
+
 function cleanText(value) {
   return String(value || "")
     .replace(/<[^>]*>/g, " ")
@@ -199,6 +203,7 @@ function providerKeyMismatch(provider, key) {
 async function askModel(question, style, sources, includeSources, history = []) {
   const { key, url, model, provider } = aiConfig();
   if (!key && provider !== "local") return null;
+  const fastLocal = localFastMode(provider);
   const context = sources.length
     ? sources.map((s, i) => `[${i + 1}] ${s.title}\nURL: ${s.url}\n${s.snippet}`).join("\n\n")
     : "No se encontraron resultados web verificables.";
@@ -210,9 +215,11 @@ async function askModel(question, style, sources, includeSources, history = []) 
   const languageName = languageInfo.name;
   const locale = LANGUAGES[language] ? language : "es-ES";
   const dateContext = new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(new Date());
-  const systemPrompt = `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`;
+  const systemPrompt = fastLocal
+    ? `Responde en ${languageName}, claro y útil. Hoy es ${dateContext}. Sé breve y usa este tono: ${style}. No inventes datos. ${sourceInstruction}`
+    : `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`;
   const userPrompt = `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}`;
-  const messages = [{ role: "system", content: systemPrompt }, ...history.slice(-8), { role: "user", content: userPrompt }];
+  const messages = [{ role: "system", content: systemPrompt }, ...history.slice(fastLocal ? -2 : -8), { role: "user", content: userPrompt }];
   const maxTokens = envNumber("AI_MAX_TOKENS", provider === "local" ? LOCAL_MAX_TOKENS : 700);
   const requestBody = { model, temperature: 0.2, max_tokens: maxTokens, messages };
   const headers = { "content-type": "application/json" };
