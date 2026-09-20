@@ -168,7 +168,7 @@ Ejecuta `npm start` y sigue las instrucciones mostradas en la terminal. El códi
 | `!vigilar <nick, SteamID o URL>` | Crea una vigilancia en el chat actual. |
 | `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
 | `!lista` | Muestra las vigilancias del chat. |
-| `!escaneo [SteamID64, vanity o URL]` | Ejecuta un escaneo inmediato de todas las vigilancias o del objetivo indicado. |
+| `!escaneo [SteamID64, vanity o URL]` | Ejecuta un escaneo manual inmediato y envía la información actual. |
 | `!ai <pregunta>` | Busca contexto web y responde con IA. |
 | `!tono <estilo>` | Cambia el tono de la IA. |
 | `!idioma <código o país>` | Cambia el idioma de la IA. |
@@ -201,7 +201,7 @@ ALLOW_PRIVATE_SERVERS=true
 
 ## Vigilancia de jugadores
 
-`!vigilar` acepta un nickname, SteamID64, vanity o URL de perfil. `!escaneo` admite los mismos identificadores; sin argumento revisa todas las vigilancias y con un argumento revisa únicamente ese objetivo. El bot consulta la Steam Web API cuando está disponible y usa el Master Server de Steam y A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
+`!vigilar` acepta un nickname, SteamID64, vanity o URL de perfil. `!escaneo` admite los mismos identificadores; sin argumento revisa todas las vigilancias y con un argumento revisa únicamente ese objetivo. El escaneo manual envía la información aunque ya se haya enviado antes; no cambia el comportamiento de los avisos automáticos. El bot consulta la Steam Web API cuando está disponible y usa el Master Server de Steam y A2S como respaldo. El estado se guarda en `watchlist.json`, que no debe publicarse.
 
 La vigilancia automática se ejecuta cada 50 segundos como mínimo. Puedes aumentar el intervalo con `WATCH_INTERVAL_SECONDS`, pero no reducirlo por debajo de 50 segundos.
 

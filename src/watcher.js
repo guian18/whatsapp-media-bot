@@ -160,11 +160,11 @@ async function scanWatched(targetKey = null) {
   return found;
 }
 
-function notificationText(key, result) {
+function notificationText(key, result, manual = false) {
   const info = result.info || {};
   const address = result.addr;
   return [
-    "🔔 Jugador conectado a L4D2",
+    manual ? "Escaneo manual de L4D2" : "🔔 Jugador conectado a L4D2",
     `${result.player} (vigilando ${labelFor(key)})`,
     `Servidor: ${info.name || "desconocido"}`,
     `Dirección: ${address}`,
@@ -174,7 +174,7 @@ function notificationText(key, result) {
   ].filter(Boolean).join("\n");
 }
 
-export async function scanAndNotify(sendMessage, input = null) {
+export async function scanAndNotify(sendMessage, input = null, { manual = false } = {}) {
   if (scanInFlight || !Object.keys(state.watchlist).length) return { found: 0, notified: 0 };
   let targetKey = null;
   if (input) {
@@ -202,16 +202,19 @@ export async function scanAndNotify(sendMessage, input = null) {
         continue;
       }
       const alreadyNotified = Array.isArray(state.notified[key]) && state.notified[key].includes(current);
-      if (current && current !== previous && !alreadyNotified) {
+      const shouldNotify = current && (manual || (current !== previous && !alreadyNotified));
+      if (shouldNotify) {
         for (const jid of state.watchlist[key]) {
           try {
-            await sendMessage(jid, { text: notificationText(key, result) });
+            await sendMessage(jid, { text: notificationText(key, result, manual) });
             notified++;
           } catch (error) {
             console.error(`No se pudo enviar aviso a ${jid}:`, error?.message || error);
           }
         }
-        state.notified[key] = [...new Set([...(state.notified[key] || []), current])];
+        if (!manual) {
+          state.notified[key] = [...new Set([...(state.notified[key] || []), current])];
+        }
       }
       if (current !== previous) {
         state.lastSeen[key] = current;

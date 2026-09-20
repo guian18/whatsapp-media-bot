@@ -227,7 +227,7 @@ export async function handleCommand(text, context = {}) {
       return listWatched(context.jid);
     case "escaneo": {
       if (typeof context.sendMessage !== "function") return "El escaneo solo está disponible desde WhatsApp.";
-      const result = await scanAndNotify(context.sendMessage, args || null);
+      const result = await scanAndNotify(context.sendMessage, args || null, { manual: true });
       if (result.error) return result.error;
       return `Escaneo completado: ${result.found} conectado(s), ${result.notified} aviso(s) enviado(s).`;
     }
