@@ -351,3 +351,25 @@ test("environment loader preserves explicit local provider with a Groq key", (t)
   assert.match(readFileSync(envFile, "utf8"), /AI_PROVIDER=local/);
   assert.match(readFileSync(envFile, "utf8"), /AI_API_KEY=gsk_preserved/);
 });
+
+test("all tones and AI settings persist even when .env starts missing", async (t) => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-tone-"));
+  const envFile = path.join(dir, ".env");
+  const previousEnvFile = process.env.ENV_FILE;
+  process.env.ENV_FILE = envFile;
+  const tones = ["tranquilo", "agresivo", "insultos", "formal", "divertido", "sarcastico", "breve", "amable"];
+  for (const tone of tones) assert.match((await import("../src/ai.js")).cmdTono(tone), /Tono cambiado/);
+  const ai = await import("../src/ai.js");
+  assert.match(ai.cmdIdioma("es-MX"), /español de México/);
+  assert.match(ai.cmdProveedor("local"), /Proveedor cambiado a: local/);
+  const saved = readFileSync(envFile, "utf8");
+  assert.match(saved, /AI_DEFAULT_STYLE=amable/);
+  assert.match(saved, /AI_LANGUAGE=es-MX/);
+  assert.match(saved, /AI_PROVIDER=local/);
+  assert.match(saved, /AI_MODEL=local-model/);
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+    if (previousEnvFile === undefined) delete process.env.ENV_FILE;
+    else process.env.ENV_FILE = previousEnvFile;
+  });
+});

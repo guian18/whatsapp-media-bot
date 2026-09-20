@@ -264,6 +264,22 @@ function nicknameRoast(question) {
   return `${nickname}, eres más despistado que un bot sin conexión: mucho apodo y poco juego, campeón 😄`;
 }
 
+function saveEnvValues(values, errorLabel) {
+  const file = process.env.ENV_FILE || ".env";
+  try {
+    let content = existsSync(file) ? readFileSync(file, "utf8") : "";
+    for (const [key, value] of Object.entries(values)) {
+      const pattern = new RegExp(`^${key}\\s*=.*$`, "m");
+      const line = `${key}=${value}`;
+      if (pattern.test(content)) content = content.replace(pattern, line);
+      else content += `${content.endsWith("\\n") || !content ? "" : "\\n"}${line}\\n`;
+    }
+    writeFileSync(file, content, { mode: 0o600 });
+  } catch (error) {
+    console.error(`No se pudo guardar ${errorLabel} en .env:`, error?.message || error);
+  }
+}
+
 export function cmdTono(value) {
   const requested = String(value || "").trim().toLowerCase();
   if (!requested || requested === "lista") {
@@ -275,18 +291,7 @@ export function cmdTono(value) {
 
   manualStyle = requested;
   process.env.AI_DEFAULT_STYLE = requested;
-  const file = process.env.ENV_FILE || ".env";
-  try {
-    if (existsSync(file)) {
-      let content = readFileSync(file, "utf8");
-      const pattern = /^AI_DEFAULT_STYLE\s*=.*$/m;
-      if (pattern.test(content)) content = content.replace(pattern, `AI_DEFAULT_STYLE=${requested}`);
-      else content += `\nAI_DEFAULT_STYLE=${requested}\n`;
-      writeFileSync(file, content, { mode: 0o600 });
-    }
-  } catch (error) {
-    console.error("No se pudo guardar el tono en .env:", error?.message || error);
-  }
+  saveEnvValues({ AI_DEFAULT_STYLE: requested }, "el tono");
   return `Tono cambiado a: ${requested}`;
 }
 
@@ -301,18 +306,7 @@ export function cmdIdioma(value) {
   }
   manualLanguage = requested;
   process.env.AI_LANGUAGE = requested;
-  const file = process.env.ENV_FILE || ".env";
-  try {
-    if (existsSync(file)) {
-      let content = readFileSync(file, "utf8");
-      const pattern = /^AI_LANGUAGE\s*=.*$/m;
-      if (pattern.test(content)) content = content.replace(pattern, `AI_LANGUAGE=${requested}`);
-      else content += `\nAI_LANGUAGE=${requested}\n`;
-      writeFileSync(file, content, { mode: 0o600 });
-    }
-  } catch (error) {
-    console.error("No se pudo guardar el idioma en .env:", error?.message || error);
-  }
+  saveEnvValues({ AI_LANGUAGE: requested }, "el idioma");
   return `Idioma cambiado a: ${LANGUAGES[requested].name}`;
 }
 
@@ -326,20 +320,7 @@ export function cmdProveedor(value) {
   process.env.AI_PROVIDER = provider;
   process.env.AI_MODEL = model;
   process.env.AI_API_URL = "";
-  const file = process.env.ENV_FILE || ".env";
-  try {
-    if (existsSync(file)) {
-      let content = readFileSync(file, "utf8");
-      for (const [key, valueToSave] of [["AI_PROVIDER", provider], ["AI_MODEL", model], ["AI_API_URL", ""]]) {
-        const pattern = new RegExp(`^${key}\\s*=.*$`, "m");
-        if (pattern.test(content)) content = content.replace(pattern, `${key}=${valueToSave}`);
-        else content += `\n${key}=${valueToSave}\n`;
-      }
-      writeFileSync(file, content, { mode: 0o600 });
-    }
-  } catch (error) {
-    console.error("No se pudo guardar el proveedor en .env:", error?.message || error);
-  }
+  saveEnvValues({ AI_PROVIDER: provider, AI_MODEL: model, AI_API_URL: "" }, "el proveedor");
   const keyStatus = providerKeyStatus(provider);
   const keyMessage = provider === "local"
     ? "No requiere API key; debe estar activo un servidor llama.cpp en AI_LOCAL_URL."
