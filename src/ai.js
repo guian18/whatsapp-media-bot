@@ -378,6 +378,9 @@ export async function cmdIA(question, chatId = null) {
     return `_${styleName}_\n${answer}${sourceLines}`.slice(0, 3900);
   } catch (error) {
     console.error("Error en !ai:", error?.message || error);
+    if (aiConfig().provider === "local" && /fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(String(error?.message || ""))) {
+      return "No pude conectar con llama.cpp. Inicia `llama-server` en 127.0.0.1:8080 y vuelve a intentarlo con `!ai <pregunta>`.";
+    }
     const detail = String(error?.message || "error desconocido")
       .replace(/(?:sk-|gsk_|AIza|sk-or-v1-)[A-Za-z0-9_\-]+/g, "[clave oculta]")
       .slice(0, 220);
