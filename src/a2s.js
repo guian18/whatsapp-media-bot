@@ -5,8 +5,24 @@ const HEADER = Buffer.from([0xff, 0xff, 0xff, 0xff]);
 const MASTER_HOST = "hl2master.steampowered.com";
 const MASTER_PORT = 27011;
 
+function validateEndpoint(host, port) {
+  if (typeof host !== "string" || !host.trim()) {
+    throw new TypeError("host A2S inválido");
+  }
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new RangeError(`puerto A2S inválido: ${String(port)}`);
+  }
+}
+
 function sendUdp(host, port, payload, timeout = 2000) {
   return new Promise((resolve, reject) => {
+    try {
+      validateEndpoint(host, port);
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
     const sock = dgram.createSocket("udp4");
     const timer = setTimeout(() => {
       sock.close();

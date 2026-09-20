@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-import { parseAddress } from "../src/a2s.js";
+import { parseAddress, serverInfo } from "../src/a2s.js";
 import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
 import { detectStyle } from "../src/ai.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
@@ -62,6 +62,17 @@ test("address and Steam-key validation reject malformed input", () => {
   assert.equal(parseAddress("127.0.0.1:65536"), null);
   assert.equal(looksValidSteamKey("0123456789abcdef0123456789ABCDEF"), true);
   assert.equal(looksValidSteamKey("not-a-key"), false);
+});
+
+test("A2S rejects an undefined or invalid port before sending UDP", async () => {
+  await assert.rejects(() => serverInfo("8.8.8.8", undefined), {
+    name: "RangeError",
+    message: "puerto A2S inválido: undefined",
+  });
+  await assert.rejects(() => serverInfo("8.8.8.8", 0), {
+    name: "RangeError",
+    message: "puerto A2S inválido: 0",
+  });
 });
 
 test("environment loader applies values from the configured .env file", (t) => {
