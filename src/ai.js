@@ -1,13 +1,9 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const SEARCH_URL = "https://html.duckduckgo.com/html/";
-const DEFAULT_AI_URL = "https://api.openai.com/v1/chat/completions";
-const DEFAULT_AI_MODEL = "gpt-4o-mini";
+const DEFAULT_AI_URL = "https://api.groq.com/openai/v1/chat/completions";
+const DEFAULT_AI_MODEL = "openai/gpt-oss-20b";
 const AI_PRESETS = {
-  openai: {
-    url: "https://api.openai.com/v1/chat/completions",
-    model: "gpt-4o-mini",
-  },
   gemini: {
     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     model: "gemini-2.5-flash",
@@ -15,14 +11,6 @@ const AI_PRESETS = {
   groq: {
     url: "https://api.groq.com/openai/v1/chat/completions",
     model: "openai/gpt-oss-20b",
-  },
-  xai: {
-    url: "https://api.x.ai/v1/responses",
-    model: "grok-4.6",
-  },
-  deepseek: {
-    url: "https://api.deepseek.com/v1/chat/completions",
-    model: "deepseek-chat",
   },
   mistral: {
     url: "https://api.mistral.ai/v1/chat/completions",
@@ -32,13 +20,9 @@ const AI_PRESETS = {
     url: "https://openrouter.ai/api/v1/chat/completions",
     model: "openrouter/auto",
   },
-  anthropic: {
-    url: "https://api.anthropic.com/v1/messages",
-    model: "claude-sonnet-5",
-  },
 };
-const PROVIDER_ALIASES = { chatgpt: "openai", openai: "openai", grok: "xai", xai: "xai", gemini: "gemini", google: "gemini", groq: "groq", deepseek: "deepseek", mistral: "mistral", openrouter: "openrouter", anthropic: "anthropic", claude: "anthropic", sonnet: "anthropic" };
-const PROVIDER_KEY_ENV = { openai: "OPENAI_API_KEY", xai: "XAI_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", deepseek: "DEEPSEEK_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY", anthropic: "ANTHROPIC_API_KEY" };
+const PROVIDER_ALIASES = { gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
+const PROVIDER_KEY_ENV = { gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
@@ -165,9 +149,9 @@ async function webSearch(question) {
 }
 
 function aiConfig() {
-  const provider = PROVIDER_ALIASES[(process.env.AI_PROVIDER || "openai").trim().toLowerCase()] || "openai";
+  const provider = PROVIDER_ALIASES[(process.env.AI_PROVIDER || "groq").trim().toLowerCase()] || "groq";
   const providerKey = PROVIDER_KEY_ENV[provider];
-  const key = (process.env[providerKey] || process.env.AI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
+  const key = (process.env[providerKey] || process.env.AI_API_KEY || "").trim();
   const preset = AI_PRESETS[provider];
   const url = (process.env.AI_API_URL || preset?.url || DEFAULT_AI_URL).trim();
   const model = (process.env.AI_MODEL || preset?.model || DEFAULT_AI_MODEL).trim();
@@ -185,7 +169,6 @@ function providerKeyMismatch(provider, key) {
   const value = String(key || "").trim();
   if (value.startsWith("gsk_") && provider !== "groq") return "La clave parece de Groq; usa !proveedor groq o configura la clave del proveedor seleccionado.";
   if (value.startsWith("AIza") && provider !== "gemini") return "La clave parece de Gemini; usa !proveedor gemini o configura la clave del proveedor seleccionado.";
-  if (value.startsWith("xai-") && provider !== "xai") return "La clave parece de xAI; usa !proveedor xai o configura la clave del proveedor seleccionado.";
   if (value.startsWith("sk-or-") && provider !== "openrouter") return "La clave parece de OpenRouter; usa !proveedor openrouter o configura la clave del proveedor seleccionado.";
   return null;
 }
@@ -207,17 +190,10 @@ async function askModel(question, style, sources, includeSources, history = []) 
   const systemPrompt = `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`;
   const userPrompt = `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}`;
   const messages = [{ role: "system", content: systemPrompt }, ...history.slice(-8), { role: "user", content: userPrompt }];
-  const conversationMessages = messages.filter((message) => message.role !== "system");
-  const requestBody = provider === "xai"
-    ? { model, input: messages, max_output_tokens: 700, store: false }
-    : provider === "anthropic"
-      ? { model, max_tokens: 700, system: systemPrompt, messages: conversationMessages }
-      : { model, temperature: 0.2, max_tokens: 700, messages };
+  const requestBody = { model, temperature: 0.2, max_tokens: 700, messages };
   const response = await fetch(url, {
     method: "POST",
-    headers: provider === "anthropic"
-      ? { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" }
-      : { "content-type": "application/json", authorization: `Bearer ${key}` },
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
     body: JSON.stringify(requestBody),
     signal: timeoutSignal(REQUEST_TIMEOUT_MS),
   });
@@ -227,10 +203,7 @@ async function askModel(question, style, sources, includeSources, history = []) 
   }
   const data = await response.json();
   const outputItems = Array.isArray(data?.output) ? data.output.flatMap((item) => item.content || []) : [];
-  const anthropicText = Array.isArray(data?.content)
-    ? data.content.filter((item) => item.type === "text").map((item) => item.text).join("\n")
-    : "";
-  const responseText = anthropicText || data?.output_text || outputItems
+  const responseText = data?.output_text || outputItems
     .filter((item) => item.type === "output_text" || typeof item.text === "string")
     .map((item) => item.text)
     .join("\n") || data?.choices?.[0]?.message?.content;
@@ -301,7 +274,7 @@ export function cmdIdioma(value) {
 
 export function cmdProveedor(value) {
   const input = String(value || "").trim().toLowerCase();
-  const available = ["openai", "xai", "gemini", "groq", "deepseek", "mistral", "openrouter", "anthropic"];
+  const available = ["gemini", "groq", "mistral", "openrouter"];
   if (!input || input === "lista") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
   const provider = PROVIDER_ALIASES[input];
   if (!provider || !AI_PRESETS[provider]) return `Proveedor no válido. Usa: ${available.join(", ")}`;
@@ -362,7 +335,7 @@ export async function cmdIA(question, chatId = null) {
     return "Siento que estés pasando por esto. Si estás en peligro inmediato, contacta a emergencias de tu país o a una persona de confianza ahora mismo. No tienes que afrontar esta situación a solas.";
   }
   if (!aiConfigured()) {
-    return "La IA no está configurada. Añade `AI_API_KEY` (o `OPENAI_API_KEY`) en el entorno y vuelve a intentarlo.";
+    return "La IA no está configurada. Añade `AI_API_KEY` o la clave específica del proveedor gratuito seleccionado en el entorno y vuelve a intentarlo.";
   }
   const mismatch = providerKeyMismatch(aiConfig().provider, aiConfig().key);
   if (mismatch) return mismatch;
@@ -396,7 +369,7 @@ export async function cmdIA(question, chatId = null) {
   } catch (error) {
     console.error("Error en !ai:", error?.message || error);
     const detail = String(error?.message || "error desconocido")
-      .replace(/(?:sk-|gsk_|AIza|xai-|sk-or-v1-)[A-Za-z0-9_\-]+/g, "[clave oculta]")
+      .replace(/(?:sk-|gsk_|AIza|sk-or-v1-)[A-Za-z0-9_\-]+/g, "[clave oculta]")
       .slice(0, 220);
     return `No pude consultar Internet o la IA ahora. Detalle: ${detail}`;
   } finally {

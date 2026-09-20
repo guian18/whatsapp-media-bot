@@ -6,7 +6,7 @@ Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyect
 
 ## Novedades incluidas
 
-- Soporte directo para **Anthropic Claude** mediante la Messages API oficial. Se selecciona con `!proveedor claude` y usa `ANTHROPIC_API_KEY`.
+- Soporte para cuatro proveedores gratuitos: Groq, Gemini, Mistral y OpenRouter con modelos `:free`.
 - Memoria conversacional privada por chat para `!ai`, configurable con `AI_MEMORY_FILE` y excluida de Git.
 - Detección básica de frases asociadas a crisis emocionales, con una respuesta de apoyo que no requiere consultar una API.
 - Comando `!anime` para enviar imágenes de anime **SFW** desde Nekos.best, sin API key y sin fuentes NSFW.
@@ -101,7 +101,7 @@ WHATSAPP_NUMBER=
 PAIRING_CODE=false
 ```
 
-El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias claves, es preferible configurar la variable específica de cada proveedor, como `GROQ_API_KEY` o `OPENAI_API_KEY`.
+El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias claves, es preferible configurar la variable específica del proveedor seleccionado, como `GROQ_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY` u `OPENROUTER_API_KEY`.
 
 La lista principal de esta guía contiene solo proveedores con modalidad gratuita verificada. El código mantiene compatibilidad opcional con otros proveedores, pero no se incluyen aquí como alternativas sin coste.
 
@@ -146,7 +146,6 @@ Elige un proveedor gratuito, crea la clave desde su enlace oficial y configura l
 
 OpenRouter tiene modelos gratuitos concretos, no todo su catálogo es gratuito. En Mistral, activa el modo gratuito de Studio si está disponible para tu cuenta. Ninguna modalidad gratuita garantiza disponibilidad ilimitada.
 
-> **Proveedores no incluidos en la lista gratuita:** OpenAI, xAI, DeepSeek y Anthropic Claude requieren normalmente facturación o solo ofrecen créditos iniciales de prueba. Su compatibilidad puede permanecer en el código, pero no se recomiendan aquí como opciones gratuitas.
 
 ### Proxy opcional de OpenRouter
 
@@ -163,7 +162,6 @@ Este archivo no modifica el arranque de WhatsApp. Si lo despliegas como función
 
 `!ai` usa el proveedor configurado mediante `AI_PROVIDER`, recuerda las últimas interacciones de cada chat en `AI_MEMORY_FILE`, aplica los estilos configurables con `!tono` y responde con una advertencia de apoyo cuando detecta frases asociadas a una posible crisis. La memoria se guarda localmente y se excluye de Git mediante `.gitignore`.
 
-La integración de Claude utiliza `https://api.anthropic.com/v1/messages`, el encabezado `x-api-key`, `anthropic-version: 2023-06-01` y el formato de respuesta `content[].text`. También conserva la memoria y el contexto de conversación del bot.
 
 ## Vincular WhatsApp
 

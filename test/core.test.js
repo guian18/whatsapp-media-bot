@@ -15,11 +15,9 @@ import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
   const previousAiKey = process.env.AI_API_KEY;
-  const previousOpenAiKey = process.env.OPENAI_API_KEY;
   const previousPingDeadChance = process.env.PING_DEAD_CHANCE;
   const previousPingTripChance = process.env.PING_TRIP_CHANCE;
   process.env.AI_API_KEY = "";
-  process.env.OPENAI_API_KEY = "";
   process.env.PING_DEAD_CHANCE = "0";
   process.env.PING_TRIP_CHANCE = "0";
   assert.equal(await handleCommand("!ping"), "Pong! 🏓");
@@ -37,12 +35,13 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!idioma"), /Idiomas:/);
   assert.match(await handleCommand("!idioma klingon"), /Idioma no válido/);
   assert.match(await handleCommand("!proveedor"), /Proveedores:/);
+  assert.match(await handleCommand("!proveedor"), /gemini.*groq.*mistral.*openrouter/);
+  assert.match(await handleCommand("!proveedor openai"), /Proveedor no válido/);
+  assert.match(await handleCommand("!proveedor claude"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor desconocido"), /Proveedor no válido/);
   assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
   if (previousAiKey === undefined) delete process.env.AI_API_KEY;
   else process.env.AI_API_KEY = previousAiKey;
-  if (previousOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
-  else process.env.OPENAI_API_KEY = previousOpenAiKey;
   if (previousPingDeadChance === undefined) delete process.env.PING_DEAD_CHANCE;
   else process.env.PING_DEAD_CHANCE = previousPingDeadChance;
   if (previousPingTripChance === undefined) delete process.env.PING_TRIP_CHANCE;
