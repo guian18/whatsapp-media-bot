@@ -2,7 +2,7 @@
 import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
-import { listWatched, scanAndNotify, unwatchPlayer, watchPlayer } from "./watcher.js";
+import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchPlayer } from "./watcher.js";
 
 const MAX_SERVERS = 200;
 const CONCURRENCY = 20;
@@ -81,6 +81,7 @@ export async function cmdInfo(entrada) {
 
   const steamId = await extractIdentifier(entrada);
   if (!steamId) return "No pude resolver ese identificador de Steam.";
+  void refreshOfficialAddresses();
 
   const { player, error } = await getPlayerInfo(steamId);
   if (error || !player) return `❌ ${error || "Sin datos."}`;

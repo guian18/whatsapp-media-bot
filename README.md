@@ -210,7 +210,7 @@ ALLOW_PRIVATE_SERVERS=false
 
 ### Guardado automático de direcciones oficiales
 
-El bot consulta el Master Server de Steam automáticamente al iniciar y después de cada ciclo de vigilancia. Guarda únicamente las direcciones públicas oficiales de L4D2 en formato `IP:puerto`, una por línea. No incluye `0.0.0.0:0000`, que es el marcador de fin de la respuesta, ni dominios, `localhost` o direcciones privadas.
+El bot consulta el Master Server de Steam automáticamente al iniciar, al ejecutar `!info`, al ejecutar `!vigilar` y después de cada ciclo de vigilancia. Guarda únicamente las direcciones públicas oficiales de L4D2 en formato `IP:puerto`, una por línea. No incluye `0.0.0.0:0000`, que es el marcador de fin de la respuesta, ni dominios, `localhost` o direcciones privadas.
 
 En Termux, el archivo se guarda por defecto en:
 

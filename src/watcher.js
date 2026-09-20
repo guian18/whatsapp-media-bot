@@ -76,6 +76,7 @@ export async function watchPlayer(input, jid) {
   if (!jid) return "No se pudo identificar este chat.";
   const target = await resolveTarget(input);
   if (!target) return "No pude resolver ese SteamID o perfil. Usa un nickname o una URL válida.";
+  void refreshOfficialAddresses();
   const chats = new Set(Array.isArray(state.watchlist[target.key]) ? state.watchlist[target.key] : []);
   if (chats.has(jid)) return `Ya estoy vigilando ${target.label} en este chat.`;
   chats.add(jid);
@@ -244,7 +245,7 @@ export function startWatcher(sendMessage) {
   };
 }
 
-async function refreshOfficialAddresses() {
+export async function refreshOfficialAddresses() {
   try {
     const servers = await masterServerList({ limit: MAX_SERVERS });
     const result = saveOfficialAddresses(servers);
