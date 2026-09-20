@@ -4,6 +4,10 @@ const SEARCH_URL = "https://html.duckduckgo.com/html/";
 const DEFAULT_AI_URL = "https://api.groq.com/openai/v1/chat/completions";
 const DEFAULT_AI_MODEL = "openai/gpt-oss-20b";
 const AI_PRESETS = {
+  local: {
+    url: "http://127.0.0.1:8080/v1/chat/completions",
+    model: "local-model",
+  },
   gemini: {
     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     model: "gemini-2.5-flash",
@@ -21,8 +25,8 @@ const AI_PRESETS = {
     model: "openrouter/auto",
   },
 };
-const PROVIDER_ALIASES = { gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
-const PROVIDER_KEY_ENV = { gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
+const PROVIDER_ALIASES = { local: "local", llamacpp: "local", llama: "local", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
+const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
@@ -151,9 +155,10 @@ async function webSearch(question) {
 function aiConfig() {
   const provider = PROVIDER_ALIASES[(process.env.AI_PROVIDER || "groq").trim().toLowerCase()] || "groq";
   const providerKey = PROVIDER_KEY_ENV[provider];
-  const key = (process.env[providerKey] || process.env.AI_API_KEY || "").trim();
+  const key = (providerKey ? process.env[providerKey] : "")?.trim() || (provider === "local" ? "" : (process.env.AI_API_KEY || "").trim());
   const preset = AI_PRESETS[provider];
-  const url = (process.env.AI_API_URL || preset?.url || DEFAULT_AI_URL).trim();
+  const configuredUrl = provider === "local" ? (process.env.AI_LOCAL_URL || process.env.AI_API_URL) : process.env.AI_API_URL;
+  const url = (configuredUrl || preset?.url || DEFAULT_AI_URL).trim();
   const model = (process.env.AI_MODEL || preset?.model || DEFAULT_AI_MODEL).trim();
   return { key, url, model, provider };
 }
@@ -191,9 +196,11 @@ async function askModel(question, style, sources, includeSources, history = []) 
   const userPrompt = `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}`;
   const messages = [{ role: "system", content: systemPrompt }, ...history.slice(-8), { role: "user", content: userPrompt }];
   const requestBody = { model, temperature: 0.2, max_tokens: 700, messages };
+  const headers = { "content-type": "application/json" };
+  if (key) headers.authorization = `Bearer ${key}`;
   const response = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    headers,
     body: JSON.stringify(requestBody),
     signal: timeoutSignal(REQUEST_TIMEOUT_MS),
   });
@@ -211,7 +218,8 @@ async function askModel(question, style, sources, includeSources, history = []) 
 }
 
 export function aiConfigured() {
-  return Boolean(aiConfig().key);
+  const config = aiConfig();
+  return config.provider === "local" || Boolean(config.key);
 }
 
 function configuredStyle() {
@@ -274,7 +282,7 @@ export function cmdIdioma(value) {
 
 export function cmdProveedor(value) {
   const input = String(value || "").trim().toLowerCase();
-  const available = ["gemini", "groq", "mistral", "openrouter"];
+  const available = ["local", "gemini", "groq", "mistral", "openrouter"];
   if (!input || input === "lista") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
   const provider = PROVIDER_ALIASES[input];
   if (!provider || !AI_PRESETS[provider]) return `Proveedor no válido. Usa: ${available.join(", ")}`;
@@ -297,7 +305,9 @@ export function cmdProveedor(value) {
     console.error("No se pudo guardar el proveedor en .env:", error?.message || error);
   }
   const keyStatus = providerKeyStatus(provider);
-  const keyMessage = keyStatus.specific
+  const keyMessage = provider === "local"
+    ? "No requiere API key; debe estar activo un servidor llama.cpp en AI_LOCAL_URL."
+    : keyStatus.specific
     ? `Clave detectada en ${keyStatus.variable}.`
     : keyStatus.generic
       ? `Se usará AI_API_KEY; comprueba que sea una clave de ${provider}.`

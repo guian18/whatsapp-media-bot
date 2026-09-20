@@ -10,7 +10,7 @@ import { parseAddress, serverInfo } from "../src/a2s.js";
 import { formatOfficialAddresses } from "../src/official-addresses.js";
 import { SCAN_INTERVAL_MS } from "../src/watcher.js";
 import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
-import { containsRisk, detectStyle } from "../src/ai.js";
+import { aiConfigured, containsRisk, detectStyle } from "../src/ai.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
@@ -35,7 +35,7 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!idioma"), /Idiomas:/);
   assert.match(await handleCommand("!idioma klingon"), /Idioma no válido/);
   assert.match(await handleCommand("!proveedor"), /Proveedores:/);
-  assert.match(await handleCommand("!proveedor"), /gemini.*groq.*mistral.*openrouter/);
+  assert.match(await handleCommand("!proveedor"), /local.*gemini.*groq.*mistral.*openrouter/);
   assert.match(await handleCommand("!proveedor openai"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor claude"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor desconocido"), /Proveedor no válido/);
@@ -120,6 +120,22 @@ test("official address export keeps public IP and port only", () => {
 test("AI detects crisis-risk phrases without requiring an API", () => {
   assert.equal(containsRisk("no quiero vivir"), true);
   assert.equal(containsRisk("quiero consultar el mapa"), false);
+});
+
+test("local AI provider does not require an API key", () => {
+  const previousProvider = process.env.AI_PROVIDER;
+  const previousKey = process.env.AI_API_KEY;
+  const previousLocalKey = process.env.AI_LOCAL_API_KEY;
+  process.env.AI_PROVIDER = "local";
+  delete process.env.AI_API_KEY;
+  delete process.env.AI_LOCAL_API_KEY;
+  assert.equal(aiConfigured(), true);
+  if (previousProvider === undefined) delete process.env.AI_PROVIDER;
+  else process.env.AI_PROVIDER = previousProvider;
+  if (previousKey === undefined) delete process.env.AI_API_KEY;
+  else process.env.AI_API_KEY = previousKey;
+  if (previousLocalKey === undefined) delete process.env.AI_LOCAL_API_KEY;
+  else process.env.AI_LOCAL_API_KEY = previousLocalKey;
 });
 
 test("environment loader applies values from the configured .env file", (t) => {

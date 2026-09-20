@@ -6,7 +6,7 @@ Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyect
 
 ## Novedades incluidas
 
-- Soporte para cuatro proveedores gratuitos: Groq, Gemini, Mistral y OpenRouter con modelos `:free`.
+- Soporte para un proveedor local sin API key mediante `llama.cpp`, además de Groq, Gemini, Mistral y OpenRouter con sus modalidades gratuitas.
 - Memoria conversacional privada por chat para `!ai`, configurable con `AI_MEMORY_FILE` y excluida de Git.
 - Detección básica de frases asociadas a crisis emocionales, con una respuesta de apoyo que no requiere consultar una API.
 - Comando `!anime` para enviar imágenes de anime **SFW** desde Nekos.best, sin API key y sin fuentes NSFW.
@@ -33,7 +33,7 @@ Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyect
 - Un teléfono con WhatsApp para vincular la sesión.
 - Conexión a Internet.
 - Una Steam Web API Key para las funciones de Steam.
-- Una clave del proveedor de IA elegido para usar `!ai`.
+- Una clave del proveedor de IA elegido para usar `!ai`, excepto cuando se utiliza el proveedor local.
 
 ## Instalación rápida
 
@@ -101,7 +101,7 @@ WHATSAPP_NUMBER=
 PAIRING_CODE=false
 ```
 
-El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias claves, es preferible configurar la variable específica del proveedor seleccionado, como `GROQ_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY` u `OPENROUTER_API_KEY`.
+El bot también acepta una clave genérica mediante `AI_API_KEY`. Si usas varias claves, es preferible configurar la variable específica del proveedor seleccionado, como `GROQ_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY` u `OPENROUTER_API_KEY`. El proveedor `local` no necesita clave y se conecta a `AI_LOCAL_URL`.
 
 La lista principal de esta guía contiene solo proveedores con modalidad gratuita verificada. El código mantiene compatibilidad opcional con otros proveedores, pero no se incluyen aquí como alternativas sin coste.
 
@@ -112,6 +112,8 @@ La lista principal de esta guía contiene solo proveedores con modalidad gratuit
 | `STEAM_API_KEY` | Clave para perfiles y funciones de Steam. | Vacío hasta configurarla |
 | `AI_PROVIDER` | Proveedor usado por `!ai`. | `groq` |
 | `AI_MODEL` | Modelo usado por el proveedor. | `openai/gpt-oss-20b` |
+| `AI_LOCAL_URL` | Endpoint OpenAI-compatible del servidor local `llama.cpp`. | `http://127.0.0.1:8080/v1/chat/completions` |
+| `AI_LOCAL_API_KEY` | Clave opcional si el servidor local está protegido. | Vacío |
 | `AI_MEMORY_FILE` | Archivo privado con las últimas interacciones de `!ai` por chat. | `ai-memory.json` |
 | `SEARCH_PROVIDERS` | Proveedor de búsqueda web. | `duckduckgo` |
 | `WHATSAPP_NUMBER` | Número para vinculación directa, solo dígitos y código de país. | Vacío para usar QR |
@@ -133,18 +135,51 @@ La lista principal de esta guía contiene solo proveedores con modalidad gratuit
 - [Crear Steam Web API Key][2] — variable `STEAM_API_KEY`.
 - DuckDuckGo funciona sin clave mediante `SEARCH_PROVIDERS=duckduckgo`.
 
-### Proveedores de IA gratuitos
+### Proveedores de IA gratuitos y local
 
-Elige un proveedor gratuito, crea la clave desde su enlace oficial y configura la variable correspondiente. También puedes cambiar el proveedor desde WhatsApp con `!proveedor <nombre>`. Las cuotas y los modelos gratuitos pueden cambiar; revisa siempre la página oficial antes de usar el bot.
+Elige un proveedor gratuito, crea la clave desde su enlace oficial y configura la variable correspondiente. También puedes cambiar el proveedor desde WhatsApp con `!proveedor <nombre>`. Las cuotas y los modelos gratuitos pueden cambiar; revisa siempre la página oficial antes de usar el bot. Para evitar cuotas y API keys, usa `!proveedor local` después de iniciar un servidor `llama.cpp` en el teléfono o en el mismo equipo.
 
 | Proveedor | Enlace oficial | Configuración predeterminada | Variable |
 |---|---|---|---|
+| Local `llama.cpp` | [Documentación Android/Termux](https://github.com/ggml-org/llama.cpp/blob/master/docs/android.md) · [modelos GGUF](https://huggingface.co/models?library=gguf) | `local` / `local-model` | `AI_LOCAL_URL` |
 | Groq | [Crear API key](https://console.groq.com/keys) · [límites gratuitos](https://console.groq.com/docs/rate-limits) | `groq` / `openai/gpt-oss-20b` | `GROQ_API_KEY` |
 | Google Gemini | [Crear API key](https://aistudio.google.com/apikey) · [cuotas Free](https://ai.google.dev/gemini-api/docs/rate-limits) | `gemini` / `gemini-2.5-flash` | `GEMINI_API_KEY` |
 | Mistral | [Mistral Docs](https://docs.mistral.ai/) · [uso y límites](https://docs.mistral.ai/admin/billing-usage/usage-limits) | `mistral` / `mistral-small-4-0-26-03` | `MISTRAL_API_KEY` |
 | OpenRouter | [Crear API key](https://openrouter.ai/keys) · [modelos gratuitos](https://openrouter.ai/docs/guides/overview/models) | `openrouter` / selecciona un modelo `:free` | `OPENROUTER_API_KEY` |
 
 OpenRouter tiene modelos gratuitos concretos, no todo su catálogo es gratuito. En Mistral, activa el modo gratuito de Studio si está disponible para tu cuenta. Ninguna modalidad gratuita garantiza disponibilidad ilimitada.
+
+#### Configurar IA local en Termux
+
+La opción local ejecuta el modelo en tu propio dispositivo. No envía la conversación a Groq, Venice u otro proveedor y no consume una API key. Necesitas un modelo en formato GGUF; el tamaño debe ajustarse a la memoria disponible del teléfono.
+
+Comprueba si tu versión de Termux incluye el paquete de `llama.cpp`:
+
+```bash
+pkg update
+pkg search llama-cpp
+```
+
+Si aparece `llama-cpp`, instálalo con `pkg install llama-cpp`. Si no aparece, sigue la [guía oficial de compilación para Android](https://github.com/ggml-org/llama.cpp/blob/master/docs/android.md). Después inicia el servidor con un modelo GGUF descargado de una fuente confiable:
+
+```bash
+llama-server \
+  -m ~/models/modelo.gguf \
+  --host 127.0.0.1 \
+  --port 8080 \
+  -c 4096
+```
+
+En otra sesión de Termux, configura:
+
+```env
+AI_PROVIDER=local
+AI_MODEL=local-model
+AI_LOCAL_URL=http://127.0.0.1:8080/v1/chat/completions
+AI_LOCAL_API_KEY=
+```
+
+También puedes cambiarlo desde WhatsApp con `!proveedor local`. Si aparece un error de conexión, comprueba primero que `llama-server` siga ejecutándose en el puerto `8080`. El servidor local no garantiza ausencia total de restricciones: el comportamiento depende del modelo GGUF, su licencia y el prompt utilizado.
 
 
 ### Proxy opcional de OpenRouter
