@@ -15,7 +15,7 @@ Funciona en Linux, macOS, Windows, Termux y Heroku con Node.js 20 o superior. El
 - Vigilancia automática con un intervalo mínimo de 50 segundos.
 - Guardado automático de direcciones oficiales completas en formato `IP:puerto` para Termux.
 - Consultas A2S con validación de host y puerto, compatibles con servidores públicos, oficiales, locales y privados.
-- Funciones compatibles portadas de NEKOBOT-MD: `!menu`, `!entretenimiento`, `!dado`, `!moneda`, `!8ball`, `!verdad`, `!reto`, `!pareja` y `!calcular`, sin dependencias adicionales.
+- Comandos de entretenimiento y utilidades locales: `!menu`, `!entretenimiento`, `!dado`, `!moneda`, `!8ball`, `!verdad`, `!reto`, `!pareja` y `!calcular`, sin dependencias adicionales.
 - Soporte de despliegue en Heroku mediante `Procfile` y `app.json`, usando un proceso `worker` para la conexión persistente de WhatsApp.
 - Configuración documentada para QR, código de vinculación, variables de entorno, app móvil y Control API.
 
@@ -30,7 +30,7 @@ Funciona en Linux, macOS, Windows, Termux y Heroku con Node.js 20 o superior. El
 - Responde en conversaciones privadas y grupos privados según la configuración elegida.
 - Incluye juegos y utilidades locales que no envían datos a servicios externos.
 
-### Funciones portadas de NEKOBOT-MD
+### Entretenimiento y utilidades locales
 
 | Comando | Función |
 |---|---|
@@ -49,7 +49,7 @@ Funciona en Linux, macOS, Windows, Termux y Heroku con Node.js 20 o superior. El
 | `!estado` | Muestra el estado básico del proceso. |
 | `!rapidez` | Comprueba la respuesta del proceso. |
 
-Estas funciones se integraron en el dispatcher actual y no reemplazan Baileys, la sesión, el Control API, Steam ni la vigilancia de jugadores.
+Estas funciones forman parte del dispatcher actual y no reemplazan Baileys, la sesión, el Control API, Steam ni la vigilancia de jugadores.
 
 ## Requisitos
 
