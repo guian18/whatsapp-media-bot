@@ -192,6 +192,35 @@ heroku logs --tail --app nombre-de-tu-app
 
 Heroku usa almacenamiento efímero. `auth_info/`, `watchlist.json` y `ai-memory.json` pueden desaparecer cuando se reinicia el dyno. Para Ollama, llama.cpp o LocalAI usa un equipo propio o un servidor con almacenamiento y GPU/CPU adecuados.
 
+## Railway
+
+El repositorio incluye [`railway.json`](railway.json) y está preparado como un **worker** Node.js con `npm ci`, `npm start` y reinicio automático si el proceso falla.
+
+Railway ofrece una prueba inicial de **$5 durante 30 días** y después un plan gratuito con **$1 de crédito mensual**; no es un hosting gratuito ilimitado. El servicio gratuito tiene límites de CPU, RAM y almacenamiento. Consulta el [precio oficial de Railway](https://railway.com/pricing) antes de desplegar.
+
+### Despliegue desde GitHub
+
+1. Abre [railway.com/new](https://railway.com/new) y crea un proyecto desde GitHub.
+2. Selecciona `guianpierrcastillolazo-rgb/infoplayerleft`.
+3. Railway detectará `railway.json` y usará `npm ci` seguido de `npm start`.
+4. Añade las variables de `.env.example` en **Variables**. Nunca subas el archivo `.env`.
+5. En **Volumes**, crea un volumen de al menos `0.5 GB` montado en `/app/data`.
+6. Añade estas variables para conservar la sesión y los datos:
+
+```env
+AUTH_DIR=/app/data/auth_info
+AI_MEMORY_FILE=/app/data/ai-memory.json
+WATCH_STATE_FILE=/app/data/watchlist.json
+OFFICIAL_ADDRESSES_FILE=/app/data/l4d2-official-addresses.txt
+STEAM_KEY_FILE=/app/data/.steam_key
+```
+
+7. Para la primera vinculación, usa temporalmente `WHATSAPP_NUMBER` y `PAIRING_CODE=true`, revisa los logs y después cambia `PAIRING_CODE=false`.
+
+El volumen es necesario porque el sistema de archivos efímero puede borrar `auth_info/`, `watchlist.json` y la memoria al redeployar. No ejecutes Ollama, llama.cpp o LocalAI dentro del mismo servicio gratuito de Railway; usa un backend remoto con su clave en Variables o un equipo separado.
+
+Enlaces: [guía oficial de Railway](https://docs.railway.com/), [precios y límites](https://railway.com/pricing) y [plantilla `railway.json`](railway.json).
+
 ## Termux
 
 ```bash
