@@ -384,7 +384,9 @@ async function start() {
         mensajesProcesados.set(messageId, now);
       }
 
-      if (!jid.endsWith("@s.whatsapp.net")) continue;
+      // WhatsApp usa @lid para algunos mensajes enviados por la propia cuenta.
+      // Ambos identificadores son privados; cualquier otro tipo de chat se ignora.
+      if (!jid.endsWith("@s.whatsapp.net") && !jid.endsWith("@lid")) continue;
       if (!REPLY_IN_PRIVATE) continue;
 
       const text = textFromMessage(msg).trim();
