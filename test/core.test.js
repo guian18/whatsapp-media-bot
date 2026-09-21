@@ -61,6 +61,11 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!pareja Ana y Luis"), /Compatibilidad/);
   assert.equal(await handleCommand("!calcular 2 + 3 * 4"), "🧮 2 + 3 * 4 = 14");
   assert.match(await handleCommand("!calcular process.exit()"), /Uso:/);
+  assert.match(await handleCommand("!ppt piedra"), /Tú: piedra/);
+  assert.match(await handleCommand("!simi hola"), /🤖/);
+  assert.match(await handleCommand("!infobot"), /InfoPlayer Left/);
+  assert.match(await handleCommand("!estado"), /Estado: online/);
+  assert.match(await handleCommand("!rapidez"), /Pong!/);
   assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
   if (previousProvider === undefined) delete process.env.AI_PROVIDER;
   else process.env.AI_PROVIDER = previousProvider;

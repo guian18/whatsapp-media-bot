@@ -4,7 +4,7 @@ import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
-import { calcular, dado, entretenimiento, ochoBall, moneda, pareja, verdadReto } from "./fun.js";
+import { calcular, dado, entretenimiento, estadoBot, infoBot, ochoBall, moneda, pareja, piedraPapelTijera, rapidez, respuestaSimi, verdadReto } from "./fun.js";
 
 const MAX_SERVERS = 200;
 const CONCURRENCY = 20;
@@ -101,6 +101,8 @@ export function ayuda() {
     `\`${name("proveedor")} <nombre>\` — cambia la IA y el modelo`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("entretenimiento")}\` — juegos y utilidades inspirados en el menú clásico`,
+    `\`!ppt piedra|papel|tijera\` — juega contra el bot`,
+    `\`!simi <mensaje>\` — respuesta divertida local`,
     `\`${name("vigilar")} <nick|SteamID|URL>\` — avisa cuando un jugador se conecta a L4D2`,
     `\`${name("novigilar")} <nick|SteamID|URL>\` — cancela una vigilancia`,
     `\`${name("lista")}\` — muestra los jugadores vigilados en este chat`,
@@ -295,6 +297,19 @@ export async function handleCommand(text, context = {}) {
     case "calcular":
     case "calc":
       return calcular(args);
+    case "ppt":
+    case "piedrapapeltijera":
+      return piedraPapelTijera(args);
+    case "simi":
+      return respuestaSimi(args);
+    case "infobot":
+    case "botinfo":
+      return infoBot();
+    case "estado":
+      return estadoBot();
+    case "rapidez":
+    case "speed":
+      return rapidez();
     case "vigilar":
     case "vigilarnick":
       return watchPlayer(args, context.jid);

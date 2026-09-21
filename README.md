@@ -41,6 +41,11 @@ Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyect
 | `!reto` | Propone un reto seguro para el grupo. |
 | `!pareja <nombre 1> y <nombre 2>` | Calcula una compatibilidad aleatoria, solo como entretenimiento. |
 | `!calcular <expresión>` | Calcula expresiones aritméticas básicas. |
+| `!ppt piedra\|papel\|tijera` | Juega piedra, papel o tijera. |
+| `!simi <mensaje>` | Respuesta divertida local, sin API externa. |
+| `!infobot` | Muestra información del bot. |
+| `!estado` | Muestra el estado básico del proceso. |
+| `!rapidez` | Comprueba la respuesta del proceso. |
 
 Estas funciones se integraron en el dispatcher actual y no reemplazan Baileys, la sesión, el Control API, Steam ni la vigilancia de jugadores.
 

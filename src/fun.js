@@ -91,3 +91,38 @@ export function entretenimiento() {
     "`!calcular <expresión>` — cálculo aritmético básico",
   ].join("\n");
 }
+
+export function piedraPapelTijera(input = "") {
+  const choices = ["piedra", "papel", "tijera"];
+  const player = input.trim().toLowerCase();
+  if (!choices.includes(player)) return "Uso: `!ppt piedra|papel|tijera`";
+  const bot = pick(choices);
+  const win = (player === "piedra" && bot === "tijera") ||
+    (player === "papel" && bot === "piedra") ||
+    (player === "tijera" && bot === "papel");
+  const result = player === bot ? "Empate." : win ? "Ganaste." : "Gané yo.";
+  return `✊ Tú: ${player} · Yo: ${bot}\n${result}`;
+}
+
+export function respuestaSimi(input = "") {
+  if (!input.trim()) return "Uso: `!simi <mensaje>`";
+  const responses = ["Entendido.", "Puede ser.", "No estoy seguro, pero suena interesante.", "Jajaja, quizá."];
+  return `🤖 ${pick(responses)}`;
+}
+
+export function infoBot() {
+  return [
+    "*InfoPlayer Left*",
+    "Bot de WhatsApp para Steam y Left 4 Dead 2.",
+    "También incluye IA, vigilancia, juegos y utilidades portadas de NEKOBOT-MD.",
+    `Node.js ${process.versions.node}`,
+  ].join("\n");
+}
+
+export function estadoBot() {
+  return `Estado: online\nTiempo activo: ${Math.floor(process.uptime())} segundos`;
+}
+
+export function rapidez() {
+  return `Pong! 🏓\nTiempo de proceso: ${Math.round(process.uptime() * 1000) % 1000} ms`;
+}
