@@ -24,7 +24,7 @@ Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyect
 - Vigilancia de jugadores y avisos cuando cambian de servidor.
 - Integración opcional con DuckDuckGo y varios proveedores de IA.
 - Soporte para código QR o código de vinculación de WhatsApp.
-- Responde únicamente en conversaciones privadas.
+- Responde en conversaciones privadas y grupos privados según la configuración elegida.
 
 ## Requisitos
 
@@ -152,6 +152,8 @@ La lista principal de esta guía contiene solo proveedores con modalidad gratuit
 | `SEARCH_PROVIDERS` | Proveedor de búsqueda web. | `duckduckgo` |
 | `WHATSAPP_NUMBER` | Número para vinculación directa, solo dígitos y código de país. | Vacío para usar QR |
 | `PAIRING_CODE` | Activa el código de vinculación cuando corresponde. | `false` |
+| `GROUPS_ENABLED` | Permite responder en grupos privados. | `true` |
+| `ALLOWED_GROUPS` | IDs de grupos permitidos, separados por comas. Vacío permite todos los grupos. | Vacío |
 | `REPLY_IN_PRIVATE` | Permite respuestas en chats privados. | `true` |
 | `AUTH_DIR` | Carpeta de la sesión de WhatsApp. | `auth_info` |
 | `ALLOW_PRIVATE_SERVERS` | Permite consultar servidores locales, privados y públicos. Usa `false` para bloquear los locales. | `true` |
