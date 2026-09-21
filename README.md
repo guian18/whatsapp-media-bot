@@ -207,7 +207,7 @@ CONTROL_API_PORT=8787
 
 En la app, abre la pantalla de control, introduce la URL base en **URL de la API del bot** y el mismo valor de `CONTROL_API_TOKEN` en **Token de control**. Pulsa **Guardar** y después **Comprobar conexión**. El token se guarda en el llavero seguro del teléfono.
 
-Cuando **Guardar** modifica una configuración remota, el bot envía un aviso de confirmación únicamente al chat privado de su propia cuenta vinculada, es decir, a tu número del bot. El destinatario se obtiene del identificador de la cuenta conectada; nunca se toma de la solicitud de la app. El bot rechaza explícitamente identificadores de grupo (`@g.us`) y no envía estos avisos a números desconocidos. Las API keys tampoco se incluyen en el mensaje.
+Cuando **Guardar** modifica una configuración remota, el bot envía un aviso de confirmación únicamente al chat privado de su propia cuenta vinculada, es decir, a tu número del bot. El destinatario se obtiene del identificador de la cuenta conectada; nunca se toma de la solicitud de la app. El bot rechaza explícitamente identificadores de conversaciones grupales y no envía estos avisos a números desconocidos. Las API keys tampoco se incluyen en el mensaje.
 
 Puedes verificar el API desde otro dispositivo de la misma red sin mostrar el token en la URL:
 

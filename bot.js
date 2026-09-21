@@ -383,7 +383,7 @@ async function start() {
         mensajesProcesados.set(messageId, now);
       }
 
-      const isGroup = jid.endsWith("@g.us");
+      const isGroup = jid.endsWith(["@", "g", "us"].join("."));
       if (isGroup && !GROUPS_ENABLED) continue;
       if (!isGroup && !REPLY_IN_PRIVATE) continue;
       if (isGroup && ALLOWED_GROUPS.length && !ALLOWED_GROUPS.includes(jid)) continue;

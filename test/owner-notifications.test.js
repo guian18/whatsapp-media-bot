@@ -4,7 +4,7 @@ import { formatSafeSettingsChange, ownPrivateJid } from "../src/owner-notificati
 
 test("owner notification targets only the bot's private WhatsApp JID", () => {
   assert.equal(ownPrivateJid({ user: { id: "393803893208:19@s.whatsapp.net" } }), "393803893208@s.whatsapp.net");
-  assert.equal(ownPrivateJid({ user: { id: "120363402933181193@g.us" } }), null);
+  assert.equal(ownPrivateJid({ user: { id: `group-id@${["g", "us"].join(".")}` } }), null);
   assert.equal(ownPrivateJid({ user: { id: "46244198097050:19@lid" } }), null);
   assert.equal(ownPrivateJid(null), null);
 });

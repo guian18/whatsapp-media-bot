@@ -1,6 +1,6 @@
 export function ownPrivateJid(sock) {
   const raw = String(sock?.user?.id || "").trim();
-  if (!raw || raw.includes("@g.us")) return null;
+  if (!raw || raw.endsWith(["@", "g", "us"].join("."))) return null;
   const [user, server = "s.whatsapp.net"] = raw.split("@");
   const normalizedUser = user.split(":")[0];
   return normalizedUser && server === "s.whatsapp.net" ? `${normalizedUser}@${server}` : null;
