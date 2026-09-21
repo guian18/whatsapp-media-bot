@@ -1,74 +1,32 @@
 # InfoPlayer Left
 
-Bot de WhatsApp para consultar perfiles de Steam, buscar jugadores y consultar servidores de **Left 4 Dead 2** mediante Steam Web API y consultas A2S. También incluye IA opcional, vigilancia de jugadores y una app móvil de control.
+Bot de WhatsApp para consultar perfiles y servidores de **Left 4 Dead 2** mediante Steam Web API y consultas A2S. Incluye vigilancia de jugadores, IA local o remota y una app móvil de control.
 
-Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
+Funciona con Node.js 20 o superior en Linux, macOS, Windows y Termux. Heroku puede ejecutar el bot como `worker`, pero no incluye Ollama, llama.cpp ni LocalAI.
 
-## Funciones
+## Enlaces directos para crear claves API
 
-- Perfiles de Steam y búsqueda de jugadores en servidores públicos.
-- Información A2S de servidores públicos, oficiales, locales y privados.
-- Vigilancia de jugadores con avisos automáticos y consultas manuales.
-- IA configurable con Ollama, llama.cpp, LocalAI, Groq, Gemini, Mistral u OpenRouter.
-- Ollama local con API compatible con OpenAI.
-- Memoria privada por chat, tono e idioma configurables.
-- Imágenes de anime SFW.
-- App móvil Expo para controlar el bot mediante el Control API.
-- Despliegue en Heroku como proceso `worker`.
-
-## Requisitos
-
-- Node.js 20 o superior.
-- Git.
-- Un teléfono con WhatsApp para vincular la sesión.
-- Una Steam Web API Key para las funciones de Steam.
-- Una clave del proveedor de IA elegido si se usará IA remota.
-
-## Enlaces directos
-
-### Steam y Left 4 Dead 2
-
-| Recurso | Enlace |
-|---|---|
-| Crear o consultar la Steam Web API Key | [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) |
-| Documentación de Steam Web API | [developer.valvesoftware.com/wiki/Steam_Web_API](https://developer.valvesoftware.com/wiki/Steam_Web_API) |
-| Documentación de consultas A2S | [developer.valvesoftware.com/wiki/Server_queries](https://developer.valvesoftware.com/wiki/Server_queries) |
-| Wiki oficial de Left 4 Dead 2 | [developer.valvesoftware.com/wiki/Left_4_Dead_2](https://developer.valvesoftware.com/wiki/Left_4_Dead_2) |
-| Comunidad de Steam | [steamcommunity.com](https://steamcommunity.com/) |
-
-### Proveedores de IA
-
-| Proveedor | Crear clave | Documentación |
+| Servicio | Crear clave o token | Variable del bot |
 |---|---|---|
-| Groq | [console.groq.com/keys](https://console.groq.com/keys) | [console.groq.com/docs](https://console.groq.com/docs) |
-| Gemini | [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) | [ai.google.dev/gemini-api/docs](https://ai.google.dev/gemini-api/docs) |
-| Mistral | [console.mistral.ai/api-keys](https://console.mistral.ai/api-keys) | [docs.mistral.ai/api](https://docs.mistral.ai/api/) |
-| OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | [openrouter.ai/docs](https://openrouter.ai/docs/quickstart) |
-| Ollama local | No requiere clave para el servidor local | [ollama.com/download](https://ollama.com/download) · [docs.ollama.com/api/openai-compatibility](https://docs.ollama.com/api/openai-compatibility) · [último release](https://github.com/ollama/ollama/releases/latest) |
-| llama.cpp local | No requiere clave remota | [github.com/ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp) |
-| LocalAI local | No requiere clave en una instalación local | [github.com/mudler/LocalAI](https://github.com/mudler/LocalAI) · [compatibilidad OpenAI](https://localai.io/features/openai-compatibility/) |
+| Steam Web API | [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) | `STEAM_API_KEY` |
+| Groq | [console.groq.com/keys](https://console.groq.com/keys) | `GROQ_API_KEY` |
+| Google Gemini | [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) | `GEMINI_API_KEY` |
+| Mistral | [console.mistral.ai/api-keys](https://console.mistral.ai/api-keys) | `MISTRAL_API_KEY` |
+| OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | `OPENROUTER_API_KEY` |
+| Hugging Face | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) | `AI_API_KEY` |
+| Ollama Cloud | [ollama.com/settings/keys](https://ollama.com/settings/keys) | `OLLAMA_API_KEY` |
 
-### WhatsApp, app y despliegue
+Los backends locales **Ollama, llama.cpp y LocalAI no necesitan una clave** cuando se ejecutan en `127.0.0.1`. No pongas claves reales en el README, el código ni los commits; guárdalas en `.env`, secretos de Heroku o un gestor de secretos.
 
-| Recurso | Enlace |
-|---|---|
-| Dispositivos vinculados de WhatsApp | [faq.whatsapp.com/1310471976070758](https://faq.whatsapp.com/1310471976070758/) |
-| Baileys | [github.com/WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) |
-| Documentación de Expo | [docs.expo.dev](https://docs.expo.dev/) |
-| Panel de Heroku | [dashboard.heroku.com/apps](https://dashboard.heroku.com/apps) |
-| Heroku CLI | [devcenter.heroku.com/articles/heroku-cli](https://devcenter.heroku.com/articles/heroku-cli) |
-| Termux en F-Droid | [f-droid.org/packages/com.termux](https://f-droid.org/packages/com.termux/) |
-| Termux en GitHub | [github.com/termux/termux-app](https://github.com/termux/termux-app) |
+## Enlaces directos de instalación y API
 
-### Proyecto
+| Backend | Instalación | API compatible |
+|---|---|---|
+| Ollama | [ollama.com/download](https://ollama.com/download) | [OpenAI compatibility](https://docs.ollama.com/api/openai-compatibility) |
+| llama.cpp | [GitHub: ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp) | [llama-server](https://github.com/ggml-org/llama.cpp/tree/master/tools/server) |
+| LocalAI | [GitHub: mudler/LocalAI](https://github.com/mudler/LocalAI) | [OpenAI compatibility](https://localai.io/features/openai-compatibility/) |
 
-| Recurso | Enlace |
-|---|---|
-| Repositorio privado | [github.com/guianpierrcastillolazo-rgb/infoplayerleft](https://github.com/guianpierrcastillolazo-rgb/infoplayerleft) |
-| Plantilla de variables de entorno | [.env.example](.env.example) |
-| Guía de backends locales | [services/README.md](services/README.md) |
-
-## Instalación local
+## Instalación
 
 ```bash
 git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
@@ -89,55 +47,49 @@ npm start
 
 ## Configuración mínima
 
-Copia `.env.example` como `.env` y configura, como mínimo:
+Copia `.env.example` como `.env` y configura Steam y el proveedor de IA elegido:
 
 ```env
 STEAM_API_KEY=tu_steam_api_key
-AI_PROVIDER=local
-AI_MODEL=local-model
-AI_LOCAL_URL=http://127.0.0.1:8080/v1/chat/completions
+AI_PROVIDER=ollama
+AI_MODEL=gpt-oss:20b
+OLLAMA_URL=http://127.0.0.1:11434/v1/chat/completions
+OLLAMA_API_KEY=ollama
 GROUPS_ENABLED=true
 REPLY_IN_PRIVATE=true
 PAIRING_CODE=false
 ```
 
-Puedes seleccionar `ollama`, `llama_cpp` o `localai` para usar un backend local gratuito con API HTTP compatible con OpenAI. Para un proveedor remoto, por ejemplo:
+## Ollama local
 
-La release estable verificada al actualizar este repositorio es **v0.34.2** ([release oficial](https://github.com/ollama/ollama/releases/tag/v0.34.2)). Para usar la versión actual de Ollama, instala desde su sitio oficial y descarga un modelo:
+La versión estable verificada al actualizar el repositorio es **v0.34.2**. Instala Ollama y descarga un modelo:
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull gpt-oss:20b
 ollama serve
+npm start
 ```
 
-También puedes usar el instalador del repositorio:
+También puedes usar el instalador incluido:
 
 ```bash
 bash scripts/setup-ollama.sh
 ```
 
-La API local de Ollama escucha en `http://127.0.0.1:11434`. Configura el bot así:
+Para cambiar de proveedor desde WhatsApp:
 
-```env
-AI_PROVIDER=ollama
-AI_MODEL=gpt-oss:20b
-OLLAMA_URL=http://127.0.0.1:11434/v1/chat/completions
-OLLAMA_API_KEY=ollama
-AI_LOCAL_TIMEOUT_MS=120000
+```text
+!proveedor ollama
+!proveedor llama_cpp
+!proveedor localai
 ```
 
-La clave local `ollama` es un valor ignorado por el servidor local y solo se envía para compatibilidad con la API OpenAI. Para modelos cloud de Ollama usa la autenticación indicada en la [documentación oficial](https://docs.ollama.com/api/authentication).
+## llama.cpp local
 
-```env
-AI_PROVIDER=groq
-AI_MODEL=openai/gpt-oss-20b
-GROQ_API_KEY=tu_clave
+```bash
+./build/bin/llama-server --model /ruta/al/modelo.gguf --host 127.0.0.1 --port 8080
 ```
-
-Las claves disponibles son `GROQ_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY` y `OPENROUTER_API_KEY`. También se acepta `AI_API_KEY` como clave genérica. Los backends locales no requieren una clave para uso en `127.0.0.1`.
-
-Para llama.cpp:
 
 ```env
 AI_PROVIDER=llama_cpp
@@ -146,7 +98,7 @@ LLAMA_CPP_URL=http://127.0.0.1:8080/v1/chat/completions
 LLAMA_CPP_API_KEY=
 ```
 
-Para LocalAI con Docker:
+## LocalAI local
 
 ```bash
 docker run -p 8081:8080 --name local-ai -ti localai/localai:latest
@@ -159,55 +111,50 @@ LOCALAI_URL=http://127.0.0.1:8081/v1/chat/completions
 LOCALAI_API_KEY=
 ```
 
-## Vincular WhatsApp
+Los tres backends locales son gratuitos como software, pero los modelos consumen disco, CPU/RAM o GPU/VRAM. Revisa la licencia del modelo que descargues.
+
+## Proveedores remotos
+
+Ejemplo con Groq:
+
+```env
+AI_PROVIDER=groq
+AI_MODEL=openai/gpt-oss-20b
+GROQ_API_KEY=tu_clave
+```
+
+También están disponibles `gemini`, `mistral` y `openrouter`. Puedes usar `AI_API_KEY` como variable genérica, aunque es preferible usar la variable específica del proveedor.
+
+## WhatsApp
 
 ### Código QR
 
-Deja vacías `WHATSAPP_NUMBER` y usa `PAIRING_CODE=false`:
-
-```env
-WHATSAPP_NUMBER=
-PAIRING_CODE=false
-```
-
-Ejecuta `npm start` y escanea el QR desde **WhatsApp → Dispositivos vinculados**.
+Deja vacío `WHATSAPP_NUMBER`, configura `PAIRING_CODE=false`, ejecuta `npm start` y escanea el QR en **WhatsApp → Dispositivos vinculados**.
 
 ### Código de vinculación
-
-Configura el número internacional solo con dígitos:
 
 ```env
 WHATSAPP_NUMBER=51987654321
 PAIRING_CODE=true
 ```
 
-Ejecuta `npm start`, copia el código mostrado y escríbelo en **WhatsApp → Dispositivos vinculados → Vincular con número de teléfono**. Después cambia `PAIRING_CODE=false`.
+Ejecuta `npm start`, introduce el código en **WhatsApp → Dispositivos vinculados → Vincular con número de teléfono** y después cambia `PAIRING_CODE=false`.
 
-## Servidores A2S
+## Steam, A2S y vigilancia
 
-Las consultas A2S requieren una dirección con formato `IP_o_dominio:puerto`:
+Las direcciones A2S usan el formato `IP_o_dominio:puerto`, por ejemplo `192.0.2.10:27015`. El puerto debe estar entre `1` y `65535`.
 
-```text
-IP_o_dominio:27015
-```
+La vigilancia acepta nickname, SteamID64, vanity o URL de Steam. Los datos se guardan localmente en `watchlist.json`; no publiques ese archivo.
 
-El puerto debe estar entre `1` y `65535`. Las direcciones locales y privadas están permitidas por defecto. Para bloquearlas:
+Para bloquear servidores locales o privados:
 
 ```env
 ALLOW_PRIVATE_SERVERS=false
 ```
 
-El bot guarda las direcciones públicas oficiales de L4D2 en formato `IP:puerto`. En Termux, la ubicación predeterminada es `~/storage/downloads/l4d2-official-addresses.txt`.
+## App móvil y Control API
 
-## Vigilancia
-
-La vigilancia acepta un nickname, SteamID64, vanity o URL de perfil. Permite consultar una vigilancia en el momento y envía avisos automáticos. El intervalo nunca es inferior a 50 segundos; puedes aumentarlo con `WATCH_INTERVAL_SECONDS`.
-
-Los datos se guardan en `watchlist.json`. Este archivo no debe publicarse ni compartirse.
-
-## Control API y app móvil
-
-El Control API permite consultar el estado del bot, probar la IA y guardar ajustes desde `control-app`. Para activarlo localmente:
+Configura el control local:
 
 ```env
 CONTROL_API_TOKEN=genera-un-token-largo
@@ -215,9 +162,7 @@ CONTROL_API_HOST=0.0.0.0
 CONTROL_API_PORT=8787
 ```
 
-La app móvil se conecta a la URL del equipo donde corre el bot, por ejemplo `http://192.168.1.25:8787`, y utiliza el mismo token. No añadas `/api/control` a la URL: la app agrega las rutas automáticamente.
-
-La app está dentro de `control-app` y está escrita completamente en JavaScript:
+La app móvil se conecta a `http://IP_DEL_EQUIPO:8787` usando el mismo token. No añadas `/api/control` a la URL.
 
 ```bash
 cd control-app
@@ -229,13 +174,11 @@ pnpm test
 
 ## Heroku
 
-El repositorio incluye `Procfile` y `app.json`. El proceso correcto es `worker`, no `web`:
+El repositorio incluye `Procfile` y usa un proceso `worker`:
 
 ```text
 worker: npm start
 ```
-
-### Desde Heroku CLI
 
 ```bash
 heroku login
@@ -247,31 +190,21 @@ heroku ps:scale worker=1 --app nombre-de-tu-app
 heroku logs --tail --app nombre-de-tu-app
 ```
 
-También puedes conectar el repositorio desde el panel de Heroku y activar un proceso `worker` en **Resources**.
-
-Para la primera vinculación, configura temporalmente `WHATSAPP_NUMBER` y `PAIRING_CODE=true`. El código aparecerá en los logs. Después de vincular, cambia `PAIRING_CODE=false`.
-
-**Importante:** Heroku utiliza almacenamiento efímero. `auth_info/`, `watchlist.json` y `ai-memory.json` pueden desaparecer al reiniciar o redeployar el dyno. Es posible que debas volver a vincular WhatsApp. No actives `CONTROL_API_TOKEN` públicamente en Heroku sin una protección adicional.
-
-## Backends locales de IA
-
-El bot admite backends locales gratuitos mediante APIs HTTP: Ollama, llama.cpp server y LocalAI. El software del runtime puede ser gratuito, pero los modelos tienen licencias propias y el equipo sigue consumiendo CPU, RAM, disco y energía. Mantén los servidores enlazados a `127.0.0.1` si no necesitas acceso remoto y no incluyas claves en el repositorio.
+Heroku usa almacenamiento efímero. `auth_info/`, `watchlist.json` y `ai-memory.json` pueden desaparecer cuando se reinicia el dyno. Para Ollama, llama.cpp o LocalAI usa un equipo propio o un servidor con almacenamiento y GPU/CPU adecuados.
 
 ## Termux
 
 ```bash
 pkg update && pkg upgrade
 pkg install nodejs-lts git
-termux-setup-storage
 git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
 cd infoplayerleft
 npm ci
 cp .env.example .env
-nano .env
 npm run start:termux
 ```
 
-Para mantenerlo activo, puedes usar `tmux`:
+Para mantenerlo activo:
 
 ```bash
 pkg install tmux
@@ -279,9 +212,9 @@ tmux new -s infoplayerleft
 npm start
 ```
 
-## Sesión y reinicio
+## Sesión, pruebas y seguridad
 
-La sesión se guarda en `auth_info/`. Para volver a vincular:
+La sesión de WhatsApp se guarda en `auth_info/`. Para volver a vincular:
 
 ```bash
 npm run reset
@@ -293,26 +226,10 @@ Para borrar la sesión y arrancar de nuevo:
 npm run relink
 ```
 
-## Pruebas
+La suite principal contiene 28 pruebas. La app móvil se valida con `pnpm run check`, `pnpm run build` y `pnpm test`.
 
-Bot principal:
+No compartas `.env`, claves API, códigos de vinculación, `auth_info/`, `.steam_key`, `watchlist.json` ni `ai-memory.json`. Mantén los backends locales enlazados a `127.0.0.1`; si necesitas acceso remoto, utiliza autenticación, firewall y TLS.
 
-```bash
-npm ci
-npm test
-```
+## Repositorio
 
-La suite principal contiene 28 pruebas. La app móvil se valida desde `control-app` con `pnpm run check`, `pnpm run build` y `pnpm test`.
-
-## Seguridad
-
-- No compartas códigos de vinculación, sesiones, `.env`, `.steam_key`, claves API ni `auth_info/`.
-- No publiques `watchlist.json` ni `ai-memory.json`.
-- El Control API está pensado para una red local de confianza.
-- Usa `ALLOW_PRIVATE_SERVERS=false` si quieres bloquear consultas a direcciones locales o privadas.
-- Revisa los límites del proveedor antes de usar una API remota.
-- Baileys no es una librería oficial de WhatsApp.
-
-## Referencias
-
-- [Desplegar InfoPlayer Left en Heroku](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
+[Repositorio privado en GitHub](https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
