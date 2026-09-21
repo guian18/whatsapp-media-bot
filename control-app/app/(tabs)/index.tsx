@@ -224,7 +224,7 @@ export default function HomeScreen() {
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>INFOPLAYER LEFT</Text>
               <Text style={styles.title}>Control del bot</Text>
-              <Text style={styles.subtitle}>Configura tu IA desde el iPhone sin exponer tus claves.</Text>
+              <Text style={styles.subtitle}>Configura tu IA desde Android sin exponer tus claves.</Text>
             </View>
           </View>
 

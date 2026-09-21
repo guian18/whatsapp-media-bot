@@ -34,29 +34,19 @@ const env = {
   // Leave empty to use the default icon from assets/images/icon.png
   logoUrl: "",
   scheme: schemeFromBundleId,
-  iosBundleId: bundleId,
   androidPackage: bundleId,
 };
 
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
+  platforms: ["android"],
   version: "1.0.7",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
-  ios: {
-    supportsTablet: true,
-    bundleIdentifier: env.iosBundleId,
-    "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSAppTransportSecurity": {
-          "NSAllowsLocalNetworking": true
-        }
-      }
-  },
   android: {
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
@@ -82,11 +72,6 @@ const config: ExpoConfig = {
         category: ["BROWSABLE", "DEFAULT"],
       },
     ],
-  },
-  web: {
-    bundler: "metro",
-    output: "static",
-    favicon: "./assets/images/favicon.png",
   },
   extra: {
     eas: {
