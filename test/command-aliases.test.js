@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseCommandAliases, resolveCommandAlias } from "../src/command-aliases.js";
+import { handleCommand } from "../src/commands.js";
 import { normalizePrivateJid } from "../src/owner-notifications.js";
 
 test("parses safe command aliases", () => {
@@ -27,6 +28,19 @@ test("permite cambiar el nombre sin mantener activo el comando original", () => 
   try {
     assert.equal(resolveCommandAlias("players"), "jugadores");
     assert.equal(resolveCommandAlias("jugadores"), null);
+  } finally {
+    if (previous === undefined) delete process.env.COMMAND_ALIASES;
+    else process.env.COMMAND_ALIASES = previous;
+  }
+});
+
+test("actualiza !ayuda con los nombres personalizados activos", async () => {
+  const previous = process.env.COMMAND_ALIASES;
+  process.env.COMMAND_ALIASES = "players=jugadores";
+  try {
+    const help = await handleCommand("!ayuda");
+    assert.match(help, /`!players <ip:puerto>`/);
+    assert.doesNotMatch(help, /`!jugadores <ip:puerto>`/);
   } finally {
     if (previous === undefined) delete process.env.COMMAND_ALIASES;
     else process.env.COMMAND_ALIASES = previous;
