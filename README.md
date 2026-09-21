@@ -23,6 +23,50 @@ Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 - Una Steam Web API Key para las funciones de Steam.
 - Una clave del proveedor de IA elegido si se usará IA remota.
 
+## Enlaces directos
+
+### Steam y Left 4 Dead 2
+
+| Recurso | Enlace |
+|---|---|
+| Crear o consultar la Steam Web API Key | [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) |
+| Documentación de Steam Web API | [developer.valvesoftware.com/wiki/Steam_Web_API](https://developer.valvesoftware.com/wiki/Steam_Web_API) |
+| Documentación de consultas A2S | [developer.valvesoftware.com/wiki/Server_queries](https://developer.valvesoftware.com/wiki/Server_queries) |
+| Wiki oficial de Left 4 Dead 2 | [developer.valvesoftware.com/wiki/Left_4_Dead_2](https://developer.valvesoftware.com/wiki/Left_4_Dead_2) |
+| Comunidad de Steam | [steamcommunity.com](https://steamcommunity.com/) |
+
+### Proveedores de IA
+
+| Proveedor | Crear clave | Documentación |
+|---|---|---|
+| Groq | [console.groq.com/keys](https://console.groq.com/keys) | [console.groq.com/docs](https://console.groq.com/docs) |
+| Gemini | [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) | [ai.google.dev/gemini-api/docs](https://ai.google.dev/gemini-api/docs) |
+| Mistral | [console.mistral.ai/api-keys](https://console.mistral.ai/api-keys) | [docs.mistral.ai/api](https://docs.mistral.ai/api/) |
+| OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | [openrouter.ai/docs](https://openrouter.ai/docs/quickstart) |
+| llama.cpp local | No requiere clave remota | [github.com/ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp) |
+| Khoj incluido | Se configura con `KHOJ_COOKIE` o `KHOJ_API_KEY` | [docs.khoj.dev](https://docs.khoj.dev/) · [código original](https://github.com/khoj-ai/khoj) |
+
+### WhatsApp, app y despliegue
+
+| Recurso | Enlace |
+|---|---|
+| Dispositivos vinculados de WhatsApp | [faq.whatsapp.com/1310471976070758](https://faq.whatsapp.com/1310471976070758/) |
+| Baileys | [github.com/WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) |
+| Documentación de Expo | [docs.expo.dev](https://docs.expo.dev/) |
+| Panel de Heroku | [dashboard.heroku.com/apps](https://dashboard.heroku.com/apps) |
+| Heroku CLI | [devcenter.heroku.com/articles/heroku-cli](https://devcenter.heroku.com/articles/heroku-cli) |
+| Termux en F-Droid | [f-droid.org/packages/com.termux](https://f-droid.org/packages/com.termux/) |
+| Termux en GitHub | [github.com/termux/termux-app](https://github.com/termux/termux-app) |
+
+### Proyecto
+
+| Recurso | Enlace |
+|---|---|
+| Repositorio privado | [github.com/guianpierrcastillolazo-rgb/infoplayerleft](https://github.com/guianpierrcastillolazo-rgb/infoplayerleft) |
+| Plantilla de variables de entorno | [.env.example](.env.example) |
+| Backend de IA incluido | [services/khoj](services/khoj/) |
+| Guía del backend de IA | [services/README.md](services/README.md) |
+
 ## Instalación local
 
 ```bash
@@ -217,7 +261,7 @@ npm ci
 npm test
 ```
 
-La suite principal contiene 26 pruebas. La app móvil se valida desde `control-app` con `pnpm run check`, `pnpm run build` y `pnpm test`.
+La suite principal contiene 27 pruebas. La app móvil se valida desde `control-app` con `pnpm run check`, `pnpm run build` y `pnpm test`.
 
 ## Seguridad
 
@@ -230,7 +274,4 @@ La suite principal contiene 26 pruebas. La app móvil se valida desde `control-a
 
 ## Referencias
 
-[1]: https://steamcommunity.com/dev/apikey "Steam Web API Key"
-[2]: https://github.com/ggml-org/llama.cpp "llama.cpp"
-[3]: https://f-droid.org/packages/com.termux/ "Termux en F-Droid"
-[4]: https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft "Desplegar InfoPlayer Left en Heroku"
+- [Desplegar InfoPlayer Left en Heroku](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
