@@ -51,6 +51,16 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!escaneo"), /solo está disponible desde WhatsApp/);
   assert.match(await handleCommand("1", { jid: "test@s.whatsapp.net" }), /No hay un escaneo pendiente/);
   assert.match(await handleCommand("!help"), /!proveedor/);
+  assert.match(await handleCommand("!menu"), /!info/);
+  assert.match(await handleCommand("!entretenimiento"), /!dado/);
+  assert.match(await handleCommand("!dado 6"), /Resultado:/);
+  assert.match(await handleCommand("!moneda"), /Cayó:/);
+  assert.match(await handleCommand("!8ball ¿funciona?"), /🔮/);
+  assert.match(await handleCommand("!verdad"), /Verdad:/);
+  assert.match(await handleCommand("!reto"), /Reto:/);
+  assert.match(await handleCommand("!pareja Ana y Luis"), /Compatibilidad/);
+  assert.equal(await handleCommand("!calcular 2 + 3 * 4"), "🧮 2 + 3 * 4 = 14");
+  assert.match(await handleCommand("!calcular process.exit()"), /Uso:/);
   assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
   if (previousProvider === undefined) delete process.env.AI_PROVIDER;
   else process.env.AI_PROVIDER = previousProvider;

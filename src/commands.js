@@ -4,6 +4,7 @@ import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
+import { calcular, dado, entretenimiento, ochoBall, moneda, pareja, verdadReto } from "./fun.js";
 
 const MAX_SERVERS = 200;
 const CONCURRENCY = 20;
@@ -99,6 +100,7 @@ export function ayuda() {
     `\`${name("idioma")} <país|código>\` — cambia y guarda el idioma de la IA`,
     `\`${name("proveedor")} <nombre>\` — cambia la IA y el modelo`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
+    `\`${name("entretenimiento")}\` — juegos y utilidades inspirados en el menú clásico`,
     `\`${name("vigilar")} <nick|SteamID|URL>\` — avisa cuando un jugador se conecta a L4D2`,
     `\`${name("novigilar")} <nick|SteamID|URL>\` — cancela una vigilancia`,
     `\`${name("lista")}\` — muestra los jugadores vigilados en este chat`,
@@ -272,6 +274,27 @@ export async function handleCommand(text, context = {}) {
       return cmdProveedor(args);
     case "anime":
       return sendSfwAnimeImage(context);
+    case "entretenimiento":
+    case "juegos":
+      return entretenimiento();
+    case "dado":
+    case "dice":
+      return dado(args);
+    case "moneda":
+    case "coin":
+      return moneda();
+    case "8ball":
+    case "bola8":
+      return ochoBall(args);
+    case "verdad":
+    case "reto":
+      return verdadReto(cmd);
+    case "pareja":
+    case "formarpareja":
+      return pareja(args);
+    case "calcular":
+    case "calc":
+      return calcular(args);
     case "vigilar":
     case "vigilarnick":
       return watchPlayer(args, context.jid);
@@ -311,6 +334,7 @@ export async function handleCommand(text, context = {}) {
     }
     case "ayuda":
     case "help":
+    case "menu":
       return ayuda();
     case "info":
       return cmdInfo(args);

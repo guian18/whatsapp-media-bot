@@ -15,6 +15,7 @@ Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyect
 - Vigilancia automática con un intervalo mínimo de 50 segundos.
 - Guardado automático de direcciones oficiales completas en formato `IP:puerto` para Termux.
 - Consultas A2S con validación de host y puerto, compatibles con servidores públicos, oficiales, locales y privados.
+- Funciones compatibles portadas de NEKOBOT-MD: `!menu`, `!entretenimiento`, `!dado`, `!moneda`, `!8ball`, `!verdad`, `!reto`, `!pareja` y `!calcular`, sin dependencias adicionales.
 
 ## Características
 
@@ -25,6 +26,23 @@ Funciona en Linux, macOS, Windows y Termux con Node.js 20 o superior. El proyect
 - Integración opcional con DuckDuckGo y varios proveedores de IA.
 - Soporte para código QR o código de vinculación de WhatsApp.
 - Responde en conversaciones privadas y grupos privados según la configuración elegida.
+- Incluye juegos y utilidades locales que no envían datos a servicios externos.
+
+### Funciones portadas de NEKOBOT-MD
+
+| Comando | Función |
+|---|---|
+| `!menu` | Alias de `!ayuda`. |
+| `!entretenimiento` o `!juegos` | Muestra los juegos y utilidades disponibles. |
+| `!dado [caras]` | Lanza un dado de 2 a 1000 caras. |
+| `!moneda` | Lanza una moneda. |
+| `!8ball <pregunta>` | Responde una pregunta de forma lúdica. |
+| `!verdad` | Propone una pregunta de verdad. |
+| `!reto` | Propone un reto seguro para el grupo. |
+| `!pareja <nombre 1> y <nombre 2>` | Calcula una compatibilidad aleatoria, solo como entretenimiento. |
+| `!calcular <expresión>` | Calcula expresiones aritméticas básicas. |
+
+Estas funciones se integraron en el dispatcher actual y no reemplazan Baileys, la sesión, el Control API, Steam ni la vigilancia de jugadores.
 
 ## Requisitos
 
