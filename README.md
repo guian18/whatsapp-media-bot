@@ -56,7 +56,7 @@ REPLY_IN_PRIVATE=true
 PAIRING_CODE=false
 ```
 
-El proveedor `local` requiere un servidor compatible con OpenAI, como `llama.cpp`. Para un proveedor remoto, por ejemplo:
+El proveedor `local` requiere un servidor compatible con OpenAI, como `llama.cpp`. También puedes seleccionar `khoj` para usar el servicio incluido en `services/khoj` como backend de IA. Para un proveedor remoto, por ejemplo:
 
 ```env
 AI_PROVIDER=groq
@@ -65,6 +65,14 @@ GROQ_API_KEY=tu_clave
 ```
 
 Las claves disponibles son `GROQ_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY` y `OPENROUTER_API_KEY`. También se acepta `AI_API_KEY` como clave genérica.
+
+Para Khoj, inicia el servicio en el puerto `42110` y configura:
+
+```env
+AI_PROVIDER=khoj
+KHOJ_AI_URL=http://127.0.0.1:42110/api/chat?client=khoj
+KHOJ_COOKIE=tu_cookie_de_sesion
+```
 
 ## Vincular WhatsApp
 
@@ -162,7 +170,7 @@ Para la primera vinculación, configura temporalmente `WHATSAPP_NUMBER` y `PAIRI
 
 ## Servicio independiente de IA
 
-El directorio [`services/khoj/`](services/khoj/) contiene un servicio separado de IA, búsqueda semántica y documentos. Conserva su propio código Python/React, Docker, pruebas, dependencias, documentación y licencia **AGPL-3.0**. No se inicia con `npm start`, no comparte la sesión de WhatsApp y no modifica el bot de Steam/Left 4 Dead 2.
+El directorio [`services/khoj/`](services/khoj/) contiene el backend de IA, búsqueda semántica y documentos que puede usar el proveedor `khoj` del bot. Conserva su código Python/React, Docker, pruebas, dependencias, documentación y licencia **AGPL-3.0**. Se ejecuta como proceso auxiliar en el mismo repositorio; no comparte la sesión de WhatsApp ni reemplaza el bot de Steam/Left 4 Dead 2.
 
 ## Termux
 

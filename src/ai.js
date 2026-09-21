@@ -8,6 +8,10 @@ const AI_PRESETS = {
     url: "http://127.0.0.1:8080/v1/chat/completions",
     model: "local-model",
   },
+  khoj: {
+    url: "http://127.0.0.1:42110/api/chat?client=khoj",
+    model: "khoj",
+  },
   gemini: {
     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     model: "gemini-2.5-flash",
@@ -25,8 +29,8 @@ const AI_PRESETS = {
     model: "openrouter/auto",
   },
 };
-const PROVIDER_ALIASES = { local: "local", llamacpp: "local", llama: "local", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
-const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
+const PROVIDER_ALIASES = { local: "local", llamacpp: "local", llama: "local", khoj: "khoj", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
+const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", khoj: "KHOJ_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
@@ -187,7 +191,11 @@ function aiConfig() {
   const providerKey = PROVIDER_KEY_ENV[provider];
   const key = (providerKey ? process.env[providerKey] : "")?.trim() || (provider === "local" ? "" : (process.env.AI_API_KEY || "").trim());
   const preset = AI_PRESETS[provider];
-  const configuredUrl = provider === "local" ? (process.env.AI_LOCAL_URL || process.env.AI_API_URL) : process.env.AI_API_URL;
+  const configuredUrl = provider === "local"
+    ? (process.env.AI_LOCAL_URL || process.env.AI_API_URL)
+    : provider === "khoj"
+      ? (process.env.KHOJ_AI_URL || process.env.AI_API_URL)
+      : process.env.AI_API_URL;
   const url = (configuredUrl || preset?.url || DEFAULT_AI_URL).trim();
   const model = (process.env.AI_MODEL || preset?.model || DEFAULT_AI_MODEL).trim();
   return { key, url, model, provider };
@@ -210,7 +218,8 @@ function providerKeyMismatch(provider, key) {
 
 async function askModel(question, style, sources, includeSources, history = []) {
   const { key, url, model, provider } = aiConfig();
-  if (!key && provider !== "local") return null;
+  if (!key && !["local", "khoj"].includes(provider)) return null;
+  if (provider === "khoj") return askKhoj(question, url, key);
   const fastLocal = localFastMode(provider);
   const context = sources.length
     ? sources.map((s, i) => `[${i + 1}] ${s.title}\nURL: ${s.url}\n${s.snippet}`).join("\n\n")
@@ -253,9 +262,29 @@ async function askModel(question, style, sources, includeSources, history = []) 
   return responseText?.trim() || "La IA no devolvió una respuesta.";
 }
 
+async function askKhoj(question, url, key) {
+  const headers = { "content-type": "application/json" };
+  if (key) headers.authorization = `Bearer ${key}`;
+  if (process.env.KHOJ_COOKIE?.trim()) headers.cookie = process.env.KHOJ_COOKIE.trim();
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ q: question, stream: false, create_new: false }),
+    signal: timeoutSignal(envNumber("KHOJ_TIMEOUT_MS", 120_000)),
+  });
+  const raw = await response.text();
+  if (!response.ok) throw new Error(`Khoj HTTP ${response.status}${raw ? `: ${raw.slice(0, 180)}` : ""}`);
+  try {
+    const data = JSON.parse(raw);
+    return String(data?.response || data?.answer || data?.message || "Khoj no devolvió una respuesta.").trim();
+  } catch {
+    return raw.trim() || "Khoj no devolvió una respuesta.";
+  }
+}
+
 export function aiConfigured() {
   const config = aiConfig();
-  return config.provider === "local" || Boolean(config.key);
+  return ["local", "khoj"].includes(config.provider) || Boolean(config.key);
 }
 
 function configuredStyle() {
@@ -326,7 +355,7 @@ export function cmdIdioma(value) {
 
 export function cmdProveedor(value) {
   const input = String(value || "").trim().toLowerCase();
-  const available = ["local", "gemini", "groq", "mistral", "openrouter"];
+  const available = ["local", "khoj", "gemini", "groq", "mistral", "openrouter"];
   if (!input || input === "lista") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
   const provider = PROVIDER_ALIASES[input];
   if (!provider || !AI_PRESETS[provider]) return `Proveedor no válido. Usa: ${available.join(", ")}`;
@@ -338,6 +367,8 @@ export function cmdProveedor(value) {
   const keyStatus = providerKeyStatus(provider);
   const keyMessage = provider === "local"
     ? "No requiere API key; debe estar activo un servidor llama.cpp en AI_LOCAL_URL."
+    : provider === "khoj"
+    ? "Usa KHOJ_COOKIE para una sesión local o KHOJ_API_KEY si tu instalación expone un token."
     : keyStatus.specific
     ? `Clave detectada en ${keyStatus.variable}.`
     : keyStatus.generic
