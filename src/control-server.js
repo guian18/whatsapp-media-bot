@@ -47,14 +47,18 @@ function readBody(req) {
 
 function updateEnvFile(file, values) {
   let content = existsSync(file) ? readFileSync(file, "utf8") : "";
+  const changed = {};
   for (const [key, value] of Object.entries(values)) {
     if (!ALLOWED_SETTINGS.has(key)) continue;
     const line = `${key}=${String(value)}`;
-    const pattern = new RegExp(`^${key}\\s*=.*$`, "m");
+    const pattern = new RegExp(`^${key}\s*=.*$`, "m");
+    const previous = content.match(new RegExp(`^${key}\s*=(.*)$`, "m"))?.[1]?.trim();
+    if (previous !== String(value)) changed[key] = value;
     content = pattern.test(content) ? content.replace(pattern, line) : `${content.trimEnd()}\n${line}\n`;
     process.env[key] = String(value);
   }
   writeFileSync(file, content, { mode: 0o600 });
+  return changed;
 }
 
 function validSettings(body) {
@@ -79,7 +83,7 @@ function validSettings(body) {
   };
 }
 
-export function startControlServer({ getStatus, testAI }) {
+export function startControlServer({ getStatus, testAI, notifySettingsChange = async () => {} }) {
   const token = (process.env.CONTROL_API_TOKEN || "").trim();
   const port = Number(process.env.CONTROL_API_PORT || 8787);
   const host = process.env.CONTROL_API_HOST || "127.0.0.1";
@@ -98,7 +102,8 @@ export function startControlServer({ getStatus, testAI }) {
       if (req.method === "GET" && url.pathname === "/api/control/health") return json(res, 200, { ok: true, service: "infoplayerleft-control" });
       if (req.method === "POST" && url.pathname === "/api/control/settings") {
         const settings = validSettings(await readBody(req));
-        updateEnvFile(envFile, settings);
+        const changed = updateEnvFile(envFile, settings);
+        if (Object.keys(changed).length) await notifySettingsChange(changed);
         return json(res, 200, { ok: true, settings: { provider: settings.AI_PROVIDER, model: settings.AI_MODEL } });
       }
       if (req.method === "POST" && url.pathname === "/api/control/test-ai") {

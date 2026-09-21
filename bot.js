@@ -31,6 +31,7 @@ import { ensureSteamApiKey } from "./src/steamkey.js";
 import { getAuthDir } from "./src/config.js";
 import { startWatcher } from "./src/watcher.js";
 import { startControlServer } from "./src/control-server.js";
+import { formatSafeSettingsChange, ownPrivateJid } from "./src/owner-notifications.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
@@ -58,6 +59,20 @@ let guardarCredsPendiente = Promise.resolve();
 let connectionState = "starting";
 const mensajesProcesados = new Map();
 
+async function notifyOwnerOfSettingsChange(changed) {
+  const sock = sockActual;
+  const jid = ownPrivateJid(sock);
+  if (!sock || !jid || connectionState !== "online") {
+    console.warn("No se notificaron los cambios: WhatsApp aún no está conectado.");
+    return;
+  }
+  const safeChanges = formatSafeSettingsChange(changed);
+  if (!safeChanges) return;
+  await sock.sendMessage(jid, {
+    text: `⚙️ Cambios guardados desde la app:\n${safeChanges}`,
+  });
+}
+
 startControlServer({
   getStatus: () => ({
     ok: true,
@@ -70,6 +85,7 @@ startControlServer({
     controlApi: true,
   }),
   testAI: (question) => cmdIA(question),
+  notifySettingsChange: notifyOwnerOfSettingsChange,
 });
 
 function borrarSesion() {
