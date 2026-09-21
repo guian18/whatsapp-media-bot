@@ -1,19 +1,18 @@
 # InfoPlayer Left
 
-Bot de WhatsApp para consultar perfiles de Steam, buscar jugadores y consultar servidores de **Left 4 Dead 2** mediante Steam Web API y consultas A2S. También incluye IA opcional, vigilancia de jugadores, una app móvil de control y comandos de entretenimiento.
+Bot de WhatsApp para consultar perfiles de Steam, buscar jugadores y consultar servidores de **Left 4 Dead 2** mediante Steam Web API y consultas A2S. También incluye IA opcional, vigilancia de jugadores, una app móvil de control y funciones de entretenimiento.
 
 Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 
 ## Funciones
 
-- Perfiles de Steam con `!info`.
-- Búsqueda de jugadores en servidores públicos con `!buscar`.
-- Información A2S de servidores con `!servidor` y `!jugadores`.
-- Vigilancia de jugadores con `!vigilar`, `!novigilar`, `!lista` y `!escaneo`.
+- Perfiles de Steam y búsqueda de jugadores en servidores públicos.
+- Información A2S de servidores públicos, oficiales, locales y privados.
+- Vigilancia de jugadores con avisos automáticos y consultas manuales.
 - IA configurable con proveedor local, Groq, Gemini, Mistral u OpenRouter.
 - Memoria privada por chat, tono e idioma configurables.
-- Imágenes de anime SFW con `!anime`.
-- Comandos de entretenimiento sin dependencias externas.
+- Imágenes de anime SFW.
+- Funciones de entretenimiento sin dependencias externas.
 - App móvil Expo para controlar el bot mediante el Control API.
 - Despliegue en Heroku como proceso `worker`.
 
@@ -23,7 +22,7 @@ Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 - Git.
 - Un teléfono con WhatsApp para vincular la sesión.
 - Una Steam Web API Key para las funciones de Steam.
-- Una clave del proveedor de IA elegido si se usará `!ai` remoto.
+- Una clave del proveedor de IA elegido si se usará IA remota.
 
 ## Instalación local
 
@@ -92,47 +91,12 @@ PAIRING_CODE=true
 
 Ejecuta `npm start`, copia el código mostrado y escríbelo en **WhatsApp → Dispositivos vinculados → Vincular con número de teléfono**. Después cambia `PAIRING_CODE=false`.
 
-## Comandos
-
-| Comando | Función |
-|---|---|
-| `!ping` | Comprueba que el bot responde. |
-| `!ayuda` o `!menu` | Muestra la ayuda. |
-| `!info <SteamID, vanity o URL>` | Consulta un perfil de Steam. |
-| `!buscar <nickname>` | Busca un jugador en servidores públicos de L4D2. |
-| `!servidor <IP:puerto>` | Consulta un servidor. |
-| `!jugadores <IP:puerto>` | Lista los jugadores conectados. |
-| `!vigilar <nick, SteamID o URL>` | Crea una vigilancia. |
-| `!novigilar <nick, SteamID o URL>` | Cancela una vigilancia. |
-| `!lista` | Muestra las vigilancias activas. |
-| `!escaneo [número]` | Consulta una vigilancia inmediatamente. |
-| `!ai <pregunta>` | Responde con el proveedor de IA configurado. |
-| `!tono <estilo>` | Cambia el tono de la IA. |
-| `!idioma <código o país>` | Cambia el idioma de la IA. |
-| `!proveedor <nombre>` | Cambia el proveedor y el modelo. |
-| `!anime` | Envía una imagen de anime SFW. |
-| `!entretenimiento` o `!juegos` | Muestra los juegos disponibles. |
-| `!dado [caras]` | Lanza un dado de 2 a 1000 caras. |
-| `!moneda` | Lanza una moneda. |
-| `!8ball <pregunta>` | Responde una pregunta de forma lúdica. |
-| `!verdad` / `!reto` | Propone una pregunta o un reto seguro. |
-| `!pareja <nombre 1> y <nombre 2>` | Calcula una compatibilidad aleatoria. |
-| `!calcular <expresión>` | Calcula operaciones aritméticas básicas. |
-| `!ppt piedra\|papel\|tijera` | Juega contra el bot. |
-| `!simi <mensaje>` | Devuelve una respuesta divertida local. |
-| `!infobot` | Muestra información del bot. |
-| `!estado` | Muestra el estado del proceso. |
-| `!rapidez` | Comprueba la respuesta del proceso. |
-
-Los estilos disponibles para la IA incluyen `tranquilo`, `agresivo`, `insultos`, `formal`, `divertido`, `sarcastico`, `breve` y `amable`. Usa `!tono lista`, `!idioma lista` o `!proveedor lista` para ver las opciones.
-
 ## Servidores A2S
 
-Los comandos `!servidor` y `!jugadores` requieren una dirección con formato `IP_o_dominio:puerto`:
+Las consultas A2S requieren una dirección con formato `IP_o_dominio:puerto`:
 
 ```text
-!servidor 1.2.3.4:27015
-!jugadores 1.2.3.4:27015
+IP_o_dominio:27015
 ```
 
 El puerto debe estar entre `1` y `65535`. Las direcciones locales y privadas están permitidas por defecto. Para bloquearlas:
@@ -145,7 +109,7 @@ El bot guarda las direcciones públicas oficiales de L4D2 en formato `IP:puerto`
 
 ## Vigilancia
 
-`!vigilar` acepta un nickname, SteamID64, vanity o URL de perfil. `!escaneo` muestra las vigilancias numeradas y permite consultar una en el momento. La vigilancia automática nunca usa un intervalo inferior a 50 segundos; puedes aumentarlo con `WATCH_INTERVAL_SECONDS`.
+La vigilancia acepta un nickname, SteamID64, vanity o URL de perfil. Permite consultar una vigilancia en el momento y envía avisos automáticos. El intervalo nunca es inferior a 50 segundos; puedes aumentarlo con `WATCH_INTERVAL_SECONDS`.
 
 Los datos se guardan en `watchlist.json`. Este archivo no debe publicarse ni compartirse.
 
