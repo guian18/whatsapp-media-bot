@@ -55,8 +55,8 @@ function updateEnvFile(file, values) {
   for (const [key, value] of Object.entries(values)) {
     if (!ALLOWED_SETTINGS.has(key)) continue;
     const line = `${key}=${String(value)}`;
-    const pattern = new RegExp(`^${key}\s*=.*$`, "m");
-    const previous = content.match(new RegExp(`^${key}\s*=(.*)$`, "m"))?.[1]?.trim();
+    const pattern = new RegExp(`^${key}\\s*=.*$`, "m");
+    const previous = content.match(new RegExp(`^${key}\\s*=(.*)$`, "m"))?.[1]?.trim();
     if (previous !== String(value)) changed[key] = value;
     content = pattern.test(content) ? content.replace(pattern, line) : `${content.trimEnd()}\n${line}\n`;
     process.env[key] = String(value);

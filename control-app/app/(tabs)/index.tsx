@@ -59,6 +59,8 @@ type Settings = {
   tone: string;
   skipSearch: boolean;
   fastMode: boolean;
+  notificationJid: string;
+  commandAliases: string;
 };
 
 type ConnectionState = "idle" | "checking" | "online" | "offline";

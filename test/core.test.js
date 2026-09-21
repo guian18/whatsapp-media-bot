@@ -207,7 +207,12 @@ test("control API protects status and preserves secret keys", async (t) => {
     body: JSON.stringify({ provider: "openrouter", model: "openrouter/auto", llamaUrl: "https://openrouter.ai/api/v1/chat/completions", maxTokens: 64, timeoutMs: 120000, language: "es-ES", tone: "breve", skipSearch: true, fastMode: true }),
   });
   assert.equal(remoteResponse.status, 200);
-  assert.match(readFileSync(envFile, "utf8"), /AI_API_URL=https:\/\/openrouter\.ai\/api\/v1\/chat\/completions/);
+  const updated = readFileSync(envFile, "utf8");
+  assert.match(updated, /AI_API_URL=https:\/\/openrouter\.ai\/api\/v1\/chat\/completions/);
+  assert.match(updated, /^AI_PROVIDER=openrouter$/m);
+  assert.match(updated, /^AI_MODEL=openrouter\/auto$/m);
+  assert.equal((updated.match(/^AI_PROVIDER=/gm) || []).length, 1);
+  assert.equal((updated.match(/^AI_MODEL=/gm) || []).length, 1);
 });
 
 test("local AI provider accepts an OpenAI-compatible response", async (t) => {
