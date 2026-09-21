@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { healthUrl, validateInteger } from "../lib/control-settings";
-import { toControlPayload } from "../lib/control-api";
+import { normalizeControlApiUrl, toControlPayload } from "../lib/control-api";
 
 describe("control settings helpers", () => {
   it("derives the llama.cpp health endpoint", () => {
     expect(healthUrl("http://127.0.0.1:8080/v1/chat/completions")).toBe("http://127.0.0.1:8080/health");
     expect(healthUrl("https://bot.example.test/")).toBe("https://bot.example.test/health");
+  });
+
+  it("normalizes the bot URL when users paste a control path", () => {
+    expect(normalizeControlApiUrl(" http://192.168.1.25:8787/ ")).toBe("http://192.168.1.25:8787");
+    expect(normalizeControlApiUrl("http://192.168.1.25:8787/api/control")).toBe("http://192.168.1.25:8787");
   });
 
   it("validates bounded integer settings", () => {

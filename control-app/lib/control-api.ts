@@ -10,22 +10,37 @@ export type ControlSettingsPayload = {
   fastMode: boolean;
 };
 
-function baseUrl(value: string) {
-  return value.trim().replace(/\/$/, "");
+export function normalizeControlApiUrl(value: string) {
+  return value.trim().replace(/\/+$/, "").replace(/\/api\/control$/i, "");
 }
 
 export async function controlRequest<T>(apiUrl: string, token: string, path: string, init: RequestInit = {}) {
-  const response = await fetch(`${baseUrl(apiUrl)}${path}`, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      Authorization: `Bearer ${token.trim()}`,
-      ...(init.headers || {}),
-    },
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
-  return data as T;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const response = await fetch(`${normalizeControlApiUrl(apiUrl)}${path}`, {
+      ...init,
+      signal: init.signal || controller.signal,
+      headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${token.trim()}`,
+        ...(init.headers || {}),
+      },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
+    return data as T;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Tiempo de espera agotado: revisa que el bot esté iniciado y que la URL sea accesible");
+    }
+    if (error instanceof TypeError) {
+      throw new Error("No se pudo conectar: revisa la IP, el puerto 8787 y la misma red Wi‑Fi");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export function toControlPayload(settings: ControlSettingsPayload) {

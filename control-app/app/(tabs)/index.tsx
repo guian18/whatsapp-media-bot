@@ -18,7 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { healthUrl, validateInteger } from "@/lib/control-settings";
-import { controlRequest, toControlPayload } from "@/lib/control-api";
+import { controlRequest, normalizeControlApiUrl, toControlPayload } from "@/lib/control-api";
 import { useColors } from "@/hooks/use-colors";
 
 const SETTINGS_KEY = "infoplayerleft-control-settings-v1";
@@ -108,20 +108,23 @@ export default function HomeScreen() {
     }
     setIsSaving(true);
     try {
-      const { controlToken, ...localSettings } = settings;
+      const controlApiUrl = normalizeControlApiUrl(settings.controlApiUrl);
+      const settingsToSave = { ...settings, controlApiUrl };
+      const { controlToken, ...localSettings } = settingsToSave;
+      if (controlApiUrl) {
+        await controlRequest(controlApiUrl, controlToken, "/api/control/settings", {
+          method: "POST",
+          body: JSON.stringify(toControlPayload(settingsToSave)),
+        });
+      }
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(localSettings));
       await SecureStore.setItemAsync(CONTROL_TOKEN_KEY, controlToken);
-      if (settings.controlApiUrl.trim()) {
-        await controlRequest(settings.controlApiUrl, controlToken, "/api/control/settings", {
-          method: "POST",
-          body: JSON.stringify(toControlPayload(settings)),
-        });
-        setSaveMessage("Guardado en el bot remoto y en este teléfono");
-      } else {
-        setSaveMessage("Guardado en este teléfono");
+      if (controlApiUrl !== settings.controlApiUrl) {
+        setSettings(settingsToSave);
       }
-    } catch {
-      setSaveMessage("No se pudo guardar la configuración");
+      setSaveMessage(controlApiUrl ? "Guardado en el bot y en este teléfono" : "Guardado en este teléfono");
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : "No se pudo guardar la configuración");
     } finally {
       setIsSaving(false);
     }
@@ -129,7 +132,7 @@ export default function HomeScreen() {
 
   const testConnection = useCallback(async () => {
     setConnectionState("checking");
-    setConnectionMessage("Comprobando llama.cpp…");
+    setConnectionMessage("Comprobando el bot…");
     try {
       if (settings.controlApiUrl.trim()) {
         const status = await controlRequest<RemoteStatus>(settings.controlApiUrl, settings.controlToken, "/api/control/status");
@@ -220,7 +223,7 @@ export default function HomeScreen() {
           <View style={styles.card}>
             <Field label="URL de la API del bot" value={settings.controlApiUrl} onChangeText={(value) => update("controlApiUrl", value)} colors={colors} autoCapitalize="none" keyboardType="url" placeholder="http://192.168.1.25:8787" />
             <Field label="Token de control" value={settings.controlToken} onChangeText={(value) => update("controlToken", value)} colors={colors} autoCapitalize="none" secureTextEntry />
-            <Text style={styles.fieldHelp}>Al rellenarlos, Guardar aplica la configuración en el bot remoto. El token se guarda en el llavero del teléfono.</Text>
+            <Text style={styles.fieldHelp}>Usa la IP del teléfono donde corre Termux y el puerto 8787. Pulsa Guardar para enviar los cambios al bot; el token se guarda en el llavero del teléfono.</Text>
             <Pressable onPress={testRemoteAI} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
               <MaterialIcons name="psychology" size={18} color={colors.primary} />
               <Text style={styles.secondaryButtonText}>Probar IA remota</Text>
