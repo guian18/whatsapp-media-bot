@@ -7,7 +7,6 @@
  *   STEAM_API_KEY         opcional; en una terminal se solicita si no existe.
  *   WHATSAPP_NUMBER       opcional; número internacional, solo dígitos.
  *   PAIRING_CODE          "true" para solicitar un número por consola.
- *   ALLOWED_GROUPS        opcional; IDs de grupo separados por comas.
  *   REPLY_IN_PRIVATE      "false" para ignorar chats privados.
  *   AUTH_DIR              opcional; directorio de la sesión de WhatsApp.
  *   ALLOW_SELF            "false" para ignorar comandos enviados por la propia cuenta.
@@ -33,12 +32,7 @@ import { startWatcher } from "./src/watcher.js";
 import { startControlServer } from "./src/control-server.js";
 import { formatSafeSettingsChange, normalizePrivateJid, ownPrivateJid } from "./src/owner-notifications.js";
 
-const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-const GROUPS_ENABLED = process.env.GROUPS_ENABLED !== "false";
-// Responder en chats privados es el comportamiento esperado para !ping, !ayuda y !ai.
+// El bot responde únicamente en chats privados.
 // Se puede desactivar explícitamente con REPLY_IN_PRIVATE=false.
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
 // La cuenta vinculada también puede probar comandos enviados desde sí misma.
@@ -390,10 +384,8 @@ async function start() {
         mensajesProcesados.set(messageId, now);
       }
 
-      const isGroup = jid.endsWith(["@", "g", "us"].join("."));
-      if (isGroup && !GROUPS_ENABLED) continue;
-      if (!isGroup && !REPLY_IN_PRIVATE) continue;
-      if (isGroup && ALLOWED_GROUPS.length && !ALLOWED_GROUPS.includes(jid)) continue;
+      if (!jid.endsWith("@s.whatsapp.net")) continue;
+      if (!REPLY_IN_PRIVATE) continue;
 
       const text = textFromMessage(msg).trim();
       if (!text.startsWith("!")) continue;
@@ -401,7 +393,7 @@ async function start() {
       if (msg.key.fromMe && !ALLOW_SELF) continue;
 
       console.log(
-        `[${isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
+        `[privado ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
       );
 
       try {
