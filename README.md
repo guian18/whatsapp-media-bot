@@ -160,6 +160,10 @@ Para la primera vinculación, configura temporalmente `WHATSAPP_NUMBER` y `PAIRI
 
 **Importante:** Heroku utiliza almacenamiento efímero. `auth_info/`, `watchlist.json` y `ai-memory.json` pueden desaparecer al reiniciar o redeployar el dyno. Es posible que debas volver a vincular WhatsApp. No actives `CONTROL_API_TOKEN` públicamente en Heroku sin una protección adicional.
 
+## Servicio independiente de IA
+
+El directorio [`services/khoj/`](services/khoj/) contiene un servicio separado de IA, búsqueda semántica y documentos. Conserva su propio código Python/React, Docker, pruebas, dependencias, documentación y licencia **AGPL-3.0**. No se inicia con `npm start`, no comparte la sesión de WhatsApp y no modifica el bot de Steam/Left 4 Dead 2.
+
 ## Termux
 
 ```bash
