@@ -1,6 +1,6 @@
 # InfoPlayer Left
 
-Bot de WhatsApp para consultar perfiles de Steam, buscar jugadores y consultar servidores de **Left 4 Dead 2** mediante Steam Web API y consultas A2S. También incluye IA opcional, vigilancia de jugadores, una app móvil de control y funciones de entretenimiento.
+Bot de WhatsApp para consultar perfiles de Steam, buscar jugadores y consultar servidores de **Left 4 Dead 2** mediante Steam Web API y consultas A2S. También incluye IA opcional, vigilancia de jugadores y una app móvil de control.
 
 Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 
@@ -12,7 +12,6 @@ Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 - IA configurable con proveedor local, Groq, Gemini, Mistral u OpenRouter.
 - Memoria privada por chat, tono e idioma configurables.
 - Imágenes de anime SFW.
-- Funciones de entretenimiento sin dependencias externas.
 - App móvil Expo para controlar el bot mediante el Control API.
 - Despliegue en Heroku como proceso `worker`.
 
