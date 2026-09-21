@@ -14,7 +14,19 @@ test("resolves a configured command alias", () => {
   process.env.COMMAND_ALIASES = "saludo=ping";
   try {
     assert.equal(resolveCommandAlias("saludo"), "ping");
-    assert.equal(resolveCommandAlias("ping"), "ping");
+    assert.equal(resolveCommandAlias("ping"), null);
+  } finally {
+    if (previous === undefined) delete process.env.COMMAND_ALIASES;
+    else process.env.COMMAND_ALIASES = previous;
+  }
+});
+
+test("permite cambiar el nombre sin mantener activo el comando original", () => {
+  const previous = process.env.COMMAND_ALIASES;
+  process.env.COMMAND_ALIASES = "players=jugadores";
+  try {
+    assert.equal(resolveCommandAlias("players"), "jugadores");
+    assert.equal(resolveCommandAlias("jugadores"), null);
   } finally {
     if (previous === undefined) delete process.env.COMMAND_ALIASES;
     else process.env.COMMAND_ALIASES = previous;

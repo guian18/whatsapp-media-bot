@@ -213,7 +213,7 @@ Cuando **Guardar** modifica una configuración remota, el bot envía un aviso de
 
 Desde la app puedes cambiar el número privado que recibe estos avisos. Escribe únicamente el número con código de país, sin `+` ni espacios. Si el campo queda vacío, se utiliza el número de la cuenta vinculada al bot. El servidor valida que el destino sea un número privado antes de guardarlo.
 
-También puedes renombrar comandos desde el campo **Renombrar comandos**. Usa pares separados por comas, por ejemplo `saludo=ping, asistente=ai`. Después de guardar, `!saludo` ejecutará lo mismo que `!ping` y `!asistente` lo mismo que `!ai`. Solo se aceptan comandos existentes y alias alfanuméricos; los nombres originales continúan funcionando.
+También puedes renombrar comandos desde el campo **Renombrar comandos**. Usa pares separados por comas, por ejemplo `saludo=ping, asistente=ai`. Después de guardar, `!saludo` sustituirá a `!ping` y `!asistente` sustituirá a `!ai`; los nombres originales quedan desactivados mientras tengan un nombre personalizado. Solo se aceptan comandos existentes y nombres alfanuméricos. Para volver a los nombres originales, elimina los alias desde la app y guarda la configuración.
 
 Puedes verificar el API desde otro dispositivo de la misma red sin mostrar el token en la URL:
 

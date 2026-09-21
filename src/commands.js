@@ -3,7 +3,7 @@ import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
-import { resolveCommandAlias } from "./command-aliases.js";
+import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
 const MAX_SERVERS = 200;
 const CONCURRENCY = 20;
@@ -85,24 +85,25 @@ async function mapWithLimit(items, limit, fn) {
 }
 
 export function ayuda() {
+  const name = (command) => `!${commandDisplayName(command)}`;
   return [
     "*infoplayerleft — comandos*",
     "",
-    "`!info <steamid|vanity|url>` — perfil de Steam y servidor actual de L4D2",
-    "`!buscar <nickname>` — busca un nick en servidores públicos de L4D2",
-    "`!servidor <ip:puerto>` — información detallada de un servidor",
-    "`!jugadores <ip:puerto>` — lista los jugadores conectados",
-    "`!ping` — comprueba que el bot responde",
-    "`!ai` / `!ia` `<pregunta>` — responde con IA; añade `fuentes` si necesitas buscar en Internet",
-    "`!tono <estilo>` — cambia y guarda el tono de la IA",
-    "`!idioma <país|código>` — cambia y guarda el idioma de la IA",
-    "`!proveedor <nombre>` — cambia la IA y el modelo",
-    "`!anime` — envía una imagen SFW de anime",
-    "`!vigilar <nick|SteamID|URL>` — avisa cuando un jugador se conecta a L4D2",
-    "`!novigilar <nick|SteamID|URL>` — cancela una vigilancia",
-    "`!lista` — muestra los jugadores vigilados en este chat",
-    "`!escaneo` — muestra las vigilancias numeradas para elegir una",
-    "`!ayuda` — este mensaje",
+    `\`${name("info")} <steamid|vanity|url>\` — perfil de Steam y servidor actual de L4D2`,
+    `\`${name("buscar")} <nickname>\` — busca un nick en servidores públicos de L4D2`,
+    `\`${name("servidor")} <ip:puerto>\` — información detallada de un servidor`,
+    `\`${name("jugadores")} <ip:puerto>\` — lista los jugadores conectados`,
+    `\`${name("ping")}\` — comprueba que el bot responde`,
+    `\`${name("ai")} / \`${name("ia")}\` <pregunta> — responde con IA; añade \`fuentes\` si necesitas buscar en Internet`,
+    `\`${name("tono")} <estilo>\` — cambia y guarda el tono de la IA`,
+    `\`${name("idioma")} <país|código>\` — cambia y guarda el idioma de la IA`,
+    `\`${name("proveedor")} <nombre>\` — cambia la IA y el modelo`,
+    `\`${name("anime")}\` — envía una imagen SFW de anime`,
+    `\`${name("vigilar")} <nick|SteamID|URL>\` — avisa cuando un jugador se conecta a L4D2`,
+    `\`${name("novigilar")} <nick|SteamID|URL>\` — cancela una vigilancia`,
+    `\`${name("lista")}\` — muestra los jugadores vigilados en este chat`,
+    `\`${name("escaneo")}\` — muestra las vigilancias numeradas para elegir`,
+    `\`${name("ayuda")}\` — este mensaje`,
   ].join("\n");
 }
 
@@ -254,6 +255,7 @@ export async function handleCommand(text, context = {}) {
   } catch {
     // Una configuración inválida no debe detener el bot ni ejecutar un comando inesperado.
   }
+  if (!cmd) return null;
   const args = match[2].trim();
 
   switch (cmd) {

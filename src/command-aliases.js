@@ -49,5 +49,12 @@ export function aliasesToText(value = {}) {
 
 export function resolveCommandAlias(command) {
   const aliases = parseCommandAliases(process.env.COMMAND_ALIASES || "");
-  return aliases[command] || command;
+  if (aliases[command]) return aliases[command];
+  if (Object.values(aliases).includes(command)) return null;
+  return command;
+}
+
+export function commandDisplayName(command) {
+  const aliases = parseCommandAliases(process.env.COMMAND_ALIASES || "");
+  return Object.entries(aliases).find(([, target]) => target === command)?.[0] || command;
 }

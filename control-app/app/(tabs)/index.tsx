@@ -262,7 +262,7 @@ export default function HomeScreen() {
             <Text style={styles.fieldHelp}>Escribe el número con código de país, sin + ni espacios. Al guardar, el bot enviará allí el aviso privado de los cambios. Vacío usa la cuenta vinculada.</Text>
             <View style={styles.commandBox}>
               <Text style={styles.cardTitle}>Cambiar nombre de un comando</Text>
-              <Text style={styles.fieldHelp}>Ejemplo: selecciona !info, escribe left y pulsa Añadir. Funcionarán !left y !info; puedes cambiar el nombre personalizado cuando quieras.</Text>
+              <Text style={styles.fieldHelp}>Ejemplo: selecciona !jugadores, escribe players y pulsa Guardar nombre. Solo funcionará !players; puedes cambiarlo cuando quieras.</Text>
               <View style={styles.commandChips}>
                 {COMMAND_TARGETS.map((target) => (
                   <Pressable key={target} onPress={() => setCommandTarget(target)} style={({ pressed }) => [styles.commandChip, commandTarget === target && styles.commandChipActive, pressed && styles.pressed]}>
@@ -273,7 +273,7 @@ export default function HomeScreen() {
               <Field label="Nuevo nombre" value={commandAlias} onChangeText={setCommandAlias} colors={colors} autoCapitalize="none" placeholder="left" />
               <Pressable onPress={addCommandAlias} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
                 <MaterialIcons name="add" size={18} color={colors.primary} />
-                <Text style={styles.secondaryButtonText}>Añadir nombre</Text>
+                <Text style={styles.secondaryButtonText}>Guardar nombre</Text>
               </Pressable>
               <Text style={styles.fieldHelp}>Configurados: {settings.commandAliases || "ninguno; se usan los nombres originales"}</Text>
               <Pressable onPress={restoreOriginalCommands} style={({ pressed }) => [styles.restoreButton, pressed && styles.pressed]}>
