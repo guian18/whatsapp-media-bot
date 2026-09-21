@@ -40,7 +40,7 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 type Provider = "local" | "groq" | "gemini" | "mistral" | "openrouter";
-const COMMAND_TARGETS = ["info", "buscar", "servidor", "jugadores", "ping", "ai", "ayuda", "anime", "vigilar", "novigilar", "lista", "escaneo"] as const;
+const COMMAND_TARGETS = ["info", "buscar", "servidor", "jugadores", "ping", "ai", "ia", "tono", "idioma", "proveedor", "anime", "vigilar", "vigilarnick", "novigilar", "lista", "escaneo", "ayuda", "help"] as const;
 const PROVIDER_DEFAULTS: Record<Provider, { model: string; url: string }> = {
   local: { model: "local-model", url: "http://127.0.0.1:8080/v1/chat/completions" },
   groq: { model: "openai/gpt-oss-20b", url: "https://api.groq.com/openai/v1/chat/completions" },
@@ -118,7 +118,10 @@ export default function HomeScreen() {
       .split(",")
       .map((entry) => entry.trim())
       .filter(Boolean)
-      .filter((entry) => entry.split("=")[0]?.trim().toLowerCase() !== alias);
+      .filter((entry) => {
+        const [existingAlias, existingTarget] = entry.split("=").map((part) => part.trim().toLowerCase());
+        return existingAlias !== alias && existingTarget !== commandTarget;
+      });
     update("commandAliases", [...entries, `${alias}=${commandTarget}`].join(", "));
     setCommandAlias("");
   }, [commandAlias, commandTarget, settings.commandAliases, update]);
@@ -259,7 +262,7 @@ export default function HomeScreen() {
             <Text style={styles.fieldHelp}>Escribe el número con código de país, sin + ni espacios. Al guardar, el bot enviará allí el aviso privado de los cambios. Vacío usa la cuenta vinculada.</Text>
             <View style={styles.commandBox}>
               <Text style={styles.cardTitle}>Cambiar nombre de un comando</Text>
-              <Text style={styles.fieldHelp}>Ejemplo: selecciona info, escribe left y pulsa Añadir. Funcionarán !left y !info.</Text>
+              <Text style={styles.fieldHelp}>Ejemplo: selecciona !info, escribe left y pulsa Añadir. Funcionarán !left y !info; puedes cambiar el nombre personalizado cuando quieras.</Text>
               <View style={styles.commandChips}>
                 {COMMAND_TARGETS.map((target) => (
                   <Pressable key={target} onPress={() => setCommandTarget(target)} style={({ pressed }) => [styles.commandChip, commandTarget === target && styles.commandChipActive, pressed && styles.pressed]}>
