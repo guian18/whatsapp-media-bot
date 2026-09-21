@@ -1,5 +1,7 @@
 import http from "node:http";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { normalizePrivateJid } from "./owner-notifications.js";
+import { parseCommandAliases } from "./command-aliases.js";
 
 const ALLOWED_SETTINGS = new Set([
   "AI_PROVIDER",
@@ -12,6 +14,8 @@ const ALLOWED_SETTINGS = new Set([
   "AI_DEFAULT_STYLE",
   "AI_LOCAL_SKIP_SEARCH",
   "AI_LOCAL_FAST",
+  "CONTROL_NOTIFY_JID",
+  "COMMAND_ALIASES",
 ]);
 const PROVIDERS = new Set(["local", "groq", "gemini", "mistral", "openrouter"]);
 
@@ -70,6 +74,10 @@ function validSettings(body) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 600000) throw new Error("timeoutMs no válido");
   const url = String(body.llamaUrl || "").trim();
   if (!/^https?:\/\//i.test(url)) throw new Error("llamaUrl debe ser una URL HTTP(S)");
+  const notificationJid = String(body.notificationJid || "").trim();
+  const aliasesText = String(body.commandAliases || "").trim();
+  if (notificationJid) normalizePrivateJid(notificationJid);
+  parseCommandAliases(aliasesText);
   return {
     AI_PROVIDER: provider,
     AI_MODEL: String(body.model || "local-model").trim().slice(0, 160),
@@ -80,6 +88,8 @@ function validSettings(body) {
     AI_DEFAULT_STYLE: String(body.tone || "breve").trim().slice(0, 40),
     AI_LOCAL_SKIP_SEARCH: body.skipSearch === false ? "false" : "true",
     AI_LOCAL_FAST: body.fastMode === false ? "false" : "true",
+    ...(notificationJid ? { CONTROL_NOTIFY_JID: normalizePrivateJid(notificationJid) } : { CONTROL_NOTIFY_JID: "" }),
+    COMMAND_ALIASES: aliasesText,
   };
 }
 

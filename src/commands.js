@@ -3,6 +3,7 @@ import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
+import { resolveCommandAlias } from "./command-aliases.js";
 
 const MAX_SERVERS = 200;
 const CONCURRENCY = 20;
@@ -247,7 +248,12 @@ export async function handleCommand(text, context = {}) {
   const match = rawText.match(/^!(\w+)\s*([\s\S]*)$/);
   if (!match) return null;
 
-  const cmd = match[1].toLowerCase();
+  let cmd = match[1].toLowerCase();
+  try {
+    cmd = resolveCommandAlias(cmd);
+  } catch {
+    // Una configuración inválida no debe detener el bot ni ejecutar un comando inesperado.
+  }
   const args = match[2].trim();
 
   switch (cmd) {

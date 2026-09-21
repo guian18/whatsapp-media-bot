@@ -22,8 +22,9 @@ describe("control settings helpers", () => {
   });
 
   it("builds a remote-safe settings payload without secrets", () => {
-    const payload = toControlPayload({ provider: "local", model: "local-model", llamaUrl: "http://127.0.0.1:8080/v1/chat/completions", maxTokens: "64", timeoutMs: "120000", language: "es-ES", tone: "breve", skipSearch: true, fastMode: true });
+    const payload = toControlPayload({ provider: "local", model: "local-model", llamaUrl: "http://127.0.0.1:8080/v1/chat/completions", maxTokens: "64", timeoutMs: "120000", language: "es-ES", tone: "breve", skipSearch: true, fastMode: true, notificationJid: "", commandAliases: "saludo=ping" });
     expect(payload).toMatchObject({ provider: "local", maxTokens: 64, timeoutMs: 120000, fastMode: true });
+    expect(payload).toMatchObject({ notificationJid: "", commandAliases: "saludo=ping" });
     expect(payload).not.toHaveProperty("controlToken");
     expect(payload).not.toHaveProperty("GROQ_API_KEY");
   });

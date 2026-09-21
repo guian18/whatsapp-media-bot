@@ -192,12 +192,14 @@ test("control API protects status and preserves secret keys", async (t) => {
   const response = await fetch(`${base}/api/control/settings`, {
     method: "POST",
     headers: { authorization: "Bearer test-control-token", "content-type": "application/json" },
-    body: JSON.stringify({ provider: "local", model: "local-model", llamaUrl: "http://127.0.0.1:8080/v1/chat/completions", maxTokens: 64, timeoutMs: 120000, language: "es-ES", tone: "breve", skipSearch: true, fastMode: true, GROQ_API_KEY: "overwrite-attempt" }),
+    body: JSON.stringify({ provider: "local", model: "local-model", llamaUrl: "http://127.0.0.1:8080/v1/chat/completions", maxTokens: 64, timeoutMs: 120000, language: "es-ES", tone: "breve", skipSearch: true, fastMode: true, notificationJid: "393803893208", commandAliases: "saludo=ping", GROQ_API_KEY: "overwrite-attempt" }),
   });
   assert.equal(response.status, 200);
   const saved = readFileSync(envFile, "utf8");
   assert.match(saved, /GROQ_API_KEY=keep-this-secret/);
   assert.match(saved, /AI_MAX_TOKENS=64/);
+  assert.match(saved, /CONTROL_NOTIFY_JID=393803893208@s\.whatsapp\.net/);
+  assert.match(saved, /COMMAND_ALIASES=saludo=ping/);
   assert.doesNotMatch(saved, /overwrite-attempt/);
   const remoteResponse = await fetch(`${base}/api/control/settings`, {
     method: "POST",

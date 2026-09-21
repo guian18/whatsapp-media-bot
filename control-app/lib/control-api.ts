@@ -8,6 +8,8 @@ export type ControlSettingsPayload = {
   tone: string;
   skipSearch: boolean;
   fastMode: boolean;
+  notificationJid: string;
+  commandAliases: string;
 };
 
 export function normalizeControlApiUrl(value: string) {
@@ -54,5 +56,7 @@ export function toControlPayload(settings: ControlSettingsPayload) {
     tone: settings.tone,
     skipSearch: settings.skipSearch,
     fastMode: settings.fastMode,
+    notificationJid: settings.notificationJid,
+    commandAliases: settings.commandAliases,
   };
 }

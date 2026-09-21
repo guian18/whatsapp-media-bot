@@ -31,7 +31,7 @@ import { ensureSteamApiKey } from "./src/steamkey.js";
 import { getAuthDir } from "./src/config.js";
 import { startWatcher } from "./src/watcher.js";
 import { startControlServer } from "./src/control-server.js";
-import { formatSafeSettingsChange, ownPrivateJid } from "./src/owner-notifications.js";
+import { formatSafeSettingsChange, normalizePrivateJid, ownPrivateJid } from "./src/owner-notifications.js";
 
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
@@ -61,7 +61,14 @@ const mensajesProcesados = new Map();
 
 async function notifyOwnerOfSettingsChange(changed) {
   const sock = sockActual;
-  const jid = ownPrivateJid(sock);
+  let jid = ownPrivateJid(sock);
+  if (process.env.CONTROL_NOTIFY_JID) {
+    try {
+      jid = normalizePrivateJid(process.env.CONTROL_NOTIFY_JID);
+    } catch {
+      console.warn("CONTROL_NOTIFY_JID no es válido; se usará el chat privado de la cuenta vinculada.");
+    }
+  }
   if (!sock || !jid || connectionState !== "online") {
     console.warn("No se notificaron los cambios: WhatsApp aún no está conectado.");
     return;

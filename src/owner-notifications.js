@@ -6,6 +6,13 @@ export function ownPrivateJid(sock) {
   return normalizedUser && server === "s.whatsapp.net" ? `${normalizedUser}@${server}` : null;
 }
 
+export function normalizePrivateJid(value) {
+  const raw = String(value || "").trim();
+  const number = raw.replace(/@s\.whatsapp\.net$/i, "");
+  if (!/^\d{6,15}$/.test(number)) throw new Error("notificationJid debe ser un número privado válido");
+  return `${number}@s.whatsapp.net`;
+}
+
 export function formatSafeSettingsChange(changed) {
   return Object.entries(changed)
     .filter(([key]) => !key.endsWith("_API_KEY") && key !== "AI_API_KEY")

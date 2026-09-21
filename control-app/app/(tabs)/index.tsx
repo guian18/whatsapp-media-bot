@@ -35,6 +35,8 @@ const DEFAULT_SETTINGS: Settings = {
   tone: "insultos",
   skipSearch: true,
   fastMode: true,
+  notificationJid: "",
+  commandAliases: "",
 };
 
 type Provider = "local" | "groq" | "gemini" | "mistral" | "openrouter";
@@ -224,6 +226,10 @@ export default function HomeScreen() {
             <Field label="URL de la API del bot" value={settings.controlApiUrl} onChangeText={(value) => update("controlApiUrl", value)} colors={colors} autoCapitalize="none" keyboardType="url" placeholder="http://192.168.1.25:8787" />
             <Field label="Token de control" value={settings.controlToken} onChangeText={(value) => update("controlToken", value)} colors={colors} autoCapitalize="none" secureTextEntry />
             <Text style={styles.fieldHelp}>Usa la IP del teléfono donde corre Termux y el puerto 8787. Pulsa Guardar para enviar los cambios al bot; el token se guarda en el llavero del teléfono.</Text>
+            <Field label="Número privado para avisos" value={settings.notificationJid} onChangeText={(value) => update("notificationJid", value.replace(/[^\d]/g, ""))} colors={colors} keyboardType="phone-pad" placeholder="Vacío = tu número del bot" />
+            <Text style={styles.fieldHelp}>Opcional. Escribe solo el número con código de país, sin + ni espacios. Los avisos nunca se envían a conversaciones grupales.</Text>
+            <Field label="Renombrar comandos" value={settings.commandAliases} onChangeText={(value) => update("commandAliases", value)} colors={colors} autoCapitalize="none" placeholder="saludo=ping, asistente=ai" />
+            <Text style={styles.fieldHelp}>Formato: alias=comando, separados por comas. Ejemplo: saludo=ping, asistente=ai.</Text>
             <Pressable onPress={testRemoteAI} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
               <MaterialIcons name="psychology" size={18} color={colors.primary} />
               <Text style={styles.secondaryButtonText}>Probar IA remota</Text>
