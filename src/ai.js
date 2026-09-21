@@ -8,6 +8,10 @@ const AI_PRESETS = {
     url: "http://127.0.0.1:8080/v1/chat/completions",
     model: "local-model",
   },
+  ollama: {
+    url: "http://127.0.0.1:11434/v1/chat/completions",
+    model: "gpt-oss:20b",
+  },
   khoj: {
     url: "http://127.0.0.1:42110/api/chat?client=khoj",
     model: "khoj",
@@ -29,8 +33,8 @@ const AI_PRESETS = {
     model: "openrouter/auto",
   },
 };
-const PROVIDER_ALIASES = { local: "local", llamacpp: "local", llama: "local", khoj: "khoj", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
-const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", khoj: "KHOJ_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
+const PROVIDER_ALIASES = { local: "local", llamacpp: "local", llama: "local", ollama: "ollama", khoj: "khoj", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
+const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", ollama: "OLLAMA_API_KEY", khoj: "KHOJ_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
@@ -118,7 +122,7 @@ function timeoutSignal(ms) {
 }
 
 function modelTimeoutMs(provider) {
-  if (provider === "local") {
+  if (["local", "ollama"].includes(provider)) {
     return envNumber("AI_LOCAL_TIMEOUT_MS", LOCAL_AI_TIMEOUT_MS);
   }
   return envNumber("AI_TIMEOUT_MS", REMOTE_AI_TIMEOUT_MS);
@@ -131,7 +135,7 @@ function isTimeoutError(error) {
 }
 
 function localFastMode(provider) {
-  return provider === "local" && process.env.AI_LOCAL_FAST !== "false";
+  return ["local", "ollama"].includes(provider) && process.env.AI_LOCAL_FAST !== "false";
 }
 
 function cleanText(value) {
@@ -193,6 +197,8 @@ function aiConfig() {
   const preset = AI_PRESETS[provider];
   const configuredUrl = provider === "local"
     ? (process.env.AI_LOCAL_URL || process.env.AI_API_URL)
+    : provider === "ollama"
+      ? (process.env.OLLAMA_URL || process.env.AI_API_URL)
     : provider === "khoj"
       ? (process.env.KHOJ_AI_URL || process.env.AI_API_URL)
       : process.env.AI_API_URL;
@@ -218,7 +224,7 @@ function providerKeyMismatch(provider, key) {
 
 async function askModel(question, style, sources, includeSources, history = []) {
   const { key, url, model, provider } = aiConfig();
-  if (!key && !["local", "khoj"].includes(provider)) return null;
+  if (!key && !["local", "ollama", "khoj"].includes(provider)) return null;
   if (provider === "khoj") return askKhoj(question, url, key);
   const fastLocal = localFastMode(provider);
   const context = sources.length
@@ -237,7 +243,7 @@ async function askModel(question, style, sources, includeSources, history = []) 
     : `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`;
   const userPrompt = `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}`;
   const messages = [{ role: "system", content: systemPrompt }, ...history.slice(fastLocal ? -2 : -8), { role: "user", content: userPrompt }];
-  const maxTokens = envNumber("AI_MAX_TOKENS", provider === "local" ? LOCAL_MAX_TOKENS : 700);
+  const maxTokens = envNumber("AI_MAX_TOKENS", ["local", "ollama"].includes(provider) ? LOCAL_MAX_TOKENS : 700);
   const requestBody = { model, temperature: 0.2, max_tokens: maxTokens, messages };
   const headers = { "content-type": "application/json" };
   if (key) headers.authorization = `Bearer ${key}`;
@@ -284,7 +290,7 @@ async function askKhoj(question, url, key) {
 
 export function aiConfigured() {
   const config = aiConfig();
-  return ["local", "khoj"].includes(config.provider) || Boolean(config.key);
+  return ["local", "ollama", "khoj"].includes(config.provider) || Boolean(config.key);
 }
 
 function configuredStyle() {
@@ -355,7 +361,7 @@ export function cmdIdioma(value) {
 
 export function cmdProveedor(value) {
   const input = String(value || "").trim().toLowerCase();
-  const available = ["local", "khoj", "gemini", "groq", "mistral", "openrouter"];
+  const available = ["local", "ollama", "khoj", "gemini", "groq", "mistral", "openrouter"];
   if (!input || input === "lista") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
   const provider = PROVIDER_ALIASES[input];
   if (!provider || !AI_PRESETS[provider]) return `Proveedor no válido. Usa: ${available.join(", ")}`;
@@ -367,6 +373,8 @@ export function cmdProveedor(value) {
   const keyStatus = providerKeyStatus(provider);
   const keyMessage = provider === "local"
     ? "No requiere API key; debe estar activo un servidor llama.cpp en AI_LOCAL_URL."
+    : provider === "ollama"
+    ? "No requiere API key en local; ejecuta Ollama y descarga un modelo con `ollama pull`."
     : provider === "khoj"
     ? "Usa KHOJ_COOKIE para una sesión local o KHOJ_API_KEY si tu instalación expone un token."
     : keyStatus.specific
@@ -449,9 +457,13 @@ export async function cmdIA(question, chatId = null) {
   } catch (error) {
     console.error("Error en !ai:", error?.message || error);
     const config = aiConfig();
-    if (config.provider === "local" && isTimeoutError(error)) {
-      const seconds = Math.ceil(modelTimeoutMs("local") / 1000);
-      return `llama.cpp tardó más de ${seconds} segundos en responder. Comprueba que llama-server siga activo en ${config.url}; si tu teléfono es lento, aumenta AI_LOCAL_TIMEOUT_MS en .env y reinicia el bot.`;
+    if (["local", "ollama"].includes(config.provider) && isTimeoutError(error)) {
+      const seconds = Math.ceil(modelTimeoutMs(config.provider) / 1000);
+      const service = config.provider === "ollama" ? "Ollama" : "llama.cpp";
+      return `${service} tardó más de ${seconds} segundos en responder. Comprueba que el servicio siga activo en ${config.url} y aumenta AI_LOCAL_TIMEOUT_MS en .env si el modelo tarda en cargar.`;
+    }
+    if (config.provider === "ollama" && /fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(String(error?.message || ""))) {
+      return "No pude conectar con Ollama. Instálalo desde https://ollama.com/download, ejecuta `ollama serve` y descarga el modelo configurado con `ollama pull`.";
     }
     if (config.provider === "local" && /fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(String(error?.message || ""))) {
       return "No pude conectar con llama.cpp. Inicia `llama-server` en 127.0.0.1:8080 y vuelve a intentarlo con `!ai <pregunta>`.";

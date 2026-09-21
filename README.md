@@ -10,6 +10,7 @@ Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 - Información A2S de servidores públicos, oficiales, locales y privados.
 - Vigilancia de jugadores con avisos automáticos y consultas manuales.
 - IA configurable con proveedor local, Groq, Gemini, Mistral u OpenRouter.
+- Ollama local con API compatible con OpenAI.
 - Memoria privada por chat, tono e idioma configurables.
 - Imágenes de anime SFW.
 - App móvil Expo para controlar el bot mediante el Control API.
@@ -43,6 +44,7 @@ Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 | Gemini | [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) | [ai.google.dev/gemini-api/docs](https://ai.google.dev/gemini-api/docs) |
 | Mistral | [console.mistral.ai/api-keys](https://console.mistral.ai/api-keys) | [docs.mistral.ai/api](https://docs.mistral.ai/api/) |
 | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | [openrouter.ai/docs](https://openrouter.ai/docs/quickstart) |
+| Ollama local | No requiere clave para el servidor local | [ollama.com/download](https://ollama.com/download) · [docs.ollama.com/api/openai-compatibility](https://docs.ollama.com/api/openai-compatibility) · [último release](https://github.com/ollama/ollama/releases/latest) |
 | llama.cpp local | No requiere clave remota | [github.com/ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp) |
 | Khoj incluido | Se configura con `KHOJ_COOKIE` o `KHOJ_API_KEY` | [docs.khoj.dev](https://docs.khoj.dev/) · [código original](https://github.com/khoj-ai/khoj) |
 
@@ -101,6 +103,32 @@ PAIRING_CODE=false
 ```
 
 El proveedor `local` requiere un servidor compatible con OpenAI, como `llama.cpp`. También puedes seleccionar `khoj` para usar el servicio incluido en `services/khoj` como backend de IA. Para un proveedor remoto, por ejemplo:
+
+La release estable verificada al actualizar este repositorio es **v0.34.2** ([release oficial](https://github.com/ollama/ollama/releases/tag/v0.34.2)). Para usar la versión actual de Ollama, instala desde su sitio oficial y descarga un modelo:
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull gpt-oss:20b
+ollama serve
+```
+
+También puedes usar el instalador del repositorio:
+
+```bash
+bash scripts/setup-ollama.sh
+```
+
+La API local de Ollama escucha en `http://127.0.0.1:11434`. Configura el bot así:
+
+```env
+AI_PROVIDER=ollama
+AI_MODEL=gpt-oss:20b
+OLLAMA_URL=http://127.0.0.1:11434/v1/chat/completions
+OLLAMA_API_KEY=ollama
+AI_LOCAL_TIMEOUT_MS=120000
+```
+
+La clave local `ollama` es un valor ignorado por el servidor local y solo se envía para compatibilidad con la API OpenAI. Para modelos cloud de Ollama usa la autenticación indicada en la [documentación oficial](https://docs.ollama.com/api/authentication).
 
 ```env
 AI_PROVIDER=groq

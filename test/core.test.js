@@ -279,6 +279,31 @@ test("Khoj AI provider accepts its native response format", async () => {
   }
 });
 
+test("Ollama provider uses its OpenAI-compatible local endpoint", async () => {
+  const previousProvider = process.env.AI_PROVIDER;
+  const previousUrl = process.env.OLLAMA_URL;
+  const previousKey = process.env.OLLAMA_API_KEY;
+  const previousInterval = process.env.AI_MIN_INTERVAL_MS;
+  const previousFetch = globalThis.fetch;
+  process.env.AI_PROVIDER = "ollama";
+  process.env.OLLAMA_URL = "http://127.0.0.1:11434/v1/chat/completions";
+  process.env.OLLAMA_API_KEY = "ollama";
+  process.env.AI_MIN_INTERVAL_MS = "0";
+  globalThis.fetch = async (url) => {
+    if (String(url).startsWith("https://html.duckduckgo.com/")) return new Response("", { status: 200 });
+    return new Response(JSON.stringify({ choices: [{ message: { content: "Respuesta de Ollama" } }] }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    assert.match(await cmdIA("prueba Ollama"), /Respuesta de Ollama/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    for (const [key, value] of [["AI_PROVIDER", previousProvider], ["OLLAMA_URL", previousUrl], ["OLLAMA_API_KEY", previousKey], ["AI_MIN_INTERVAL_MS", previousInterval]]) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
 test("AI replaces a violent model response with safe advice", async () => {
   const previousProvider = process.env.AI_PROVIDER;
   const previousUrl = process.env.AI_LOCAL_URL;
