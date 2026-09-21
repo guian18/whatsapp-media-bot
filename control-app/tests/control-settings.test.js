@@ -1,0 +1,26 @@
+import { describe, expect, it } from "vitest";
+import { healthUrl, validateInteger } from "../lib/control-settings.js";
+import { normalizeControlApiUrl, toControlPayload } from "../lib/control-api.js";
+describe("control settings helpers", () => {
+  it("derives the llama.cpp health endpoint", () => {
+    expect(healthUrl("http://127.0.0.1:8080/v1/chat/completions")).toBe("http://127.0.0.1:8080/health");
+    expect(healthUrl("https://bot.example.test/")).toBe("https://bot.example.test/health");
+  });
+  it("normalizes the bot URL when users paste a control path", () => {
+    expect(normalizeControlApiUrl(" http://192.168.1.25:8787/ ")).toBe("http://192.168.1.25:8787");
+    expect(normalizeControlApiUrl("http://192.168.1.25:8787/api/control")).toBe("http://192.168.1.25:8787");
+  });
+  it("validates bounded integer settings", () => {
+    expect(validateInteger("64", 8, 4096)).toBe(true);
+    expect(validateInteger("7", 8, 4096)).toBe(false);
+    expect(validateInteger("64.5", 8, 4096)).toBe(false);
+    expect(validateInteger("nope", 8, 4096)).toBe(false);
+  });
+  it("builds a remote-safe settings payload without secrets", () => {
+    const payload = toControlPayload({ provider: "local", model: "local-model", llamaUrl: "http://127.0.0.1:8080/v1/chat/completions", maxTokens: "64", timeoutMs: "120000", language: "es-ES", tone: "breve", skipSearch: true, fastMode: true, notificationJid: "", commandAliases: "saludo=ping" });
+    expect(payload).toMatchObject({ provider: "local", maxTokens: 64, timeoutMs: 12e4, fastMode: true });
+    expect(payload).toMatchObject({ notificationJid: "", commandAliases: "saludo=ping" });
+    expect(payload).not.toHaveProperty("controlToken");
+    expect(payload).not.toHaveProperty("GROQ_API_KEY");
+  });
+});

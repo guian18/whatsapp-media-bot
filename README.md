@@ -18,6 +18,7 @@ Funciona en Linux, macOS, Windows, Termux y Heroku con Node.js 20 o superior. El
 - Comandos de entretenimiento y utilidades locales: `!menu`, `!entretenimiento`, `!dado`, `!moneda`, `!8ball`, `!verdad`, `!reto`, `!pareja` y `!calcular`, sin dependencias adicionales.
 - Soporte de despliegue en Heroku mediante `Procfile` y `app.json`, usando un proceso `worker` para la conexión persistente de WhatsApp.
 - Configuración documentada para QR, código de vinculación, variables de entorno, app móvil y Control API.
+- La aplicación móvil `control-app` también está escrita completamente en JavaScript, con pantallas JSX transformadas a JavaScript, servidor Node.js, configuración de Drizzle y pruebas ejecutables sin TypeScript.
 
 ## Características
 
@@ -50,6 +51,10 @@ Funciona en Linux, macOS, Windows, Termux y Heroku con Node.js 20 o superior. El
 | `!rapidez` | Comprueba la respuesta del proceso. |
 
 Estas funciones forman parte del dispatcher actual y no reemplazan Baileys, la sesión, el Control API, Steam ni la vigilancia de jugadores.
+
+## Estructura JavaScript
+
+El bot principal y la aplicación móvil utilizan archivos `.js`. La interfaz móvil conserva Expo/React Native y JSX ya transformado a JavaScript; el servidor de la app se ejecuta con Node.js y es compilable con `esbuild`. Se eliminaron los archivos de configuración y dependencias de TypeScript. Para comprobar la sintaxis de la app móvil, ejecuta `pnpm run check` dentro de `control-app`.
 
 ## Requisitos
 
