@@ -256,23 +256,23 @@ test("local AI provider accepts an OpenAI-compatible response", async (t) => {
   }
 });
 
-test("Khoj AI provider accepts its native response format", async () => {
+test("LocalAI provider uses its OpenAI-compatible local endpoint", async () => {
   const previousProvider = process.env.AI_PROVIDER;
-  const previousUrl = process.env.KHOJ_AI_URL;
+  const previousUrl = process.env.LOCALAI_URL;
   const previousInterval = process.env.AI_MIN_INTERVAL_MS;
   const previousFetch = globalThis.fetch;
-  process.env.AI_PROVIDER = "khoj";
-  process.env.KHOJ_AI_URL = "http://127.0.0.1:42110/api/chat?client=khoj";
+  process.env.AI_PROVIDER = "localai";
+  process.env.LOCALAI_URL = "http://127.0.0.1:8081/v1/chat/completions";
   process.env.AI_MIN_INTERVAL_MS = "0";
   globalThis.fetch = async (url) => {
     if (String(url).startsWith("https://html.duckduckgo.com/")) return new Response("", { status: 200 });
-    return new Response(JSON.stringify({ response: "Respuesta de Khoj" }), { status: 200, headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify({ choices: [{ message: { content: "Respuesta de LocalAI" } }] }), { status: 200, headers: { "content-type": "application/json" } });
   };
   try {
-    assert.match(await cmdIA("prueba Khoj"), /Respuesta de Khoj/);
+    assert.match(await cmdIA("prueba LocalAI"), /Respuesta de LocalAI/);
   } finally {
     globalThis.fetch = previousFetch;
-    for (const [key, value] of [["AI_PROVIDER", previousProvider], ["KHOJ_AI_URL", previousUrl], ["AI_MIN_INTERVAL_MS", previousInterval]]) {
+    for (const [key, value] of [["AI_PROVIDER", previousProvider], ["LOCALAI_URL", previousUrl], ["AI_MIN_INTERVAL_MS", previousInterval]]) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }

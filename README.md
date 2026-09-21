@@ -9,7 +9,7 @@ Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 - Perfiles de Steam y búsqueda de jugadores en servidores públicos.
 - Información A2S de servidores públicos, oficiales, locales y privados.
 - Vigilancia de jugadores con avisos automáticos y consultas manuales.
-- IA configurable con proveedor local, Groq, Gemini, Mistral u OpenRouter.
+- IA configurable con Ollama, llama.cpp, LocalAI, Groq, Gemini, Mistral u OpenRouter.
 - Ollama local con API compatible con OpenAI.
 - Memoria privada por chat, tono e idioma configurables.
 - Imágenes de anime SFW.
@@ -46,7 +46,7 @@ Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) | [openrouter.ai/docs](https://openrouter.ai/docs/quickstart) |
 | Ollama local | No requiere clave para el servidor local | [ollama.com/download](https://ollama.com/download) · [docs.ollama.com/api/openai-compatibility](https://docs.ollama.com/api/openai-compatibility) · [último release](https://github.com/ollama/ollama/releases/latest) |
 | llama.cpp local | No requiere clave remota | [github.com/ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp) |
-| Khoj incluido | Se configura con `KHOJ_COOKIE` o `KHOJ_API_KEY` | [docs.khoj.dev](https://docs.khoj.dev/) · [código original](https://github.com/khoj-ai/khoj) |
+| LocalAI local | No requiere clave en una instalación local | [github.com/mudler/LocalAI](https://github.com/mudler/LocalAI) · [compatibilidad OpenAI](https://localai.io/features/openai-compatibility/) |
 
 ### WhatsApp, app y despliegue
 
@@ -66,8 +66,7 @@ Funciona con Node.js 20 o superior en Linux, macOS, Windows, Termux y Heroku.
 |---|---|
 | Repositorio privado | [github.com/guianpierrcastillolazo-rgb/infoplayerleft](https://github.com/guianpierrcastillolazo-rgb/infoplayerleft) |
 | Plantilla de variables de entorno | [.env.example](.env.example) |
-| Backend de IA incluido | [services/khoj](services/khoj/) |
-| Guía del backend de IA | [services/README.md](services/README.md) |
+| Guía de backends locales | [services/README.md](services/README.md) |
 
 ## Instalación local
 
@@ -102,7 +101,7 @@ REPLY_IN_PRIVATE=true
 PAIRING_CODE=false
 ```
 
-El proveedor `local` requiere un servidor compatible con OpenAI, como `llama.cpp`. También puedes seleccionar `khoj` para usar el servicio incluido en `services/khoj` como backend de IA. Para un proveedor remoto, por ejemplo:
+Puedes seleccionar `ollama`, `llama_cpp` o `localai` para usar un backend local gratuito con API HTTP compatible con OpenAI. Para un proveedor remoto, por ejemplo:
 
 La release estable verificada al actualizar este repositorio es **v0.34.2** ([release oficial](https://github.com/ollama/ollama/releases/tag/v0.34.2)). Para usar la versión actual de Ollama, instala desde su sitio oficial y descarga un modelo:
 
@@ -136,14 +135,28 @@ AI_MODEL=openai/gpt-oss-20b
 GROQ_API_KEY=tu_clave
 ```
 
-Las claves disponibles son `GROQ_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY` y `OPENROUTER_API_KEY`. También se acepta `AI_API_KEY` como clave genérica.
+Las claves disponibles son `GROQ_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY` y `OPENROUTER_API_KEY`. También se acepta `AI_API_KEY` como clave genérica. Los backends locales no requieren una clave para uso en `127.0.0.1`.
 
-Para Khoj, inicia el servicio en el puerto `42110` y configura:
+Para llama.cpp:
 
 ```env
-AI_PROVIDER=khoj
-KHOJ_AI_URL=http://127.0.0.1:42110/api/chat?client=khoj
-KHOJ_COOKIE=tu_cookie_de_sesion
+AI_PROVIDER=llama_cpp
+AI_MODEL=nombre-del-modelo-gguf
+LLAMA_CPP_URL=http://127.0.0.1:8080/v1/chat/completions
+LLAMA_CPP_API_KEY=
+```
+
+Para LocalAI con Docker:
+
+```bash
+docker run -p 8081:8080 --name local-ai -ti localai/localai:latest
+```
+
+```env
+AI_PROVIDER=localai
+AI_MODEL=nombre-del-modelo
+LOCALAI_URL=http://127.0.0.1:8081/v1/chat/completions
+LOCALAI_API_KEY=
 ```
 
 ## Vincular WhatsApp
@@ -240,9 +253,9 @@ Para la primera vinculación, configura temporalmente `WHATSAPP_NUMBER` y `PAIRI
 
 **Importante:** Heroku utiliza almacenamiento efímero. `auth_info/`, `watchlist.json` y `ai-memory.json` pueden desaparecer al reiniciar o redeployar el dyno. Es posible que debas volver a vincular WhatsApp. No actives `CONTROL_API_TOKEN` públicamente en Heroku sin una protección adicional.
 
-## Servicio independiente de IA
+## Backends locales de IA
 
-El directorio [`services/khoj/`](services/khoj/) contiene el backend de IA, búsqueda semántica y documentos que puede usar el proveedor `khoj` del bot. Conserva su código Python/React, Docker, pruebas, dependencias, documentación y licencia **AGPL-3.0**. Se ejecuta como proceso auxiliar en el mismo repositorio; no comparte la sesión de WhatsApp ni reemplaza el bot de Steam/Left 4 Dead 2.
+El bot admite backends locales gratuitos mediante APIs HTTP: Ollama, llama.cpp server y LocalAI. El software del runtime puede ser gratuito, pero los modelos tienen licencias propias y el equipo sigue consumiendo CPU, RAM, disco y energía. Mantén los servidores enlazados a `127.0.0.1` si no necesitas acceso remoto y no incluyas claves en el repositorio.
 
 ## Termux
 
@@ -289,7 +302,7 @@ npm ci
 npm test
 ```
 
-La suite principal contiene 27 pruebas. La app móvil se valida desde `control-app` con `pnpm run check`, `pnpm run build` y `pnpm test`.
+La suite principal contiene 28 pruebas. La app móvil se valida desde `control-app` con `pnpm run check`, `pnpm run build` y `pnpm test`.
 
 ## Seguridad
 

@@ -12,9 +12,13 @@ const AI_PRESETS = {
     url: "http://127.0.0.1:11434/v1/chat/completions",
     model: "gpt-oss:20b",
   },
-  khoj: {
-    url: "http://127.0.0.1:42110/api/chat?client=khoj",
-    model: "khoj",
+  llama_cpp: {
+    url: "http://127.0.0.1:8080/v1/chat/completions",
+    model: "local-model",
+  },
+  localai: {
+    url: "http://127.0.0.1:8081/v1/chat/completions",
+    model: "local-model",
   },
   gemini: {
     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
@@ -33,8 +37,8 @@ const AI_PRESETS = {
     model: "openrouter/auto",
   },
 };
-const PROVIDER_ALIASES = { local: "local", llamacpp: "local", llama: "local", ollama: "ollama", khoj: "khoj", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
-const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", ollama: "OLLAMA_API_KEY", khoj: "KHOJ_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
+const PROVIDER_ALIASES = { local: "local", llamacpp: "llama_cpp", "llama.cpp": "llama_cpp", llama: "llama_cpp", ollama: "ollama", localai: "localai", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
+const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", ollama: "OLLAMA_API_KEY", llama_cpp: "LLAMA_CPP_API_KEY", localai: "LOCALAI_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
@@ -122,7 +126,7 @@ function timeoutSignal(ms) {
 }
 
 function modelTimeoutMs(provider) {
-  if (["local", "ollama"].includes(provider)) {
+  if (["local", "ollama", "llama_cpp", "localai"].includes(provider)) {
     return envNumber("AI_LOCAL_TIMEOUT_MS", LOCAL_AI_TIMEOUT_MS);
   }
   return envNumber("AI_TIMEOUT_MS", REMOTE_AI_TIMEOUT_MS);
@@ -135,7 +139,7 @@ function isTimeoutError(error) {
 }
 
 function localFastMode(provider) {
-  return ["local", "ollama"].includes(provider) && process.env.AI_LOCAL_FAST !== "false";
+  return ["local", "ollama", "llama_cpp", "localai"].includes(provider) && process.env.AI_LOCAL_FAST !== "false";
 }
 
 function cleanText(value) {
@@ -193,15 +197,17 @@ async function webSearch(question) {
 function aiConfig() {
   const provider = PROVIDER_ALIASES[(process.env.AI_PROVIDER || "local").trim().toLowerCase()] || "local";
   const providerKey = PROVIDER_KEY_ENV[provider];
-  const key = (providerKey ? process.env[providerKey] : "")?.trim() || (provider === "local" ? "" : (process.env.AI_API_KEY || "").trim());
+  const key = (providerKey ? process.env[providerKey] : "")?.trim() || (["local", "ollama", "llama_cpp", "localai"].includes(provider) ? "" : (process.env.AI_API_KEY || "").trim());
   const preset = AI_PRESETS[provider];
   const configuredUrl = provider === "local"
     ? (process.env.AI_LOCAL_URL || process.env.AI_API_URL)
     : provider === "ollama"
       ? (process.env.OLLAMA_URL || process.env.AI_API_URL)
-    : provider === "khoj"
-      ? (process.env.KHOJ_AI_URL || process.env.AI_API_URL)
-      : process.env.AI_API_URL;
+    : provider === "llama_cpp"
+      ? (process.env.LLAMA_CPP_URL || process.env.AI_API_URL)
+      : provider === "localai"
+        ? (process.env.LOCALAI_URL || process.env.AI_API_URL)
+        : process.env.AI_API_URL;
   const url = (configuredUrl || preset?.url || DEFAULT_AI_URL).trim();
   const model = (process.env.AI_MODEL || preset?.model || DEFAULT_AI_MODEL).trim();
   return { key, url, model, provider };
@@ -224,8 +230,7 @@ function providerKeyMismatch(provider, key) {
 
 async function askModel(question, style, sources, includeSources, history = []) {
   const { key, url, model, provider } = aiConfig();
-  if (!key && !["local", "ollama", "khoj"].includes(provider)) return null;
-  if (provider === "khoj") return askKhoj(question, url, key);
+  if (!key && !["local", "ollama", "llama_cpp", "localai"].includes(provider)) return null;
   const fastLocal = localFastMode(provider);
   const context = sources.length
     ? sources.map((s, i) => `[${i + 1}] ${s.title}\nURL: ${s.url}\n${s.snippet}`).join("\n\n")
@@ -243,7 +248,7 @@ async function askModel(question, style, sources, includeSources, history = []) 
     : `Responde en ${languageName} con criterio, de forma clara y útil. Fecha actual del sistema: ${dateContext}. Si preguntan por hoy, ayer o mañana, usa esa fecha y no digas que no está disponible. Usa el contexto web para datos actuales; separa hechos, inferencias y dudas, y no inventes información. Usa este tono: ${style}. Puedes usar humor adulto, doble sentido y palabrotas entre adultos cuando el contexto sea amistoso, pero no sexualices menores, no promuevas coerción ni generes amenazas, insultos discriminatorios, slurs, doxxing o acoso dirigido a una persona identificable. ${sourceInstruction}`;
   const userPrompt = `Pregunta: ${question}\n\nContexto web:\n${context.slice(0, MAX_CONTEXT_LENGTH)}`;
   const messages = [{ role: "system", content: systemPrompt }, ...history.slice(fastLocal ? -2 : -8), { role: "user", content: userPrompt }];
-  const maxTokens = envNumber("AI_MAX_TOKENS", ["local", "ollama"].includes(provider) ? LOCAL_MAX_TOKENS : 700);
+  const maxTokens = envNumber("AI_MAX_TOKENS", ["local", "ollama", "llama_cpp", "localai"].includes(provider) ? LOCAL_MAX_TOKENS : 700);
   const requestBody = { model, temperature: 0.2, max_tokens: maxTokens, messages };
   const headers = { "content-type": "application/json" };
   if (key) headers.authorization = `Bearer ${key}`;
@@ -268,29 +273,9 @@ async function askModel(question, style, sources, includeSources, history = []) 
   return responseText?.trim() || "La IA no devolvió una respuesta.";
 }
 
-async function askKhoj(question, url, key) {
-  const headers = { "content-type": "application/json" };
-  if (key) headers.authorization = `Bearer ${key}`;
-  if (process.env.KHOJ_COOKIE?.trim()) headers.cookie = process.env.KHOJ_COOKIE.trim();
-  const response = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ q: question, stream: false, create_new: false }),
-    signal: timeoutSignal(envNumber("KHOJ_TIMEOUT_MS", 120_000)),
-  });
-  const raw = await response.text();
-  if (!response.ok) throw new Error(`Khoj HTTP ${response.status}${raw ? `: ${raw.slice(0, 180)}` : ""}`);
-  try {
-    const data = JSON.parse(raw);
-    return String(data?.response || data?.answer || data?.message || "Khoj no devolvió una respuesta.").trim();
-  } catch {
-    return raw.trim() || "Khoj no devolvió una respuesta.";
-  }
-}
-
 export function aiConfigured() {
   const config = aiConfig();
-  return ["local", "ollama", "khoj"].includes(config.provider) || Boolean(config.key);
+  return ["local", "ollama", "llama_cpp", "localai"].includes(config.provider) || Boolean(config.key);
 }
 
 function configuredStyle() {
@@ -361,7 +346,7 @@ export function cmdIdioma(value) {
 
 export function cmdProveedor(value) {
   const input = String(value || "").trim().toLowerCase();
-  const available = ["local", "ollama", "khoj", "gemini", "groq", "mistral", "openrouter"];
+  const available = ["local", "ollama", "llama_cpp", "localai", "gemini", "groq", "mistral", "openrouter"];
   if (!input || input === "lista") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
   const provider = PROVIDER_ALIASES[input];
   if (!provider || !AI_PRESETS[provider]) return `Proveedor no válido. Usa: ${available.join(", ")}`;
@@ -375,8 +360,8 @@ export function cmdProveedor(value) {
     ? "No requiere API key; debe estar activo un servidor llama.cpp en AI_LOCAL_URL."
     : provider === "ollama"
     ? "No requiere API key en local; ejecuta Ollama y descarga un modelo con `ollama pull`."
-    : provider === "khoj"
-    ? "Usa KHOJ_COOKIE para una sesión local o KHOJ_API_KEY si tu instalación expone un token."
+    : ["llama_cpp", "localai"].includes(provider)
+    ? "No requiere API key en local; inicia el servidor compatible con OpenAI en la URL configurada."
     : keyStatus.specific
     ? `Clave detectada en ${keyStatus.variable}.`
     : keyStatus.generic
@@ -433,7 +418,7 @@ export async function cmdIA(question, chatId = null) {
   try {
     let sources = [];
     const provider = aiConfig().provider;
-    const skipLocalSearch = provider === "local" && process.env.AI_LOCAL_SKIP_SEARCH !== "false" && !includeSources;
+    const skipLocalSearch = ["local", "ollama", "llama_cpp", "localai"].includes(provider) && process.env.AI_LOCAL_SKIP_SEARCH !== "false" && !includeSources;
     if (!skipLocalSearch) {
       try {
         sources = await webSearch(query);
@@ -457,9 +442,9 @@ export async function cmdIA(question, chatId = null) {
   } catch (error) {
     console.error("Error en !ai:", error?.message || error);
     const config = aiConfig();
-    if (["local", "ollama"].includes(config.provider) && isTimeoutError(error)) {
+    if (["local", "ollama", "llama_cpp", "localai"].includes(config.provider) && isTimeoutError(error)) {
       const seconds = Math.ceil(modelTimeoutMs(config.provider) / 1000);
-      const service = config.provider === "ollama" ? "Ollama" : "llama.cpp";
+      const service = { local: "llama.cpp", ollama: "Ollama", llama_cpp: "llama.cpp", localai: "LocalAI" }[config.provider] || "El servidor local";
       return `${service} tardó más de ${seconds} segundos en responder. Comprueba que el servicio siga activo en ${config.url} y aumenta AI_LOCAL_TIMEOUT_MS en .env si el modelo tarda en cargar.`;
     }
     if (config.provider === "ollama" && /fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(String(error?.message || ""))) {
@@ -467,6 +452,10 @@ export async function cmdIA(question, chatId = null) {
     }
     if (config.provider === "local" && /fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(String(error?.message || ""))) {
       return "No pude conectar con llama.cpp. Inicia `llama-server` en 127.0.0.1:8080 y vuelve a intentarlo con `!ai <pregunta>`.";
+    }
+    if (["llama_cpp", "localai"].includes(config.provider) && /fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(String(error?.message || ""))) {
+      const service = config.provider === "localai" ? "LocalAI" : "llama.cpp";
+      return `No pude conectar con ${service}. Comprueba la URL configurada y que el servidor esté iniciado.`;
     }
     const detail = String(error?.message || "error desconocido")
       .replace(/(?:sk-|gsk_|AIza|sk-or-v1-)[A-Za-z0-9_\-]+/g, "[clave oculta]")

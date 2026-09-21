@@ -1,29 +1,60 @@
-# Servicios independientes
+# Backends locales de IA
 
-## Servicio de conocimiento personal
-
-`services/khoj/` contiene el backend de IA, búsqueda semántica y gestión de documentos que el bot puede seleccionar mediante `AI_PROVIDER=khoj`. Conserva su propia arquitectura Python, frontend, Docker, documentación, pruebas y archivos de dependencias.
-
-El servicio se mantiene bajo la licencia **GNU Affero General Public License v3 (AGPL-3.0)**. El archivo `services/khoj/LICENSE` y los avisos incluidos en el servicio deben conservarse al distribuir o modificar este código.
-
-### Ejecución
-
-Consulta `services/khoj/README.md` para la configuración oficial. Las opciones principales son:
-
-```bash
-cd services/khoj
-uv sync
-uv run khoj --host 0.0.0.0 --port 42110
-```
-
-También se incluyen `Dockerfile`, `prod.Dockerfile`, `computer.Dockerfile` y `docker-compose.yml` para su ejecución aislada.
-
-### Integración con el bot principal
-
-El bot de WhatsApp de la raíz continúa ejecutándose en JavaScript y envía las consultas de IA a `http://127.0.0.1:42110/api/chat?client=khoj` cuando `AI_PROVIDER=khoj`. Este servicio no se inicia con `npm start`, no comparte la sesión de WhatsApp y no reemplaza las funciones de Steam, Left 4 Dead 2, A2S o vigilancia.
-
-El snapshot incluido corresponde al commit `ae229ca894c0b80ad84664afcfdde523b5e87057` y conserva el archivo `versions.json` del servicio.
+El bot puede usar backends gratuitos ejecutados en el mismo equipo mediante APIs HTTP. No se incluyen claves privadas en el repositorio; los modelos y sus licencias deben revisarse por separado.
 
 ## Ollama
 
-El bot también admite Ollama como proveedor local mediante `AI_PROVIDER=ollama`. Ollama funciona en `http://127.0.0.1:11434` y expone compatibilidad con `/v1/chat/completions`. Consulta la [documentación oficial de compatibilidad OpenAI](https://docs.ollama.com/api/openai-compatibility) y descarga la versión actual desde [ollama.com/download](https://ollama.com/download).
+Ollama es la opción recomendada para una instalación sencilla. Usa `AI_PROVIDER=ollama`, escucha normalmente en `http://127.0.0.1:11434` y ofrece una API local sin autenticación por defecto.
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull gpt-oss:20b
+ollama serve
+```
+
+```env
+AI_PROVIDER=ollama
+AI_MODEL=gpt-oss:20b
+OLLAMA_URL=http://127.0.0.1:11434/v1/chat/completions
+OLLAMA_API_KEY=ollama
+```
+
+Documentación: [Ollama](https://github.com/ollama/ollama), [descarga](https://ollama.com/download) y [compatibilidad OpenAI](https://docs.ollama.com/api/openai-compatibility).
+
+## llama.cpp server
+
+llama.cpp es una opción ligera para modelos GGUF y ofrece un endpoint compatible con OpenAI. Usa `AI_PROVIDER=llama_cpp` y configura el modelo que hayas cargado.
+
+```bash
+./build/bin/llama-server --model /ruta/al/modelo.gguf --host 127.0.0.1 --port 8080
+```
+
+```env
+AI_PROVIDER=llama_cpp
+AI_MODEL=nombre-del-modelo-gguf
+LLAMA_CPP_URL=http://127.0.0.1:8080/v1/chat/completions
+LLAMA_CPP_API_KEY=
+```
+
+Documentación: [repositorio llama.cpp](https://github.com/ggml-org/llama.cpp) y [servidor HTTP](https://github.com/ggml-org/llama.cpp/tree/master/tools/server).
+
+## LocalAI
+
+LocalAI es otra alternativa compatible con OpenAI. Se recomienda para quien ya utilice Docker y quiera gestionar varios backends/modelos.
+
+```bash
+docker run -p 8081:8080 --name local-ai -ti localai/localai:latest
+```
+
+```env
+AI_PROVIDER=localai
+AI_MODEL=nombre-del-modelo
+LOCALAI_URL=http://127.0.0.1:8081/v1/chat/completions
+LOCALAI_API_KEY=
+```
+
+Documentación: [repositorio LocalAI](https://github.com/mudler/LocalAI) y [compatibilidad OpenAI](https://localai.io/features/openai-compatibility/).
+
+## Seguridad y recursos
+
+Los tres backends son gratuitos en local, pero no tienen coste cero: requieren descarga de modelos, almacenamiento, CPU/RAM o GPU/VRAM y electricidad. Los servidores locales no deben exponerse a Internet sin autenticación, firewall y TLS. Si se configura una API remota o una clave para acceso remoto, debe guardarse en `.env`, secretos de Heroku o el gestor de secretos correspondiente, nunca en el código.
