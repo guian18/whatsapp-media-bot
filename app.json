@@ -1,0 +1,84 @@
+{
+  "name": "infoplayerleft",
+  "description": "Bot de WhatsApp para Steam y Left 4 Dead 2",
+  "repository": "https://github.com/guianpierrcastillolazo-rgb/infoplayerleft",
+  "keywords": ["whatsapp", "baileys", "left-4-dead-2", "steam", "bot"],
+  "stack": "heroku-24",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "env": {
+    "STEAM_API_KEY": {
+      "description": "Steam Web API key. Required for profile and player lookup commands.",
+      "required": false
+    },
+    "AI_PROVIDER": {
+      "description": "AI provider: local, gemini, groq, mistral or openrouter.",
+      "value": "groq",
+      "required": false
+    },
+    "AI_MODEL": {
+      "description": "Model name for the selected AI provider.",
+      "value": "openai/gpt-oss-20b",
+      "required": false
+    },
+    "GROQ_API_KEY": {
+      "description": "Optional Groq API key for !ai.",
+      "required": false,
+      "value": ""
+    },
+    "GEMINI_API_KEY": {
+      "description": "Optional Gemini API key for !ai.",
+      "required": false,
+      "value": ""
+    },
+    "MISTRAL_API_KEY": {
+      "description": "Optional Mistral API key for !ai.",
+      "required": false,
+      "value": ""
+    },
+    "OPENROUTER_API_KEY": {
+      "description": "Optional OpenRouter API key for !ai.",
+      "required": false,
+      "value": ""
+    },
+    "GROUPS_ENABLED": {
+      "description": "Allow commands in WhatsApp groups.",
+      "value": "true",
+      "required": false
+    },
+    "REPLY_IN_PRIVATE": {
+      "description": "Allow commands in private chats.",
+      "value": "true",
+      "required": false
+    },
+    "PAIRING_CODE": {
+      "description": "Set true to link WhatsApp with a phone number instead of QR.",
+      "value": "false",
+      "required": false
+    },
+    "WHATSAPP_NUMBER": {
+      "description": "WhatsApp number with country code, digits only, for pairing code.",
+      "required": false,
+      "value": ""
+    },
+    "CONTROL_API_TOKEN": {
+      "description": "Leave empty to disable the local control API on Heroku.",
+      "required": false,
+      "value": ""
+    },
+    "AUTH_DIR": {
+      "description": "Directory for WhatsApp credentials. Heroku storage is ephemeral.",
+      "value": "auth_info",
+      "required": false
+    }
+  }
+}

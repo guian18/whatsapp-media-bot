@@ -69,6 +69,37 @@ nano .env
 npm start
 ```
 
+### Despliegue en Heroku
+
+El repositorio incluye `Procfile` y `app.json` para ejecutar el bot como un **worker**, que es el tipo de proceso adecuado para una conexión persistente de WhatsApp. No lo despliegues como `web`, porque el bot no necesita servir una página HTTP.
+
+#### Opción 1: desde el panel de Heroku
+
+1. Crea una aplicación nueva en Heroku.
+2. En **Deploy**, conecta el repositorio `guianpierrcastillolazo-rgb/infoplayerleft` y selecciona la rama `main`.
+3. En **Settings → Config Vars**, añade como mínimo `STEAM_API_KEY` si utilizarás las funciones de Steam.
+4. Para `!ai`, configura el proveedor y su clave: por ejemplo `AI_PROVIDER=groq` y `GROQ_API_KEY=...`. Si no usarás IA remota, puedes dejar `AI_PROVIDER=local`, pero Heroku no ejecutará automáticamente un servidor local de `llama.cpp`.
+5. En **Resources**, activa un proceso `worker` con el comando definido en `Procfile`: `npm start`.
+6. Abre los logs con `heroku logs --tail --app NOMBRE_DE_TU_APP` y vincula WhatsApp.
+
+#### Opción 2: con Heroku CLI
+
+```bash
+heroku login
+heroku create nombre-de-tu-app
+heroku config:set STEAM_API_KEY=TU_CLAVE --app nombre-de-tu-app
+heroku config:set AI_PROVIDER=groq GROQ_API_KEY=TU_CLAVE --app nombre-de-tu-app
+git push heroku main
+heroku ps:scale worker=1 --app nombre-de-tu-app
+heroku logs --tail --app nombre-de-tu-app
+```
+
+Para vincular por código, configura temporalmente `WHATSAPP_NUMBER` con el número internacional sin `+` ni espacios y `PAIRING_CODE=true`. El código aparecerá en los logs. Después de completar la vinculación, cambia `PAIRING_CODE=false` y reinicia el worker.
+
+**Importante:** el sistema de archivos de Heroku es efímero. `auth_info/`, `watchlist.json`, `ai-memory.json` y otros archivos locales pueden desaparecer al reiniciar, redeployar o cambiar de dyno. Por ello, Heroku sirve para probar o ejecutar el bot, pero no garantiza conservar la sesión de WhatsApp. No pongas `CONTROL_API_TOKEN` en Heroku salvo que hayas diseñado una protección adicional; el Control API está pensado para una red local de confianza.
+
+El archivo `app.json` contiene los nombres y descripciones de las variables para facilitar la creación de la aplicación, pero **no contiene claves secretas**.
+
 En Windows PowerShell, sustituye la copia del archivo de entorno por:
 
 ```powershell
