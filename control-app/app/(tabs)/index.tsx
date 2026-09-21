@@ -40,6 +40,7 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 type Provider = "local" | "groq" | "gemini" | "mistral" | "openrouter";
+const COMMAND_TARGETS = ["info", "buscar", "servidor", "jugadores", "ping", "ai", "ayuda", "anime", "vigilar", "novigilar", "lista", "escaneo"] as const;
 const PROVIDER_DEFAULTS: Record<Provider, { model: string; url: string }> = {
   local: { model: "local-model", url: "http://127.0.0.1:8080/v1/chat/completions" },
   groq: { model: "openai/gpt-oss-20b", url: "https://api.groq.com/openai/v1/chat/completions" },
@@ -76,6 +77,8 @@ export default function HomeScreen() {
   const [testMessage, setTestMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [remoteStatus, setRemoteStatus] = useState<RemoteStatus>({});
+  const [commandAlias, setCommandAlias] = useState("");
+  const [commandTarget, setCommandTarget] = useState<(typeof COMMAND_TARGETS)[number]>("info");
 
   useEffect(() => {
     Promise.all([AsyncStorage.getItem(SETTINGS_KEY), SecureStore.getItemAsync(CONTROL_TOKEN_KEY)])
@@ -100,6 +103,30 @@ export default function HomeScreen() {
     setSettings((current) => ({ ...current, provider, model: defaults.model, llamaUrl: defaults.url }));
     setSaveMessage("");
   }, []);
+
+  const addCommandAlias = useCallback(() => {
+    const alias = commandAlias.trim().replace(/^!/, "").toLowerCase();
+    if (!/^[a-z][a-z0-9_]{0,31}$/.test(alias)) {
+      Alert.alert("Nombre inválido", "Usa letras, números o guion bajo; debe empezar por una letra.");
+      return;
+    }
+    if (alias === commandTarget) {
+      Alert.alert("Nombre inválido", "El nuevo nombre debe ser diferente al comando original.");
+      return;
+    }
+    const entries = settings.commandAliases
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .filter((entry) => entry.split("=")[0]?.trim().toLowerCase() !== alias);
+    update("commandAliases", [...entries, `${alias}=${commandTarget}`].join(", "));
+    setCommandAlias("");
+  }, [commandAlias, commandTarget, settings.commandAliases, update]);
+
+  const restoreOriginalCommands = useCallback(() => {
+    update("commandAliases", "");
+    setSaveMessage("Comandos originales restaurados en el formulario; pulsa Guardar configuración");
+  }, [update]);
 
   const saveSettings = useCallback(async () => {
     if (!validateInteger(settings.maxTokens, 8, 4096)) {
@@ -228,10 +255,29 @@ export default function HomeScreen() {
             <Field label="URL de la API del bot" value={settings.controlApiUrl} onChangeText={(value) => update("controlApiUrl", value)} colors={colors} autoCapitalize="none" keyboardType="url" placeholder="http://192.168.1.25:8787" />
             <Field label="Token de control" value={settings.controlToken} onChangeText={(value) => update("controlToken", value)} colors={colors} autoCapitalize="none" secureTextEntry />
             <Text style={styles.fieldHelp}>Usa la IP del teléfono donde corre Termux y el puerto 8787. Pulsa Guardar para enviar los cambios al bot; el token se guarda en el llavero del teléfono.</Text>
-            <Field label="Número privado para avisos" value={settings.notificationJid} onChangeText={(value) => update("notificationJid", value.replace(/[^\d]/g, ""))} colors={colors} keyboardType="phone-pad" placeholder="Vacío = tu número del bot" />
-            <Text style={styles.fieldHelp}>Opcional. Escribe solo el número con código de país, sin + ni espacios. Los avisos nunca se envían a conversaciones grupales.</Text>
-            <Field label="Renombrar comandos" value={settings.commandAliases} onChangeText={(value) => update("commandAliases", value)} colors={colors} autoCapitalize="none" placeholder="saludo=ping, asistente=ai" />
-            <Text style={styles.fieldHelp}>Formato: alias=comando, separados por comas. Ejemplo: saludo=ping, asistente=ai.</Text>
+            <Field label="Número que recibe los avisos de cambios" value={settings.notificationJid} onChangeText={(value) => update("notificationJid", value.replace(/[^\d]/g, ""))} colors={colors} keyboardType="phone-pad" placeholder="Vacío = tu número del bot" />
+            <Text style={styles.fieldHelp}>Escribe el número con código de país, sin + ni espacios. Al guardar, el bot enviará allí el aviso privado de los cambios. Vacío usa la cuenta vinculada.</Text>
+            <View style={styles.commandBox}>
+              <Text style={styles.cardTitle}>Cambiar nombre de un comando</Text>
+              <Text style={styles.fieldHelp}>Ejemplo: selecciona info, escribe left y pulsa Añadir. Funcionarán !left y !info.</Text>
+              <View style={styles.commandChips}>
+                {COMMAND_TARGETS.map((target) => (
+                  <Pressable key={target} onPress={() => setCommandTarget(target)} style={({ pressed }) => [styles.commandChip, commandTarget === target && styles.commandChipActive, pressed && styles.pressed]}>
+                    <Text style={[styles.commandChipText, commandTarget === target && styles.commandChipTextActive]}>!{target}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Field label="Nuevo nombre" value={commandAlias} onChangeText={setCommandAlias} colors={colors} autoCapitalize="none" placeholder="left" />
+              <Pressable onPress={addCommandAlias} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
+                <MaterialIcons name="add" size={18} color={colors.primary} />
+                <Text style={styles.secondaryButtonText}>Añadir nombre</Text>
+              </Pressable>
+              <Text style={styles.fieldHelp}>Configurados: {settings.commandAliases || "ninguno; se usan los nombres originales"}</Text>
+              <Pressable onPress={restoreOriginalCommands} style={({ pressed }) => [styles.restoreButton, pressed && styles.pressed]}>
+                <MaterialIcons name="restore" size={18} color={colors.error} />
+                <Text style={styles.restoreButtonText}>Restaurar comandos originales</Text>
+              </Pressable>
+            </View>
             <Pressable onPress={testRemoteAI} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
               <MaterialIcons name="psychology" size={18} color={colors.primary} />
               <Text style={styles.secondaryButtonText}>Probar IA remota</Text>
@@ -355,6 +401,12 @@ function makeStyles(colors: ReturnType<typeof useColors>) {
     providerChipText: { fontSize: 13, fontWeight: "700", color: colors.muted },
     providerChipTextActive: { color: colors.background },
     card: { padding: 16, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: 14 },
+    commandBox: { padding: 14, borderRadius: 14, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, gap: 10 },
+    commandChips: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+    commandChip: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+    commandChipActive: { borderColor: colors.primary, backgroundColor: colors.primary },
+    commandChipText: { fontSize: 12, fontWeight: "700", color: colors.muted },
+    commandChipTextActive: { color: colors.background },
     field: { gap: 7 },
     label: { fontSize: 12, fontWeight: "700", color: colors.muted },
     input: { minHeight: 44, paddingHorizontal: 12, borderRadius: 11, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background, color: colors.foreground, fontSize: 14 },
@@ -372,6 +424,8 @@ function makeStyles(colors: ReturnType<typeof useColors>) {
     noteBox: { flexDirection: "row", gap: 9, padding: 13, borderRadius: 14, backgroundColor: colors.surface },
     noteText: { flex: 1, fontSize: 12, lineHeight: 17, color: colors.muted },
     fieldHelp: { fontSize: 11, lineHeight: 16, color: colors.muted },
+    restoreButton: { minHeight: 40, paddingHorizontal: 12, borderRadius: 11, borderWidth: 1, borderColor: colors.error, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+    restoreButtonText: { fontSize: 13, fontWeight: "700", color: colors.error },
     pressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },
   });
 }
