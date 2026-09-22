@@ -118,7 +118,7 @@ Activa opcionalmente el modo de navegador automatizado. Debes instalar Chromium 
 ```env
 VIDEO_BROWSER_EXECUTABLE_PATH=/ruta/al/ejecutable/chromium
 VIDEO_BROWSER_WAIT_MS=3000
-VIDEO_SAVEHUB_ENABLED=false
+VIDEO_SAVEHUB_ENABLED=true
 VIDEO_SAVEHUB_URL=https://savehub.cc/d/
 ```
 
@@ -132,7 +132,7 @@ Si configuras `VIDEO_BROWSER_EXECUTABLE_PATH` o `VIDEO_BROWSER_CDP_URL`, `!video
 
 En Android/Termux, Node identifica la plataforma como `android` y Playwright no puede iniciarse directamente allí. En ese entorno el módulo se carga de forma diferida para que el bot siga arrancando; el modo navegador requiere ejecutar el bot dentro de un Linux compatible (por ejemplo Kali mediante `proot-distro`) o usar una API/fuente directa.
 
-Para URLs públicas de videos de Pornhub puedes activar opcionalmente el adaptador de SaveHub:
+Para URLs públicas de videos de Pornhub se usa el adaptador de SaveHub:
 
 ```env
 VIDEO_SAVEHUB_ENABLED=true
