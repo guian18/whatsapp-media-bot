@@ -40,10 +40,13 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!AI pregunta directa"), /AI_API_KEY/);
   assert.match(await handleCommand("!IA pregunta directa"), /AI_API_KEY/);
   assert.match(await handleCommand("!tono"), /Tonos:/);
+  assert.match(await handleCommand("!tono list"), /Tonos:/);
   assert.match(await handleCommand("!tono desconocido"), /Tono no válido/);
   assert.match(await handleCommand("!idioma"), /Idiomas:/);
+  assert.match(await handleCommand("!idioma list"), /Idiomas:/);
   assert.match(await handleCommand("!idioma klingon"), /Idioma no válido/);
   assert.match(await handleCommand("!proveedor"), /Proveedores:/);
+  assert.match(await handleCommand("!proveedor list"), /Proveedores:/);
   assert.match(await handleCommand("!proveedor"), /local.*gemini.*groq.*mistral.*openrouter/);
   assert.match(await handleCommand("!proveedor openai"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor claude"), /Proveedor no válido/);

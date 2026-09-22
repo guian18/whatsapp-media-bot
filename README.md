@@ -146,3 +146,97 @@ REPLY_IN_PRIVATE=true
 ```
 
 Las opciones de seguridad del archivo `.env.example` están configuradas con defaults restrictivos. Cambia solo las variables que necesites.
+
+## Menús y comandos de WhatsApp
+
+Todos los comandos empiezan con `!` y se escriben directamente en el chat de WhatsApp.
+
+### Menús disponibles
+
+| Comando | Qué muestra |
+|---|---|
+| `!ayuda` o `!help` | Menú general con todos los comandos principales. |
+| `!nsfw` | Menú de categorías de imágenes para adultos autorizadas. Esta función está desactivada por defecto. |
+| `!idioma` o `!idioma lista` | Lista de idiomas y códigos disponibles. |
+| `!tono` o `!tono lista` | Lista de tonos disponibles. |
+| `!proveedor` o `!proveedor lista` | Lista de proveedores de IA disponibles. |
+
+También puedes escribir `!idioma list`, `!tono list` o `!proveedor list`; la palabra `list` funciona como alias de `lista`.
+
+### IA
+
+```text
+!ai <pregunta>
+!ia <pregunta>
+!ai fuentes <pregunta>
+!idioma list
+!idioma es-MX
+!tono list
+!tono formal
+!proveedor list
+!proveedor ollama
+```
+
+Idiomas disponibles: `es-ES`, `es-MX`, `es-AR`, `es-CO`, `en-US`, `en-GB`, `it-IT`, `pt-BR`, `pt-PT`, `fr-FR` y `de-DE`. También se aceptan alias como `es`, `en`, `méxico`, `argentina`, `usa`, `italia`, `brasil` y `francia`.
+
+Tonos disponibles: `tranquilo`, `agresivo`, `insultos`, `formal`, `divertido`, `sarcastico`, `breve` y `amable`.
+
+Proveedores disponibles: `local`, `ollama`, `llama_cpp`, `localai`, `gemini`, `groq`, `mistral` y `openrouter`.
+
+### Steam y Left 4 Dead 2
+
+```text
+!info <SteamID64|nickname|URL>
+!buscar <nickname>
+!servidor <IP:puerto>
+!jugadores <IP:puerto>
+!ping
+```
+
+### Vigilancia de jugadores
+
+```text
+!vigilar <nickname|SteamID64|URL>
+!vigilarnick <nickname|SteamID64|URL>
+!novigilar <nickname|SteamID64|URL>
+!lista
+!escaneo
+!escaneo <número>
+!escaneo <nickname|SteamID64|URL>
+```
+
+Después de usar `!escaneo`, el bot muestra una lista numerada. Responde únicamente con el número para ejecutar el escaneo seleccionado.
+
+### Imágenes y vídeo
+
+```text
+!anime
+!nsfw
+!4k
+!anal
+!ass
+!blowjob
+!boobs
+!feet
+!gonewild
+!hass
+!hboobs
+!hentai
+!hentaianal
+!hkitsune
+!hmidriff
+!htigh
+!hyuri
+!kanna
+!lewd
+!lewdneko
+!paizuri
+!pgif
+!pussy
+!tentacle
+!thigh
+!yaoi
+!phub <URL pública>
+```
+
+Los comandos NSFW requieren `NSFW_ENABLED=true` y las restricciones correspondientes en `.env`. `!phub` requiere `PHUB_ENABLED=true`, Python, PHUB y ffmpeg.

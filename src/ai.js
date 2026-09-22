@@ -316,7 +316,7 @@ function saveEnvValues(values, errorLabel) {
 
 export function cmdTono(value) {
   const requested = String(value || "").trim().toLowerCase();
-  if (!requested || requested === "lista") {
+  if (!requested || requested === "lista" || requested === "list") {
     return `Tonos: ${Object.keys(STYLES).join(", ")}\nUso: !tono <estilo>`;
   }
   if (!STYLES[requested]) {
@@ -331,7 +331,7 @@ export function cmdTono(value) {
 
 export function cmdIdioma(value) {
   const input = String(value || "").trim().toLowerCase();
-  if (!input || input === "lista") {
+  if (!input || input === "lista" || input === "list") {
     return `Idiomas: ${Object.entries(LANGUAGES).map(([code, info]) => `${code} (${info.name})`).join(", ")}\nUso: !idioma <país o código>`;
   }
   const requested = Object.entries(LANGUAGES).find(([code, info]) => code.toLowerCase() === input || info.aliases.includes(input))?.[0];
@@ -347,7 +347,7 @@ export function cmdIdioma(value) {
 export function cmdProveedor(value) {
   const input = String(value || "").trim().toLowerCase();
   const available = ["local", "ollama", "llama_cpp", "localai", "gemini", "groq", "mistral", "openrouter"];
-  if (!input || input === "lista") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
+  if (!input || input === "lista" || input === "list") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
   const provider = PROVIDER_ALIASES[input];
   if (!provider || !AI_PRESETS[provider]) return `Proveedor no válido. Usa: ${available.join(", ")}`;
   const model = AI_PRESETS[provider].model;
