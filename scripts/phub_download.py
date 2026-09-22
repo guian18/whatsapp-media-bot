@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Download one public video with PHUB for the optional !phub command."""
+import asyncio
 import sys
 from pathlib import Path
 
@@ -18,9 +19,13 @@ def main() -> int:
         print("PHUB no puede cargarse; instala phub==5.1.2 y eaf-base-api==3.2.4", file=sys.stderr)
         print(f"detalle: {exc}", file=sys.stderr)
         return 3
+    async def download_video() -> None:
+        client = phub.Client()
+        video = await phub.Video(url=url, core=client.core).init()
+        await video.download(path=output, quality="best", no_title=True, remux=True)
+
     try:
-        video = phub.Client().get(url)
-        video.download(path=output, quality="best", convert=True)
+        asyncio.run(download_video())
     except Exception as exc:
         print(str(exc), file=sys.stderr)
         return 1
