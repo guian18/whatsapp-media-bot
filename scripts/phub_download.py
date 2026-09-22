@@ -29,32 +29,42 @@ def main() -> int:
             quality = "half"
 
         downloader_name = os.getenv("PHUB_DOWNLOADER", "default").strip().lower() or "default"
+        downloader = None
         if downloader_name == "ffmpeg":
-            import phub.download as download
-            downloader = download.FFMPEG
-        elif downloader_name == "threaded":
-            import phub.download as download
             try:
-                workers = int(os.getenv("PHUB_MAX_WORKERS", "4"))
-                timeout = int(os.getenv("PHUB_SEGMENT_TIMEOUT_SECONDS", "45"))
-            except ValueError:
-                workers, timeout = 4, 45
-            downloader = download.threaded(
-                max_workers=max(1, min(8, workers)),
-                timeout=max(10, min(120, timeout)),
-            )
+                import phub.download as download
+            except ImportError:
+                print("PHUB_DOWNLOADER=ffmpeg requiere una versión de PHUB con phub.download; se usará el descargador interno.", file=sys.stderr)
+            else:
+                downloader = download.FFMPEG
+        elif downloader_name == "threaded":
+            try:
+                import phub.download as download
+            except ImportError:
+                print("PHUB_DOWNLOADER=threaded requiere una versión de PHUB con phub.download; se usará el descargador interno.", file=sys.stderr)
+            else:
+                try:
+                    workers = int(os.getenv("PHUB_MAX_WORKERS", "4"))
+                    timeout = int(os.getenv("PHUB_SEGMENT_TIMEOUT_SECONDS", "45"))
+                except ValueError:
+                    workers, timeout = 4, 45
+                downloader = download.threaded(
+                    max_workers=max(1, min(8, workers)),
+                    timeout=max(10, min(120, timeout)),
+                )
+        if downloader_name == "default" or downloader is None:
+            # No importar phub.download: PHUB 5.1.2 usa su descargador interno
+            # cuando no se proporciona el argumento downloader.
+            download_options = {}
         else:
-            # Secuencial: evita decenas de conexiones HLS simultáneas y es
-            # más estable en Termux, Railway y conexiones lentas.
-            import phub.download as download
-            downloader = download.default
+            download_options = {"downloader": downloader}
 
         await video.download(
             path=output,
             quality=quality,
             no_title=True,
-            downloader=downloader,
             remux=True,
+            **download_options,
         )
 
     try:
