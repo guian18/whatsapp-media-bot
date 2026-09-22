@@ -331,8 +331,23 @@ export async function sendVideoFromUrl(urlValue, context = {}) {
   try {
     const url = validVideoUrl(urlValue);
     if (!url) return "Uso: `!video <URL>` con un video o una página HTML pública.";
-    const saveHubUrls = await saveHubVideoUrls(url);
-    if (saveHubUrls.length) return await sendVideoUrl(saveHubUrls[0], context);
+    let saveHubUrls = [];
+    try {
+      saveHubUrls = await saveHubVideoUrls(url);
+    } catch {
+      // SaveHub is optional; an outage must not block the normal extractor.
+      saveHubUrls = [];
+    }
+    if (saveHubUrls.length) {
+      try {
+        return await sendVideoUrl(saveHubUrls[0], context);
+      } catch (saveHubError) {
+        // SaveHub links can expire quickly; retry the original URL instead of returning its 404.
+        if (!browserConfigured()) {
+          return `SaveHub devolvió un enlace temporal no disponible (${saveHubError?.response?.status || saveHubError?.message || "404"}). Para páginas dinámicas, activa Playwright en Kali.`;
+        }
+      }
+    }
     return await sendVideoUrl(url, context);
   } catch (error) {
     return `No pude descargar el video: ${error?.message || "error de red"}`;
