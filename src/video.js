@@ -1,5 +1,4 @@
 import axios from "axios";
-import { chromium } from "playwright-core";
 
 const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 const MAX_SOURCE_PAGE_BYTES = 2 * 1024 * 1024;
@@ -134,6 +133,10 @@ function browserExecutablePath() {
 }
 
 async function launchVideoBrowser() {
+  if (process.platform === "android") {
+    throw new Error("el modo navegador Playwright no es compatible directamente con Node.js para Android; ejecuta el bot dentro de Kali/Linux o usa una API de video");
+  }
+  const { chromium } = await import("playwright-core");
   const cdpUrl = String(process.env.VIDEO_BROWSER_CDP_URL || "").trim();
   if (cdpUrl) return { browser: await chromium.connectOverCDP(cdpUrl), ownsBrowser: false };
   const executablePath = browserExecutablePath();
