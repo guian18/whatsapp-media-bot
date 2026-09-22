@@ -59,6 +59,7 @@ async function sendPhubVideo(args, context) {
   if (process.env.PHUB_ENABLED !== "true") return "PHUB está desactivado. Configura PHUB_ENABLED=true solo si instalaste la biblioteca PHUB.";
   if (!context.jid || typeof context.sendMessage !== "function") return "Este comando solo está disponible desde WhatsApp.";
   try {
+    await context.sendMessage(context.jid, { text: "⏳ PHUB está preparando el video; espera hasta 3 minutos..." });
     const buffer = await phubVideoFile(pageUrl);
     await context.sendMessage(context.jid, {
       video: buffer,
