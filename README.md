@@ -168,7 +168,10 @@ apt install -y nodejs npm ca-certificates
 cd /data/data/com.termux/files/home/infoplayerleft
 npm ci --ignore-scripts
 /usr/lib/chromium/chromium --version
+node -v
 ```
+
+El lanzador requiere **Node.js 20 o superior**. Si `node -v` muestra una versión menor, actualiza Node dentro de Kali antes de continuar; no uses el Node de Termux para el modo Playwright.
 
 Si Chromium todavía no existe dentro de Kali:
 
@@ -209,6 +212,8 @@ Para salir de Kali sin detener procesos en primer plano, pulsa `Ctrl+D` solo cua
 cd ~/infoplayerleft
 sh scripts/start-kali.sh
 ```
+
+El script comprueba automáticamente que esté dentro de Linux, valida Node 20+, localiza Chromium en `/usr/lib/chromium/chromium` o `/usr/bin/chromium`, exporta `VIDEO_BROWSER_EXECUTABLE_PATH` para esa ejecución y arranca el bot. Si falla una comprobación, muestra el comando de instalación correspondiente.
 
 El script acepta otro nombre de distribución o ruta del proyecto si lo necesitas:
 

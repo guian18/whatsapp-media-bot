@@ -145,7 +145,7 @@ async function launchVideoBrowser() {
     browser: await chromium.launch({
       executablePath,
       headless: true,
-      args: ["--no-sandbox"],
+      args: ["--no-sandbox", "--disable-dev-shm-usage"],
     }),
     ownsBrowser: true,
   };
