@@ -14,6 +14,7 @@ import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/co
 import { aiConfigured, cmdIA, containsRisk, detectStyle } from "../src/ai.js";
 import { startControlServer } from "../src/control-server.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
+import { validVideoUrl } from "../src/video.js";
 
 test("command dispatcher serves local commands without external services", async () => {
   const previousProvider = process.env.AI_PROVIDER;
@@ -48,6 +49,7 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!novigilar"), /No se pudo identificar este chat/);
   assert.match(await handleCommand("!novigilar jugador"), /No se pudo identificar este chat/);
   assert.match(await handleCommand("!anime"), /solo está disponible desde WhatsApp/);
+  assert.match(await handleCommand("!video"), /Uso: `!video/);
   assert.match(await handleCommand("!escaneo"), /solo está disponible desde WhatsApp/);
   assert.match(await handleCommand("1", { jid: "test@s.whatsapp.net" }), /No hay un escaneo pendiente/);
   assert.match(await handleCommand("!help"), /!proveedor/);
@@ -86,6 +88,12 @@ test("address and Steam-key validation reject malformed input", () => {
   assert.equal(looksValidSteamKey("not-a-key"), false);
   if (previousPrivateServers === undefined) delete process.env.ALLOW_PRIVATE_SERVERS;
   else process.env.ALLOW_PRIVATE_SERVERS = previousPrivateServers;
+});
+
+test("video URL validation accepts public HTTP URLs and rejects private targets", () => {
+  assert.equal(validVideoUrl("https://cdn.example.test/video.mp4"), "https://cdn.example.test/video.mp4");
+  assert.equal(validVideoUrl("http://127.0.0.1/video.mp4"), null);
+  assert.equal(validVideoUrl("file:///tmp/video.mp4"), null);
 });
 
 test("A2S rejects an undefined or invalid port before sending UDP", async () => {

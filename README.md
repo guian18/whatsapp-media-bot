@@ -67,6 +67,16 @@ NSFW_ALLOW_PRIVATE_CHATS=true
 
 Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Si no responde ningún comando, comprueba que `GROUPS_ENABLED=true`, `REPLY_IN_PRIVATE=true` y que `ALLOWED_GROUPS` esté vacío o contenga el ID numérico correcto. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
 
+## Enviar videos por URL
+
+Usa `!video` seguido de una URL pública directa al archivo de video:
+
+```text
+!video https://dominio.com/video.mp4
+```
+
+El bot descarga el archivo mediante Axios y lo envía a WhatsApp. Acepta HTTP/HTTPS público, limita el tamaño a 25 MB y requiere un enlace directo que devuelva video; enlaces de páginas como YouTube, TikTok o Facebook no funcionan si no apuntan directamente al archivo multimedia.
+
 ## Instalación en Termux
 
 ```bash
