@@ -152,8 +152,28 @@ Railway ofrece una prueba de $5 durante 30 días y después $1 mensual de crédi
 | OpenRouter | [Crear OpenRouter API Key](https://openrouter.ai/keys) | `OPENROUTER_API_KEY` |
 | Hugging Face | [Crear Hugging Face Token](https://huggingface.co/settings/tokens) | `AI_API_KEY` |
 | Ollama Cloud | [Crear Ollama API Key](https://ollama.com/settings/keys) | `OLLAMA_API_KEY` |
+| Apify | [Crear Apify API Token](https://console.apify.com/account/integrations) | `APIFY_API_TOKEN` |
+| RapidAPI | [Crear RapidAPI Key](https://rapidapi.com/developer/security) | `RAPIDAPI_KEY` |
 
-Backends locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](https://github.com/ggml-org/llama.cpp) y [LocalAI](https://github.com/mudler/LocalAI). Las claves reales deben guardarse en las variables del hosting, nunca en el código ni en el README.
+Servicios sin token del bot: SaveHub usa [su página pública](https://savehub.cc/es/) y `VIDEO_SAVEHUB_URL=https://savehub.cc/d/`; PHUB se instala localmente con `python3 -m pip install phub` y no usa una API key. El comando `!apify` utiliza `APIFY_API_TOKEN`; el comando `!phub` utiliza la instalación local de PHUB. RapidAPI está documentado como alternativa, pero el comando actual no lo usa automáticamente.
+
+Backends locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](https://github.com/ggml-org/llama.cpp) y [LocalAI](https://github.com/mudler/LocalAI). Las claves reales deben guardarse en `.env` o en las variables del hosting, nunca en el código, el README ni GitHub.
+
+### Configuración rápida de tokens
+
+Después de crear una clave, añádela a tu `.env` sin compartirla:
+
+```env
+STEAM_API_KEY=tu_clave
+APIFY_API_TOKEN=tu_token
+GROQ_API_KEY=tu_clave
+GEMINI_API_KEY=tu_clave
+MISTRAL_API_KEY=tu_clave
+OPENROUTER_API_KEY=tu_clave
+OLLAMA_API_KEY=tu_clave
+```
+
+No pegues tokens en comandos de WhatsApp ni en capturas de pantalla. Si una clave se filtra, revócala desde el enlace del proveedor y genera otra.
 
 ## Imágenes para adultos en WhatsApp
 
