@@ -137,7 +137,7 @@ Después del despliegue, configura las variables de `.env` en **Settings → Con
 ```env
 AI_PROVIDER=local
 AI_MODEL=local-model
-WHATSAPP_NUMBER=51987654321
+WHATSAPP_NUMBER=
 PAIRING_CODE=false
 GROUPS_ENABLED=true
 REPLY_IN_PRIVATE=true
