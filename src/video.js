@@ -1,6 +1,8 @@
 import axios from "axios";
 
 const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+const MAX_SOURCE_PAGE_BYTES = 2 * 1024 * 1024;
+const VIDEO_EXTENSIONS = /\.(?:mp4|m4v|webm|mov|mkv|avi)(?:$|[?#])/i;
 
 function isPrivateHost(hostname) {
   const host = String(hostname || "").toLowerCase();
@@ -33,20 +35,71 @@ function configuredVideoUrls() {
     .filter(Boolean);
 }
 
+function decodeHtmlAttribute(value) {
+  return String(value || "")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#x27;|&#39;/gi, "'")
+    .replace(/&#x2F;|&#47;/gi, "/")
+    .replace(/\\\//g, "/")
+    .trim();
+}
+
+/**
+ * Extracts direct video links from common HTML media attributes.
+ * Relative URLs are resolved against the configured page URL.
+ */
+export function extractVideoUrlsFromHtml(html, pageUrl) {
+  const baseUrl = validVideoUrl(pageUrl);
+  if (!baseUrl) return [];
+  const found = new Set();
+  const attributePattern = /(?:src|href|data-src|data-video|content)\s*=\s*["']([^"']+)["']/gi;
+  for (const match of String(html || "").matchAll(attributePattern)) {
+    const raw = decodeHtmlAttribute(match[1]);
+    if (!raw || raw.startsWith("data:") || raw.startsWith("javascript:")) continue;
+    try {
+      const candidate = validVideoUrl(new URL(raw, baseUrl).toString());
+      if (candidate && VIDEO_EXTENSIONS.test(candidate)) found.add(candidate);
+    } catch {
+      // Ignore malformed or non-HTTP links exposed by the page.
+    }
+  }
+  return [...found];
+}
+
 function urlFromApiResponse(data) {
   const candidate = data?.url || data?.video || data?.message || data?.result?.url || data?.data?.url;
   return validVideoUrl(candidate);
+}
+
+async function videoUrlsFromPage(pageUrl) {
+  const { data: html } = await axios.get(pageUrl, {
+    responseType: "text",
+    headers: { accept: "text/html,application/xhtml+xml", "user-agent": "InfoPlayerLeft/1.0" },
+    timeout: 15_000,
+    maxContentLength: MAX_SOURCE_PAGE_BYTES,
+    maxBodyLength: MAX_SOURCE_PAGE_BYTES,
+  });
+  return extractVideoUrlsFromHtml(html, pageUrl);
 }
 
 export async function randomVideoUrl() {
   const urls = configuredVideoUrls();
   if (urls.length) return urls[Math.floor(Math.random() * urls.length)];
 
+  const sourcePage = validVideoUrl(process.env.VIDEO_SOURCE_URL || process.env.VIDEO_PAGE_URL);
+  if (sourcePage) {
+    const pageVideos = await videoUrlsFromPage(sourcePage);
+    if (pageVideos.length) return pageVideos[Math.floor(Math.random() * pageVideos.length)];
+  }
+
   const apiUrl = validVideoUrl(process.env.VIDEO_API_URL);
   if (!apiUrl) return null;
   const { data } = await axios.get(apiUrl, {
     headers: { accept: "application/json", "user-agent": "InfoPlayerLeft/1.0" },
     timeout: 15_000,
+    maxContentLength: MAX_SOURCE_PAGE_BYTES,
+    maxBodyLength: MAX_SOURCE_PAGE_BYTES,
   });
   return urlFromApiResponse(data);
 }
@@ -96,10 +149,12 @@ export async function sendRandomVideo(context = {}) {
   try {
     const url = await randomVideoUrl();
     if (!url) {
-      return "No hay videos aleatorios configurados. Añade VIDEO_URLS o VIDEO_API_URL en tu .env.";
+      return "No hay videos aleatorios configurados. Añade VIDEO_URLS, VIDEO_SOURCE_URL o VIDEO_API_URL en tu .env.";
     }
     return await sendVideoUrl(url, context);
   } catch (error) {
     return `No pude obtener un video aleatorio: ${error?.message || "error de API"}`;
   }
 }
+
+export const VIDEO_LIMIT_BYTES = MAX_VIDEO_BYTES;

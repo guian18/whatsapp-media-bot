@@ -14,7 +14,7 @@ import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/co
 import { aiConfigured, cmdIA, containsRisk, detectStyle } from "../src/ai.js";
 import { startControlServer } from "../src/control-server.js";
 import { looksValidSteamKey } from "../src/steamkey.js";
-import { randomVideoUrl, validVideoUrl } from "../src/video.js";
+import { extractVideoUrlsFromHtml, randomVideoUrl, validVideoUrl } from "../src/video.js";
 
 test("command dispatcher serves local commands without external services", async () => {
   const previousProvider = process.env.AI_PROVIDER;
@@ -102,6 +102,19 @@ test("random video source uses configured direct URLs", async () => {
   assert.match(await randomVideoUrl(), /^https:\/\/cdn\.example\.test\/(one|two)\.mp4$/);
   if (previous === undefined) delete process.env.VIDEO_URLS;
   else process.env.VIDEO_URLS = previous;
+});
+
+test("random video source extracts public videos from a configured HTML page", () => {
+  const html = `
+    <video src="/media/first.mp4"></video>
+    <a href="https://cdn.example.test/second.webm">second</a>
+    <div data-video="/media/first.mp4"></div>
+    <a href="/not-a-video.html">ignored</a>
+  `;
+  assert.deepEqual(extractVideoUrlsFromHtml(html, "https://videos.example.com/library/"), [
+    "https://videos.example.com/media/first.mp4",
+    "https://cdn.example.test/second.webm",
+  ]);
 });
 
 test("A2S rejects an undefined or invalid port before sending UDP", async () => {

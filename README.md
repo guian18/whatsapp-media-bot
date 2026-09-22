@@ -82,13 +82,21 @@ Configura el origen de los videos aleatorios en `.env` usando una lista de URLs 
 VIDEO_URLS=https://cdn.example.com/a.mp4,https://cdn.example.com/b.mp4
 ```
 
+También puedes configurar una página HTML pública que contenga enlaces directos a videos. El bot revisa los atributos `src`, `href`, `data-src` y `data-video`, resuelve enlaces relativos y escoge uno al azar:
+
+```env
+VIDEO_SOURCE_URL=https://ejemplo.com/videos/
+```
+
+`VIDEO_PAGE_URL` es un alias compatible para la misma función. Si defines `VIDEO_URLS`, esa lista tiene prioridad; después se consulta `VIDEO_SOURCE_URL`/`VIDEO_PAGE_URL`, y por último `VIDEO_API_URL`.
+
 También puedes configurar `VIDEO_API_URL` si tienes una API que devuelve JSON con una URL en `url`, `video`, `message`, `result.url` o `data.url`:
 
 ```env
 VIDEO_API_URL=https://tu-api.example/videos/random
 ```
 
-Si defines ambas variables, se usa aleatoriamente una URL de `VIDEO_URLS`. El bot descarga el archivo mediante Axios y lo envía a WhatsApp. Acepta HTTP/HTTPS público, limita el tamaño a 25 MB y requiere un enlace directo que devuelva video; enlaces de páginas como YouTube, TikTok o Facebook no funcionan si no apuntan directamente al archivo multimedia.
+El bot descarga el archivo mediante Axios y lo envía a WhatsApp. Acepta HTTP/HTTPS público, limita el tamaño a 25 MB y requiere un enlace directo que devuelva video (por ejemplo `.mp4`, `.webm` o `.mov`). La página configurada debe publicar esos enlaces; no convierte páginas de YouTube, TikTok o Facebook en archivos de video.
 
 ## Instalación en Termux
 
