@@ -110,6 +110,10 @@ function errorStatus(error) {
   return Number(error?.response?.status || error?.status || 0);
 }
 
+function sendImageByUrl() {
+  return process.env.NSFW_DIRECT_URL !== "false";
+}
+
 function transientNetworkError(error) {
   return transientStatus(errorStatus(error))
     || ["ECONNABORTED", "ETIMEDOUT", "ECONNRESET", "EAI_AGAIN", "ENETUNREACH"].includes(error?.code)
@@ -205,11 +209,18 @@ export async function sendNsfwImage(command, context = {}) {
   for (const apiUrl of configuredApiUrls()) {
     try {
       const imageUrl = await requestImageUrl(apiUrl, type);
-      const imageBuffer = await downloadImage(imageUrl);
-      await context.sendMessage(context.jid, {
-        image: imageBuffer,
-        caption: `Contenido para adultos: ${command}`,
-      });
+      if (sendImageByUrl()) {
+        await context.sendMessage(context.jid, {
+          image: { url: imageUrl },
+          caption: `Contenido para adultos: ${command}`,
+        });
+      } else {
+        const imageBuffer = await downloadImage(imageUrl);
+        await context.sendMessage(context.jid, {
+          image: imageBuffer,
+          caption: `Contenido para adultos: ${command}`,
+        });
+      }
       return null;
     } catch (error) {
       lastError = error;
