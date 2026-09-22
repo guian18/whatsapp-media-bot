@@ -180,7 +180,7 @@ El comando `!video` y el proveedor anterior fueron eliminados. Se conserva únic
 
 ```bash
 python3 -m pip install --no-cache-dir --force-reinstall phub==5.1.2
-python3 -m pip install --no-cache-dir --force-reinstall --no-deps eaf-base-api==3.3.5
+python3 -m pip install --no-cache-dir --force-reinstall --no-deps eaf-base-api==3.2.4
 ```
 
 ```env

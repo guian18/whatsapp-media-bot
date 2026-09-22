@@ -14,8 +14,9 @@ def main() -> int:
         return 2
     try:
         import phub
-    except ImportError:
-        print("falta PHUB; instala con: python3 -m pip install phub", file=sys.stderr)
+    except ImportError as exc:
+        print("PHUB no puede cargarse; instala phub==5.1.2 y eaf-base-api==3.2.4", file=sys.stderr)
+        print(f"detalle: {exc}", file=sys.stderr)
         return 3
     try:
         video = phub.Client().get(url)
