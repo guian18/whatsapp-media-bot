@@ -177,6 +177,47 @@ WHATSAPP_NUMBER=
 PAIRING_CODE=false
 ```
 
+### Qué colocar en las variables
+
+Estas son las variables que suelen generar dudas en Railway. No copies las comillas y no compartas públicamente ninguna clave API.
+
+| Variable | Qué debes colocar |
+|---|---|
+| `ENV_FILE` | Ruta a un archivo `.env` alternativo. En Railway normalmente déjala vacía; el bot usa `.env` por defecto y Railway entrega directamente sus variables al proceso. En Termux/Linux puedes usar, por ejemplo, `/home/usuario/whatsapp-media-bot/.env`. |
+| `NSFW_API_KEY` | Déjala vacía. La API NSFW configurada actualmente no necesita una clave y esta variable no es utilizada por el bot. |
+| `ALLOWED_GROUPS` | IDs de grupos permitidos, separados por comas. Déjala vacía para permitir todos los grupos. Ejemplo: `120363012345678901@g.us,120363098765432109@g.us`. |
+| `GEMINI_API_KEY` | Una clave de [Google AI Studio](https://aistudio.google.com/app/apikey). Solo es necesaria si usas `AI_PROVIDER=gemini`; en otro caso, déjala vacía. |
+| `OLLAMA_API_KEY` | La clave de tu servidor Ollama si está protegido por autenticación. Para Ollama local sin autenticación, déjala vacía. |
+| `OPENROUTER_API_KEY` | Una clave de [OpenRouter](https://openrouter.ai/keys). Solo es necesaria si usas `AI_PROVIDER=openrouter`; en otro caso, déjala vacía. |
+| `LLAMA_CPP_API_KEY` | La clave configurada en tu servidor `llama.cpp` si exige autenticación. Para un servidor local sin autenticación, déjala vacía. |
+| `NSFW_ALLOWED_GROUPS` | IDs de grupos donde se permiten específicamente los comandos NSFW, separados por comas. Déjala vacía para no limitar por grupo cuando `NSFW_ENABLED=true`. |
+| `AI_API_KEY` | Clave genérica del proveedor de IA elegido. Úsala como alternativa si no configuras la variable específica del proveedor; por ejemplo, una clave compatible con Gemini, OpenRouter u otro proveedor remoto. Para `local`, `ollama`, `llama_cpp` o `localai` sin autenticación, déjala vacía. |
+
+#### Ejemplo recomendado para Railway
+
+Si quieres usar el modo local y permitir todos los grupos, puedes dejar las variables opcionales vacías:
+
+```env
+ENV_FILE=
+NSFW_API_KEY=
+ALLOWED_GROUPS=
+GEMINI_API_KEY=
+OLLAMA_API_KEY=
+OPENROUTER_API_KEY=
+LLAMA_CPP_API_KEY=
+NSFW_ALLOWED_GROUPS=
+AI_API_KEY=
+```
+
+Configura una sola opción de IA remota cuando la necesites. Por ejemplo, para OpenRouter:
+
+```env
+AI_PROVIDER=openrouter
+OPENROUTER_API_KEY=tu_clave_de_openrouter
+```
+
+No es necesario rellenar simultáneamente `AI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_API_KEY`, `OPENROUTER_API_KEY` y `LLAMA_CPP_API_KEY`. Elige el proveedor en `AI_PROVIDER` y añade únicamente la clave que corresponda.
+
 Configura también los permisos que quieras utilizar. Los valores recomendados son:
 
 ```env
