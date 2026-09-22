@@ -61,12 +61,14 @@ La función está activa por defecto y funciona en todos los grupos y chats priv
 NSFW_ENABLED=true
 NSFW_API_URL=https://nekobot.xyz/api/image
 NSFW_API_URLS=
+NSFW_API_TIMEOUT_MS=20000
+NSFW_IMAGE_TIMEOUT_MS=60000
 NSFW_ALLOWED_GROUPS=
 NSFW_ALLOW_EXTERNAL_URLS=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 ```
 
-Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Si no responde ningún comando, comprueba que `GROUPS_ENABLED=true`, `REPLY_IN_PRIVATE=true` y que `ALLOWED_GROUPS` esté vacío o contenga el ID numérico correcto. `NSFW_API_URLS` acepta varias APIs separadas por comas; el bot reintenta errores transitorios como HTTP 522 y prueba la siguiente API si la primera no responde. No pongas claves ni cookies en esa variable. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
+Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Si no responde ningún comando, comprueba que `GROUPS_ENABLED=true`, `REPLY_IN_PRIVATE=true` y que `ALLOWED_GROUPS` esté vacío o contenga el ID numérico correcto. `NSFW_API_URLS` acepta varias APIs separadas por comas; el bot reintenta errores transitorios como HTTP 522 y timeouts, espera hasta 60 segundos para descargar imágenes lentas y prueba la siguiente API si la primera no responde. No pongas claves ni cookies en esa variable. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
 
 ## Enviar videos por URL
 

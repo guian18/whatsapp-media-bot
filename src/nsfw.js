@@ -110,6 +110,12 @@ function errorStatus(error) {
   return Number(error?.response?.status || error?.status || 0);
 }
 
+function transientNetworkError(error) {
+  return transientStatus(errorStatus(error))
+    || ["ECONNABORTED", "ETIMEDOUT", "ECONNRESET", "EAI_AGAIN", "ENETUNREACH"].includes(error?.code)
+    || /timeout|timed out|socket hang up/i.test(String(error?.message || ""));
+}
+
 function friendlyApiError(error) {
   const status = errorStatus(error);
   if (status === 522 || status === 523 || status === 524) return `el servidor de imágenes no responde temporalmente (HTTP ${status})`;
@@ -120,40 +126,50 @@ function friendlyApiError(error) {
 
 async function requestImageUrl(apiUrl, type) {
   let lastError;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       const { data } = await axios.get(apiUrl, {
         params: { type },
         headers: { accept: "application/json", "user-agent": "InfoPlayerLeft/1.0" },
-        timeout: 15_000,
+        timeout: Number(process.env.NSFW_API_TIMEOUT_MS || 20_000),
       });
       const imageUrl = imageUrlFromApiResponse(data);
       if (!imageUrl) throw new Error("la API no devolvió una URL de imagen válida");
       return imageUrl;
     } catch (error) {
       lastError = error;
-      if (!transientStatus(errorStatus(error)) || attempt === 1) break;
-      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+      if (!transientNetworkError(error) || attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)));
     }
   }
   throw lastError;
 }
 
 async function downloadImage(imageUrl) {
-  const imageResponse = await axios.get(imageUrl, {
-    responseType: "arraybuffer",
-    headers: { accept: "image/*", "user-agent": "InfoPlayerLeft/1.0" },
-    timeout: 20_000,
-    maxContentLength: MAX_IMAGE_BYTES,
-    maxBodyLength: MAX_IMAGE_BYTES,
-  });
-  const imageBuffer = Buffer.isBuffer(imageResponse.data)
-    ? imageResponse.data
-    : Buffer.from(imageResponse.data || "");
-  if (!isImagePayload(imageBuffer, imageResponse.headers?.["content-type"] || "")) {
-    throw new Error("la URL no devolvió una imagen válida");
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const imageResponse = await axios.get(imageUrl, {
+        responseType: "arraybuffer",
+        headers: { accept: "image/*", "user-agent": "InfoPlayerLeft/1.0" },
+        timeout: Number(process.env.NSFW_IMAGE_TIMEOUT_MS || 60_000),
+        maxContentLength: MAX_IMAGE_BYTES,
+        maxBodyLength: MAX_IMAGE_BYTES,
+      });
+      const imageBuffer = Buffer.isBuffer(imageResponse.data)
+        ? imageResponse.data
+        : Buffer.from(imageResponse.data || "");
+      if (!isImagePayload(imageBuffer, imageResponse.headers?.["content-type"] || "")) {
+        throw new Error("la URL no devolvió una imagen válida");
+      }
+      return imageBuffer;
+    } catch (error) {
+      lastError = error;
+      if (!transientNetworkError(error) || attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)));
+    }
   }
-  return imageBuffer;
+  throw lastError;
 }
 
 export function nsfwHelp() {
