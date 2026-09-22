@@ -41,7 +41,9 @@ const GROUPS_ENABLED = process.env.GROUPS_ENABLED !== "false";
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
 // La cuenta vinculada también puede probar comandos enviados desde sí misma.
 const ALLOW_SELF = process.env.ALLOW_SELF === "true";
-const AUTO_RESET = process.env.AUTO_RESET === "true";
+// Por defecto se limpia una sesión inválida para que Railway pueda volver a vincularla.
+// Los cortes normales de red no entran en esta ruta y conservan las credenciales.
+const AUTO_RESET = process.env.AUTO_RESET !== "false";
 
 const AUTH_DIR = getAuthDir();
 const BOT_STARTED_AT = new Date().toISOString();
@@ -355,9 +357,9 @@ async function start() {
 
       if (sesionInvalida) {
         if (AUTO_RESET) {
-          console.log("Sesión inválida: borrando la sesión automáticamente...");
+          console.log("Sesión inválida o cerrada: borrando auth_info automáticamente...");
           borrarSesion();
-          console.log("Listo, vuelve a vincular ahora.\n");
+          console.log("Sesión eliminada; se solicitará una nueva vinculación.\n");
           reiniciar(1000);
           return;
         }
