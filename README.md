@@ -1,6 +1,6 @@
-# InfoPlayer Left
+# WhatsApp Media Bot
 
-Bot de WhatsApp para consultar Steam y servidores de Left 4 Dead 2.
+Bot de WhatsApp para IA, descargas de vídeo y automatizaciones multimedia.
 
 ## Instalación en Termux
 
@@ -8,8 +8,8 @@ Bot de WhatsApp para consultar Steam y servidores de Left 4 Dead 2.
 pkg update -y && pkg upgrade -y
 pkg install -y nodejs-lts git
 termux-setup-storage
-git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
-cd infoplayerleft
+git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+cd whatsapp-media-bot
 npm ci
 cp .env.example .env
 nano .env
@@ -20,7 +20,7 @@ Para mantenerlo activo en segundo plano:
 
 ```bash
 pkg install -y tmux
-tmux new -s infoplayerleft
+tmux new -s whatsapp-media-bot
 npm start
 ```
 
@@ -37,8 +37,8 @@ Compatible con Ubuntu, Debian y distribuciones similares.
 ```bash
 sudo apt update
 sudo apt install -y git curl nodejs npm
-git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
-cd infoplayerleft
+git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+cd whatsapp-media-bot
 npm ci
 cp .env.example .env
 nano .env
@@ -52,8 +52,8 @@ Si la versión de Node incluida por la distribución es inferior a 20, instala N
 Instala [Node.js LTS](https://nodejs.org/en/download) y [Git para Windows](https://git-scm.com/download/win). Después abre PowerShell y ejecuta:
 
 ```powershell
-git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
-Set-Location infoplayerleft
+git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+Set-Location whatsapp-media-bot
 npm ci
 Copy-Item .env.example .env
 notepad .env
@@ -72,8 +72,8 @@ Instala [Homebrew](https://brew.sh/) si aún no lo tienes y ejecuta:
 
 ```bash
 brew install node git
-git clone https://github.com/guianpierrcastillolazo-rgb/infoplayerleft.git
-cd infoplayerleft
+git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+cd whatsapp-media-bot
 npm ci
 cp .env.example .env
 nano .env
@@ -92,7 +92,6 @@ Copia `.env.example` como `.env` y añade únicamente las claves de los servicio
 
 | Servicio | Enlace directo para crear la clave | Variable |
 |---|---|---|
-| Steam Web API | [Crear Steam API Key](https://steamcommunity.com/dev/apikey) | `STEAM_API_KEY` |
 | Groq | [Crear Groq API Key](https://console.groq.com/keys) | `GROQ_API_KEY` |
 | Google Gemini | [Crear Gemini API Key](https://aistudio.google.com/app/apikey) | `GEMINI_API_KEY` |
 | Mistral | [Crear Mistral API Key](https://console.mistral.ai/api-keys) | `MISTRAL_API_KEY` |
@@ -110,34 +109,30 @@ npm start
 
 ## Deploy con Railway
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
 
-[Crear proyecto directamente en Railway](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
+[Crear proyecto directamente en Railway](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
 
 Después del despliegue, configura las variables de `.env` en **Variables** y revisa los logs para vincular WhatsApp. Para conservar la sesión y los datos, utiliza un volumen persistente y configura:
 
 ```env
 AUTH_DIR=/app/data/auth_info
 AI_MEMORY_FILE=/app/data/ai-memory.json
-WATCH_STATE_FILE=/app/data/watchlist.json
-OFFICIAL_ADDRESSES_FILE=/app/data/l4d2-official-addresses.txt
-STEAM_KEY_FILE=/app/data/.steam_key
 ```
 
 Más información: [Documentación de Railway](https://docs.railway.com/).
 
 ## Deploy con Heroku
 
-[![Deploy en Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
+[![Deploy en Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
 
-[Crear aplicación directamente en Heroku](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
+[Crear aplicación directamente en Heroku](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
 
 Después del despliegue, configura las variables de `.env` en **Settings → Config Vars** y revisa los logs para vincular WhatsApp. Heroku utiliza almacenamiento efímero; la sesión de WhatsApp y los archivos de estado pueden desaparecer después de un reinicio.
 
 ## Variables mínimas
 
 ```env
-STEAM_API_KEY=tu_clave_de_steam
 AI_PROVIDER=local
 AI_MODEL=local-model
 PAIRING_CODE=false

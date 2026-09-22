@@ -6,6 +6,8 @@ const COMMAND_NAMES = new Set([
   "idioma",
   "proveedor",
   "anime",
+  "phub",
+  "xvideos",
   "nsfw",
   "4k",
   "anal",
@@ -31,17 +33,8 @@ const COMMAND_NAMES = new Set([
   "tentacle",
   "thigh",
   "yaoi",
-  "vigilar",
-  "vigilarnick",
-  "novigilar",
-  "lista",
-  "escaneo",
   "ayuda",
   "help",
-  "info",
-  "buscar",
-  "servidor",
-  "jugadores",
 ]);
 
 function validName(value) {

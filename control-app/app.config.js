@@ -1,5 +1,5 @@
 import "./scripts/load-env.js";
-const rawBundleId = "com.app.infoplayerleftcontrol";
+const rawBundleId = "com.app.whatsappmediabotcontrol";
 const bundleId = rawBundleId.replace(/[-_]/g, ".").replace(/[^a-zA-Z0-9.]/g, "").replace(/\.+/g, ".").replace(/^\.+|\.+$/g, "").toLowerCase().split(".").map((segment) => {
   return /^[a-zA-Z]/.test(segment) ? segment : "x" + segment;
 }).join(".") || "space.manus.app";
@@ -7,8 +7,8 @@ const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 const env = {
   // App branding - update these values directly (do not use env vars)
-  appName: "InfoPlayer Left Control",
-  appSlug: "infoplayerleft-control",
+  appName: "WhatsApp Media Bot Control",
+  appSlug: "whatsapp-media-bot-control",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
   logoUrl: "",

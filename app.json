@@ -1,8 +1,14 @@
 {
-  "name": "infoplayerleft",
-  "description": "Bot de WhatsApp para Steam y Left 4 Dead 2",
-  "repository": "https://github.com/guianpierrcastillolazo-rgb/infoplayerleft",
-  "keywords": ["whatsapp", "baileys", "left-4-dead-2", "steam", "bot"],
+  "name": "whatsapp-media-bot",
+  "description": "Bot de WhatsApp para IA y medios.",
+  "repository": "https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot",
+  "keywords": [
+    "whatsapp",
+    "baileys",
+    "ai",
+    "media",
+    "bot"
+  ],
   "stack": "heroku-24",
   "buildpacks": [
     {
@@ -16,10 +22,6 @@
     }
   },
   "env": {
-    "STEAM_API_KEY": {
-      "description": "Steam Web API key. Required for profile and player lookup commands.",
-      "required": false
-    },
     "AI_PROVIDER": {
       "description": "AI provider: local, ollama, llama_cpp, localai, gemini, groq, mistral or openrouter.",
       "value": "groq",

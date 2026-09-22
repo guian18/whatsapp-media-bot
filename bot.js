@@ -1,10 +1,8 @@
 /**
- * Bot de WhatsApp — infoplayerleft
- * Consulta info de jugadores de Left 4 Dead 2 vía Steam Web API y A2S.
+ * Bot de WhatsApp — WhatsApp Media Bot
  * Vinculación por código QR o por código de 8 caracteres con un número de celular.
  *
  * Variables de entorno (se leen de .env o del entorno del sistema):
- *   STEAM_API_KEY         opcional; en una terminal se solicita si no existe.
  *   WHATSAPP_NUMBER       opcional; número internacional, solo dígitos.
  *   PAIRING_CODE          "true" para solicitar un número por consola.
  *   GROUPS_ENABLED        "false" para ignorar grupos.
@@ -29,9 +27,7 @@ import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 import { cmdIA } from "./src/ai.js";
-import { ensureSteamApiKey } from "./src/steamkey.js";
 import { getAuthDir } from "./src/config.js";
-import { startWatcher } from "./src/watcher.js";
 import { startControlServer } from "./src/control-server.js";
 import { formatSafeSettingsChange, normalizePrivateJid, ownPrivateJid } from "./src/owner-notifications.js";
 
@@ -247,7 +243,6 @@ async function start() {
     borrarSesion();
   }
 
-  await ensureSteamApiKey();
 
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
   let version;
@@ -286,7 +281,6 @@ async function start() {
   });
   sockActual = sock;
   connectionState = "connecting";
-  startWatcher((jid, payload) => sock.sendMessage(jid, payload));
   pairingReconnecting = false;
 
   sock.ev.on("creds.update", () => {

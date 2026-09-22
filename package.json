@@ -1,9 +1,9 @@
 {
-  "name": "whatsapp-bot-infoplayerleft",
+  "name": "whatsapp-media-bot",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Bot de WhatsApp que consulta jugadores y servidores de Left 4 Dead 2 (Steam Web API + A2S)",
+  "description": "Bot de WhatsApp para IA, medios y automatizaciones.",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",

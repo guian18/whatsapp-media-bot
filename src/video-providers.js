@@ -61,7 +61,7 @@ async function assertMaxDuration(input, maxDurationSeconds) {
 export async function phubVideoFile(pageUrl, options = {}) {
   const python = String(process.env.PHUB_PYTHON || "python3").trim();
   const script = path.resolve(process.env.PHUB_SCRIPT || "scripts/phub_download.py");
-  const workDir = await mkdtemp(path.join(tmpdir(), "infoplayerleft-phub-"));
+  const workDir = await mkdtemp(path.join(tmpdir(), "whatsapp-media-bot-phub-"));
   const output = path.join(workDir, "video.mp4");
   try {
     await execFileAsync(python, [script, pageUrl, output], {
@@ -88,7 +88,7 @@ export async function phubVideoFile(pageUrl, options = {}) {
 export async function xvideosVideoFile(pageUrl, options = {}) {
   const python = String(process.env.XVIDEOS_PYTHON || "python3").trim();
   const script = path.resolve(process.env.XVIDEOS_SCRIPT || "scripts/xvideos_download.py");
-  const workDir = await mkdtemp(path.join(tmpdir(), "infoplayerleft-xvideos-"));
+  const workDir = await mkdtemp(path.join(tmpdir(), "whatsapp-media-bot-xvideos-"));
   const output = path.join(workDir, "video.mp4");
   try {
     await execFileAsync(python, [script, pageUrl, output], {

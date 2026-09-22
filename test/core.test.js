@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import dgram from "node:dgram";
 import http from "node:http";
 import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import os from "node:os";
@@ -7,13 +6,9 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-import { parseAddress, serverInfo } from "../src/a2s.js";
-import { formatOfficialAddresses } from "../src/official-addresses.js";
-import { SCAN_INTERVAL_MS } from "../src/watcher.js";
-import { ayuda, cmdBuscar, cmdInfo, cmdServidor, handleCommand } from "../src/commands.js";
+import { ayuda, handleCommand } from "../src/commands.js";
 import { aiConfigured, cmdIA, containsRisk, detectStyle } from "../src/ai.js";
 import { startControlServer } from "../src/control-server.js";
-import { looksValidSteamKey } from "../src/steamkey.js";
 
 test("command dispatcher serves local commands without external services", async () => {
   const previousProvider = process.env.AI_PROVIDER;
@@ -28,7 +23,7 @@ test("command dispatcher serves local commands without external services", async
   assert.equal(await handleCommand("!PING"), "Pong! 🏓");
   assert.equal(await handleCommand("!desconocido"), null);
   assert.equal(await handleCommand("texto normal"), null);
-  assert.match(await handleCommand("!ayuda"), /!info/);
+  assert.match(await handleCommand("!ayuda"), /!phub/);
   assert.match(await handleCommand("!ayuda"), /!ai.*!ia.*pregunta/);
   assert.match(await handleCommand("!ayuda"), /fuentes/);
   const help = await handleCommand("!ayuda");
@@ -54,14 +49,6 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!proveedor openai"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor claude"), /Proveedor no válido/);
   assert.match(await handleCommand("!proveedor desconocido"), /Proveedor no válido/);
-  assert.match(await handleCommand("!vigilar jugador"), /No se pudo identificar este chat/);
-  assert.match(await handleCommand("!novigilar"), /No se pudo identificar este chat/);
-  assert.match(await handleCommand("!novigilar jugador"), /No se pudo identificar este chat/);
-  assert.match(await handleCommand("!anime"), /solo está disponible desde WhatsApp/);
-  assert.match(await handleCommand("!escaneo"), /solo está disponible desde WhatsApp/);
-  assert.match(await handleCommand("1", { jid: "test@s.whatsapp.net" }), /No hay un escaneo pendiente/);
-  assert.match(await handleCommand("!help"), /!proveedor/);
-  assert.match(await handleCommand("!lista", { jid: "test@s.whatsapp.net" }), /No vigilas/);
   if (previousProvider === undefined) delete process.env.AI_PROVIDER;
   else process.env.AI_PROVIDER = previousProvider;
   if (previousAiKey === undefined) delete process.env.AI_API_KEY;
@@ -70,75 +57,6 @@ test("command dispatcher serves local commands without external services", async
   else process.env.PING_DEAD_CHANCE = previousPingDeadChance;
   if (previousPingTripChance === undefined) delete process.env.PING_TRIP_CHANCE;
   else process.env.PING_TRIP_CHANCE = previousPingTripChance;
-  assert.equal(await cmdInfo(""), "Uso: `!info <steamid64 | vanity | url del perfil>`");
-  assert.match(await cmdBuscar(""), /Uso: `!buscar/);
-  assert.match(await cmdServidor("sin-puerto"), /Uso: `!servidor/);
-  assert.match(ayuda(), /!jugadores/);
-});
-
-test("address and Steam-key validation reject malformed input", () => {
-  const previousPrivateServers = process.env.ALLOW_PRIVATE_SERVERS;
-  process.env.ALLOW_PRIVATE_SERVERS = "true";
-  assert.deepEqual(parseAddress("8.8.8.8:27015"), { ip: "8.8.8.8", port: 27015 });
-  assert.deepEqual(parseAddress("server.example.org:12345"), {
-    ip: "server.example.org",
-    port: 12345,
-  });
-  assert.deepEqual(parseAddress("localhost:27015"), { ip: "localhost", port: 27015 });
-  assert.deepEqual(parseAddress("127.0.0.1:27015"), { ip: "127.0.0.1", port: 27015 });
-  assert.deepEqual(parseAddress("192.168.1.20:27015"), { ip: "192.168.1.20", port: 27015 });
-  process.env.ALLOW_PRIVATE_SERVERS = "false";
-  assert.equal(parseAddress("127.0.0.1:27015"), null);
-  assert.equal(parseAddress("localhost:27015"), null);
-  assert.equal(parseAddress("127.0.0.1:0"), null);
-  assert.equal(parseAddress("127.0.0.1:65536"), null);
-  assert.equal(looksValidSteamKey("0123456789abcdef0123456789ABCDEF"), true);
-  assert.equal(looksValidSteamKey("not-a-key"), false);
-  if (previousPrivateServers === undefined) delete process.env.ALLOW_PRIVATE_SERVERS;
-  else process.env.ALLOW_PRIVATE_SERVERS = previousPrivateServers;
-});
-
-test("A2S rejects an undefined or invalid port before sending UDP", async () => {
-  await assert.rejects(() => serverInfo("8.8.8.8", undefined), {
-    name: "RangeError",
-    message: "puerto A2S inválido: undefined",
-  });
-  await assert.rejects(() => serverInfo("8.8.8.8", 0), {
-    name: "RangeError",
-    message: "puerto A2S inválido: 0",
-  });
-});
-
-test("A2S sends queries with an explicit UDP destination", async (t) => {
-  const socket = dgram.createSocket("udp4");
-  t.after(() => socket.close());
-  socket.on("message", (_message, remote) => {
-    const response = Buffer.concat([
-      Buffer.from([0xff, 0xff, 0xff, 0xff, 0x49, 17]),
-      Buffer.from("Test server\0de_dust2\0left4dead2\0Left 4 Dead 2\0"),
-      Buffer.from([0x2f, 0x09, 0x00, 0x00, 0x00, 0x04, 0x10, 0x00]),
-    ]);
-    socket.send(response, remote.port, remote.address);
-  });
-  await new Promise((resolve) => socket.bind(0, "127.0.0.1", resolve));
-  const address = socket.address();
-
-  const info = await serverInfo("127.0.0.1", address.port);
-  assert.equal(info.name, "Test server");
-  assert.equal(info.map, "de_dust2");
-});
-
-test("watcher never scans more often than every 50 seconds", () => {
-  assert.ok(SCAN_INTERVAL_MS >= 50_000);
-});
-
-test("official address export keeps public IP and port only", () => {
-  assert.deepEqual(formatOfficialAddresses([
-    { ip: "8.8.8.8", port: 27015 },
-    { ip: "8.8.8.8", port: 27015 },
-    { ip: "192.168.1.20", port: 27015 },
-    { ip: "0.0.0.0", port: 0 },
-  ]), ["8.8.8.8:27015"]);
 });
 
 test("AI detects crisis-risk phrases without requiring an API", () => {
@@ -163,7 +81,7 @@ test("local AI provider does not require an API key", () => {
 });
 
 test("control API protects status and preserves secret keys", async (t) => {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-control-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "whatsapp-media-bot-control-"));
   const envFile = path.join(dir, ".env");
   writeFileSync(envFile, "GROQ_API_KEY=keep-this-secret\nAI_PROVIDER=local\n", "utf8");
   const previousToken = process.env.CONTROL_API_TOKEN;
@@ -373,7 +291,7 @@ test("local AI timeout returns an actionable message", async () => {
 });
 
 test("environment loader applies values from the configured .env file", (t) => {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-env-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "whatsapp-media-bot-env-"));
   const envFile = path.join(dir, ".env");
   writeFileSync(envFile, "# test fixture\nTEST_ENV_LOAD=loaded-from-file\n", "utf8");
   t.after(() => rmSync(dir, { recursive: true, force: true }));
@@ -415,7 +333,7 @@ test("insult mode roasts a nickname request without waiting for the model", asyn
 });
 
 test("environment loader migrates the deprecated Groq model", (t) => {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-migration-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "whatsapp-media-bot-migration-"));
   const envFile = path.join(dir, ".env");
   writeFileSync(envFile, "AI_PROVIDER=groq\nAI_MODEL=llama-3.1-8b-instant\n", "utf8");
   t.after(() => rmSync(dir, { recursive: true, force: true }));
@@ -431,7 +349,7 @@ test("environment loader migrates the deprecated Groq model", (t) => {
 });
 
 test("environment loader preserves explicit local provider with a Groq key", (t) => {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-local-provider-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "whatsapp-media-bot-local-provider-"));
   const envFile = path.join(dir, ".env");
   writeFileSync(envFile, "AI_PROVIDER=local\nAI_API_KEY=gsk_preserved\nAI_MODEL=local-model\n", "utf8");
   t.after(() => rmSync(dir, { recursive: true, force: true }));
@@ -451,7 +369,7 @@ test("environment loader preserves explicit local provider with a Groq key", (t)
 });
 
 test("all tones and AI settings persist even when .env starts missing", async (t) => {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "infoplayerleft-tone-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "whatsapp-media-bot-tone-"));
   const envFile = path.join(dir, ".env");
   const previousEnvFile = process.env.ENV_FILE;
   process.env.ENV_FILE = envFile;

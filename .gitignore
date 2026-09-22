@@ -9,14 +9,11 @@ coverage/
 auth_info/
 .env
 *.log
-.steam_key
 *.pem
 *.key
 
 # Runtime state
-watchlist.json
 ai-memory.json
-l4d2-official-addresses.txt
 *.tmp
 
 # OS/editor files

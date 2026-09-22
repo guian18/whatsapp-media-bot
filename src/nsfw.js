@@ -176,7 +176,7 @@ async function requestImageUrl(apiUrl, type) {
     try {
       const { data } = await axios.get(apiUrl, {
         params: { type },
-        headers: { accept: "application/json", "user-agent": "InfoPlayerLeft/1.0" },
+        headers: { accept: "application/json", "user-agent": "WhatsAppMediaBot/1.0" },
         timeout: Number(process.env.NSFW_API_TIMEOUT_MS || 20_000),
       });
       const imageUrl = imageUrlFromApiResponse(data);
@@ -197,7 +197,7 @@ async function downloadImage(imageUrl) {
     try {
       const imageResponse = await axios.get(imageUrl, {
         responseType: "arraybuffer",
-        headers: { accept: "image/*", "user-agent": "InfoPlayerLeft/1.0" },
+        headers: { accept: "image/*", "user-agent": "WhatsAppMediaBot/1.0" },
         timeout: Number(process.env.NSFW_IMAGE_TIMEOUT_MS || 60_000),
         maxContentLength: MAX_IMAGE_BYTES,
         maxBodyLength: MAX_IMAGE_BYTES,

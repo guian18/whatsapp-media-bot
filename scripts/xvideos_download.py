@@ -30,7 +30,7 @@ def main() -> int:
         print("XVIDEOS_COOKIE es obligatorio para xvideos-dl; configura la cookie de tu sesión de xvideos.com en .env", file=sys.stderr)
         return 2
 
-    with tempfile.TemporaryDirectory(prefix="infoplayerleft-xvideos-") as work_dir:
+    with tempfile.TemporaryDirectory(prefix="whatsapp-media-bot-xvideos-") as work_dir:
         work = Path(work_dir)
         destination = work / "downloads"
         destination.mkdir()

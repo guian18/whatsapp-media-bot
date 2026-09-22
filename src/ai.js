@@ -176,7 +176,7 @@ function searchResultsFromHtml(html) {
 async function duckDuckGoSearch(question) {
   const url = `${SEARCH_URL}?q=${encodeURIComponent(question)}`;
   const response = await fetch(url, {
-    headers: { "user-agent": "InfoPlayerLeft/1.0 (web search)" },
+    headers: { "user-agent": "WhatsAppMediaBot/1.0 (web search)" },
     // La búsqueda aporta contexto, pero no debe demorar una consulta local si
     // DuckDuckGo está lento, bloqueado o no disponible en Termux.
     signal: timeoutSignal(envNumber("AI_SEARCH_TIMEOUT_MS", SEARCH_TIMEOUT_MS)),
@@ -397,7 +397,7 @@ export async function cmdIA(question, chatId = null) {
     : STYLES[styleName];
   const quickRoast = styleName === "insultos" ? nicknameRoast(query) : null;
   const includeSources = requestsSources(query);
-  if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy sobre Left 4 Dead 2?`";
+  if (!query) return "Uso: `!ai <pregunta>`\nEjemplo: `!ai ¿qué novedades hay hoy?`";
   if (query.length > MAX_QUESTION_LENGTH) return `La pregunta no puede superar ${MAX_QUESTION_LENGTH} caracteres.`;
   if (containsRisk(query)) {
     return "Siento que estés pasando por esto. Si estás en peligro inmediato, contacta a emergencias de tu país o a una persona de confianza ahora mismo. No tienes que afrontar esta situación a solas.";

@@ -128,7 +128,7 @@ export function startControlServer({ getStatus, testAI, notifySettingsChange = a
     if (!authorized(req, token)) return json(res, 401, { error: "No autorizado" });
     try {
       if (req.method === "GET" && url.pathname === "/api/control/status") return json(res, 200, getStatus());
-      if (req.method === "GET" && url.pathname === "/api/control/health") return json(res, 200, { ok: true, service: "infoplayerleft-control" });
+      if (req.method === "GET" && url.pathname === "/api/control/health") return json(res, 200, { ok: true, service: "whatsapp-media-bot-control" });
       if (req.method === "POST" && url.pathname === "/api/control/settings") {
         const settings = validSettings(await readBody(req));
         const changed = updateEnvFile(envFile, settings);

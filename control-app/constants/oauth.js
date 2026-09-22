@@ -1,6 +1,6 @@
 import * as Linking from "expo-linking";
 import * as ReactNative from "react-native";
-const bundleId = "com.app.infoplayerleftcontrol";
+const bundleId = "com.app.whatsappmediabotcontrol";
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 const env = {
