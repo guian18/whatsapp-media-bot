@@ -4,7 +4,6 @@ const API_URL = "https://nekobot.xyz/api/image";
 const MIN_INTERVAL_MS = 10_000;
 const lastRequestByChat = new Map();
 
-// Nombres compatibles con la API de imágenes del proyecto original.
 export const NSFW_COMMANDS = Object.freeze({
   "4k": "4k",
   anal: "anal",
@@ -47,10 +46,10 @@ function groupKey(jid) {
 }
 
 function accessMessage(context) {
-  if (process.env.NSFW_ENABLED !== "true") {
+  if (process.env.NSFW_ENABLED === "false") {
     return "Los comandos de imágenes para adultos están desactivados.";
   }
-  if (!context.isGroup && process.env.NSFW_ALLOW_PRIVATE_CHATS !== "true") {
+  if (!context.isGroup && process.env.NSFW_ALLOW_PRIVATE_CHATS === "false") {
     return "Por seguridad, las imágenes para adultos solo están disponibles en grupos autorizados; no se envían por chat privado.";
   }
   if (!context.isGroup) return null;
@@ -65,15 +64,27 @@ export function validImageUrl(value) {
   try {
     const url = new URL(value);
     const isHttp = url.protocol === "http:" || url.protocol === "https:";
-    if (!isHttp) return null;
+    if (!isHttp || url.username || url.password) return null;
 
-    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS === "true";
+    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS !== "false";
     const isApiHost = url.protocol === "https:"
       && (url.hostname === "nekobot.xyz" || url.hostname.endsWith(".nekobot.xyz"));
     return (isApiHost || allowExternal) ? url.toString() : null;
   } catch {
     return null;
   }
+}
+
+function isImagePayload(data, contentType = "") {
+  if (!data || !Buffer.isBuffer(data) || data.length < 12) return false;
+  if (/^image\//i.test(contentType)) return true;
+  return (
+    data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ||
+    data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) ||
+    data.subarray(0, 6).toString("ascii") === "GIF87a" ||
+    data.subarray(0, 6).toString("ascii") === "GIF89a" ||
+    (data.subarray(0, 4).toString("ascii") === "RIFF" && data.subarray(8, 12).toString("ascii") === "WEBP")
+  );
 }
 
 function cleanup(now) {
@@ -118,16 +129,20 @@ export async function sendNsfwImage(command, context = {}) {
       timeout: 15_000,
     });
     const imageUrl = validImageUrl(data?.message);
-    if (!imageUrl) throw new Error("la API no devolvió una imagen segura");
-    const { data: imageData } = await axios.get(imageUrl, {
+    if (!imageUrl) throw new Error("la API no devolvió una URL de imagen válida");
+    const imageResponse = await axios.get(imageUrl, {
       responseType: "arraybuffer",
       headers: { accept: "image/*", "user-agent": "InfoPlayerLeft/1.0" },
       timeout: 20_000,
       maxContentLength: 15 * 1024 * 1024,
       maxBodyLength: 15 * 1024 * 1024,
     });
-    const imageBuffer = Buffer.isBuffer(imageData) ? imageData : Buffer.from(imageData);
-    if (!imageBuffer.length) throw new Error("la imagen descargada está vacía");
+    const imageBuffer = Buffer.isBuffer(imageResponse.data)
+      ? imageResponse.data
+      : Buffer.from(imageResponse.data || "");
+    if (!isImagePayload(imageBuffer, imageResponse.headers?.["content-type"] || "")) {
+      throw new Error("la URL no devolvió una imagen válida");
+    }
     await context.sendMessage(context.jid, {
       image: imageBuffer,
       caption: `Contenido para adultos: ${command}`,

@@ -5,10 +5,27 @@ import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage, validImageUrl } from "../src/ns
 
 test("adult-image commands are disabled by default", async () => {
   const previous = process.env.NSFW_ENABLED;
-  delete process.env.NSFW_ENABLED;
+  process.env.NSFW_ENABLED = "false";
   assert.match(await sendNsfwImage("hentai", { jid: "group-id", isGroup: true, sendMessage() {} }), /desactivados/);
   if (previous === undefined) delete process.env.NSFW_ENABLED;
   else process.env.NSFW_ENABLED = previous;
+});
+
+test("missing new NSFW settings use the requested enabled defaults", async () => {
+  const previousEnabled = process.env.NSFW_ENABLED;
+  const previousPrivate = process.env.NSFW_ALLOW_PRIVATE_CHATS;
+  const previousExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS;
+  delete process.env.NSFW_ENABLED;
+  delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
+  delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
+  assert.match(await sendNsfwImage("not-a-category", { jid: "new-install", isGroup: false, sendMessage() {} }), /Menú de imágenes NSFW/);
+  assert.equal(validImageUrl("https://images.example.test/a.jpg"), "https://images.example.test/a.jpg");
+  if (previousEnabled === undefined) delete process.env.NSFW_ENABLED;
+  else process.env.NSFW_ENABLED = previousEnabled;
+  if (previousPrivate === undefined) delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
+  else process.env.NSFW_ALLOW_PRIVATE_CHATS = previousPrivate;
+  if (previousExternal === undefined) delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
+  else process.env.NSFW_ALLOW_EXTERNAL_URLS = previousExternal;
 });
 
 test("adult-image commands block private chats and unauthorized groups", async () => {
@@ -58,7 +75,7 @@ test("adult-image commands are listed and dispatched without network access when
   assert.match(await handleCommand("!nsfw", { jid: "group-id", isGroup: true }), /Menú de imágenes NSFW/);
   assert.match(await handleCommand("!NSFW", { jid: "group-id", isGroup: true }), /!boobs/);
   const previous = process.env.NSFW_ENABLED;
-  delete process.env.NSFW_ENABLED;
+  process.env.NSFW_ENABLED = "false";
   assert.match(await handleCommand("!hentai", { jid: "group-id", isGroup: true, sendMessage() {} }), /desactivados/);
   if (previous === undefined) delete process.env.NSFW_ENABLED;
   else process.env.NSFW_ENABLED = previous;
@@ -66,11 +83,12 @@ test("adult-image commands are listed and dispatched without network access when
 
 test("external image URLs require an explicit opt-in", () => {
   const previous = process.env.NSFW_ALLOW_EXTERNAL_URLS;
-  delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
+  process.env.NSFW_ALLOW_EXTERNAL_URLS = "false";
   assert.equal(validImageUrl("https://images.example.test/adult.jpg"), null);
   process.env.NSFW_ALLOW_EXTERNAL_URLS = "true";
   assert.equal(validImageUrl("https://images.example.test/adult.jpg"), "https://images.example.test/adult.jpg");
   assert.equal(validImageUrl("http://images.example.test/adult.jpg"), "http://images.example.test/adult.jpg");
+  assert.equal(validImageUrl("https://user:password@images.example.test/adult.jpg"), null);
   assert.equal(validImageUrl("javascript:alert(1)"), null);
   if (previous === undefined) delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
   else process.env.NSFW_ALLOW_EXTERNAL_URLS = previous;

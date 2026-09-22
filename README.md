@@ -55,7 +55,7 @@ Backends locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](h
 
 ## Imágenes para adultos en WhatsApp
 
-La función queda habilitada al configurar el archivo `.env` y funciona en todos los grupos y chats privados por defecto. Las URLs externas también están habilitadas por defecto. Para limitar el acceso, configura los ID numéricos de los grupos separados por comas o cambia `NSFW_ALLOW_PRIVATE_CHATS=false` para bloquear chats privados:
+La función está activa por defecto y funciona en todos los grupos y chats privados. Las URLs externas también están habilitadas por defecto. Para desactivarla usa `NSFW_ENABLED=false`; para limitar el acceso, configura los ID numéricos de los grupos separados por comas o cambia `NSFW_ALLOW_PRIVATE_CHATS=false` para bloquear chats privados:
 
 ```env
 NSFW_ENABLED=true
@@ -64,7 +64,7 @@ NSFW_ALLOW_EXTERNAL_URLS=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 ```
 
-Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
+Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Si no responde ningún comando, comprueba que `GROUPS_ENABLED=true`, `REPLY_IN_PRIVATE=true` y que `ALLOWED_GROUPS` esté vacío o contenga el ID numérico correcto. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
 
 ## Instalación en Termux
 

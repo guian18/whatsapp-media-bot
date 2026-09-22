@@ -76,7 +76,7 @@
       "required": false
     },
     "NSFW_ALLOWED_GROUPS": {
-      "description": "Comma-separated WhatsApp group JIDs allowed to request adult images.",
+      "description": "Optional comma-separated numeric IDs of groups allowed to request adult images; empty allows all groups.",
       "value": "",
       "required": false
     },
