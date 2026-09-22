@@ -50,7 +50,11 @@ async function convertPlaylist(url) {
   const workDir = await mkdtemp(path.join(tmpdir(), "infoplayerleft-apify-"));
   const output = path.join(workDir, "video.mp4");
   try {
-    await execFileAsync(ffmpeg, ["-y", "-i", url, "-c", "copy", "-movflags", "+faststart", output], {
+    await execFileAsync(ffmpeg, [
+      "-y", "-i", url,
+      "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+      "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output,
+    ], {
       timeout: Number(process.env.FFMPEG_TIMEOUT_MS || 180_000),
       maxBuffer: 2 * 1024 * 1024,
     });
