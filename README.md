@@ -95,6 +95,7 @@ Si la página requiere una sesión, puedes proporcionar la cookie completa en un
 ```env
 VIDEO_SOURCE_COOKIE=session=tu_valor; otra_cookie=otro_valor
 VIDEO_USER_AGENT=Mozilla/5.0
+VIDEO_ACCEPT_LANGUAGE=es-ES,es;q=0.9,en;q=0.8
 ```
 
 La cookie se envía tanto al consultar la página como al descargar el video. Esto no resuelve CAPTCHAs, desafíos anti-bot ni renovaciones de sesión; cuando la cookie caduque debes reemplazarla manualmente.
@@ -112,7 +113,7 @@ También puedes conectar un navegador Chromium ya iniciado mediante Chrome DevTo
 VIDEO_BROWSER_CDP_URL=http://127.0.0.1:9222
 ```
 
-Si configuras `VIDEO_BROWSER_EXECUTABLE_PATH` o `VIDEO_BROWSER_CDP_URL`, `!video` abre `VIDEO_SOURCE_URL`, espera el tiempo indicado y busca las etiquetas `video`/`source`. No intenta saltar CAPTCHA, DRM, controles de acceso ni verificaciones humanas. Si el reproductor usa una URL `blob:` o segmentos protegidos, no podrá convertirlos en un archivo descargable.
+Si configuras `VIDEO_BROWSER_EXECUTABLE_PATH` o `VIDEO_BROWSER_CDP_URL`, `!video` abre `VIDEO_SOURCE_URL`, espera el tiempo indicado y busca las etiquetas `video`/`source` o metadatos `og:video`. El navegador conserva cookies y envía `Referer`, `Accept-Language` y `User-Agent`, que son cabeceras habituales detrás de OpenResty/Nginx. OpenResty no requiere una integración especial: la compatibilidad depende de que el servidor entregue un recurso de video accesible a la sesión autorizada. No intenta saltar CAPTCHA, DRM, controles de acceso ni verificaciones humanas. Si el reproductor usa una URL `blob:` o segmentos protegidos, no podrá convertirlos en un archivo descargable.
 
 En Android/Termux, Node identifica la plataforma como `android` y Playwright no puede iniciarse directamente allí. En ese entorno el módulo se carga de forma diferida para que el bot siga arrancando; el modo navegador requiere ejecutar el bot dentro de un Linux compatible (por ejemplo Kali mediante `proot-distro`) o usar una API/fuente directa.
 

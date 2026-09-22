@@ -158,16 +158,26 @@ async function browserVideoBuffer(pageUrl) {
     context = await browser.newContext({
       userAgent: process.env.VIDEO_USER_AGENT || undefined,
       viewport: { width: 1280, height: 900 },
+      extraHTTPHeaders: {
+        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "accept-language": process.env.VIDEO_ACCEPT_LANGUAGE || "es-ES,es;q=0.9,en;q=0.8",
+        referer: pageUrl,
+      },
     });
     const cookies = cookieEntries(pageUrl);
     if (cookies.length) await context.addCookies(cookies);
     const page = await context.newPage();
     await page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
     await page.waitForTimeout(Number(process.env.VIDEO_BROWSER_WAIT_MS || 3_000));
+    await page.waitForFunction(
+      () => Boolean(document.querySelector("video, source, meta[property='og:video'], meta[property='og:video:url']")),
+      { timeout: Math.max(1_000, Number(process.env.VIDEO_BROWSER_WAIT_MS || 3_000)) }
+    ).catch(() => {});
     const result = await page.evaluate(() => {
       const candidates = [
-        ...Array.from(document.querySelectorAll("video"), (element) => element.currentSrc || element.src || element.dataset.src || ""),
-        ...Array.from(document.querySelectorAll("source"), (element) => element.src || element.dataset.src || ""),
+        ...Array.from(document.querySelectorAll("video"), (element) => element.currentSrc || element.src || element.dataset.src || element.dataset.video || element.dataset.mp4 || ""),
+        ...Array.from(document.querySelectorAll("source"), (element) => element.src || element.dataset.src || element.dataset.video || element.dataset.mp4 || ""),
+        ...Array.from(document.querySelectorAll("meta[property='og:video'], meta[property='og:video:url']"), (element) => element.content || ""),
       ].filter(Boolean);
       const url = candidates[0];
       if (!url || url.startsWith("blob:") || url.startsWith("data:")) return { error: "no-direct-source" };
@@ -175,7 +185,10 @@ async function browserVideoBuffer(pageUrl) {
     });
     if (result.error) throw new Error(`el navegador no encontró un video directo (${result.error})`);
     const response = await context.request.get(result.url, {
-      headers: { accept: "video/*" },
+      headers: {
+        accept: "video/*,application/octet-stream;q=0.9,*/*;q=0.8",
+        referer: pageUrl,
+      },
       timeout: 30_000,
       maxRedirects: 5,
     });
