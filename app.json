@@ -70,6 +70,16 @@
       "required": false,
       "value": ""
     },
+    "NSFW_ENABLED": {
+      "description": "Set true only to enable adult-image commands in explicitly allowed groups.",
+      "value": "false",
+      "required": false
+    },
+    "NSFW_ALLOWED_GROUPS": {
+      "description": "Comma-separated WhatsApp group JIDs allowed to request adult images.",
+      "value": "",
+      "required": false
+    },
     "CONTROL_API_TOKEN": {
       "description": "Leave empty to disable the local control API on Heroku.",
       "required": false,

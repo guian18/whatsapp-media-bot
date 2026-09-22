@@ -50,6 +50,17 @@ Railway ofrece una prueba de $5 durante 30 días y después $1 mensual de crédi
 
 Backends locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](https://github.com/ggml-org/llama.cpp) y [LocalAI](https://github.com/mudler/LocalAI). Las claves reales deben guardarse en las variables del hosting, nunca en el código ni en el README.
 
+## Imágenes para adultos en WhatsApp
+
+La función está desactivada por defecto y solo puede enviar imágenes en grupos incluidos explícitamente en `NSFW_ALLOWED_GROUPS`; los chats privados siempre quedan bloqueados. Configura los JID de grupos separados por comas:
+
+```env
+NSFW_ENABLED=true
+NSFW_ALLOWED_GROUPS=120363012345678901@g.us,120363098765432109@g.us
+```
+
+Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. El bot valida que la imagen proceda por HTTPS del dominio de la API y limita una solicitud por grupo cada 10 segundos. Usa esta función solo en grupos donde todas las personas tengan la edad y el consentimiento necesarios.
+
 ## Instalación en Termux
 
 ```bash

@@ -412,6 +412,7 @@ async function start() {
         await sock.sendPresenceUpdate("composing", jid);
         const reply = await handleCommand(text, {
           jid,
+          isGroup,
           sendMessage: (targetJid, payload) => sock.sendMessage(targetJid, payload),
         });
         if (reply) {

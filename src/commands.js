@@ -3,6 +3,7 @@ import axios from "axios";
 import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
+import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage } from "./nsfw.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
@@ -98,6 +99,7 @@ export function ayuda() {
     `\`${name("idioma")} <país|código>\` — cambia y guarda el idioma de la IA`,
     `\`${name("proveedor")} <nombre>\` — cambia la IA y el modelo`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
+    `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
     `\`${name("vigilar")} <nick|SteamID|URL>\` — avisa cuando un jugador se conecta a L4D2`,
     `\`${name("novigilar")} <nick|SteamID|URL>\` — cancela una vigilancia`,
     `\`${name("lista")}\` — muestra los jugadores vigilados en este chat`,
@@ -271,6 +273,8 @@ export async function handleCommand(text, context = {}) {
       return cmdProveedor(args);
     case "anime":
       return sendSfwAnimeImage(context);
+    case "nsfw":
+      return nsfwHelp();
     case "vigilar":
     case "vigilarnick":
       return watchPlayer(args, context.jid);
@@ -320,6 +324,7 @@ export async function handleCommand(text, context = {}) {
     case "jugadores":
       return cmdServidor(args, true);
     default:
+      if (Object.hasOwn(NSFW_COMMANDS, cmd)) return sendNsfwImage(cmd, context);
       return null; // comando desconocido: el bot se queda callado
   }
 }
