@@ -72,7 +72,7 @@
     },
     "NSFW_ENABLED": {
       "description": "Set true only to enable adult-image commands in explicitly allowed groups.",
-      "value": "false",
+      "value": "true",
       "required": false
     },
     "NSFW_ALLOWED_GROUPS": {
@@ -82,7 +82,7 @@
     },
     "NSFW_ALLOW_EXTERNAL_URLS": {
       "description": "Allow image URLs from HTTP/HTTPS hosts outside the API domain.",
-      "value": "false",
+      "value": "true",
       "required": false
     },
     "CONTROL_API_TOKEN": {

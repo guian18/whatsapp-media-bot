@@ -24,6 +24,18 @@ test("adult-image commands block private chats and unauthorized groups", async (
   else process.env.NSFW_ALLOWED_GROUPS = previousGroups;
 });
 
+test("empty allowed-group configuration permits any group", async () => {
+  const previousEnabled = process.env.NSFW_ENABLED;
+  const previousGroups = process.env.NSFW_ALLOWED_GROUPS;
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_ALLOWED_GROUPS = "";
+  assert.match(await sendNsfwImage("not-a-category", { jid: "cualquier-grupo", isGroup: true, sendMessage() {} }), /!hentai/);
+  if (previousEnabled === undefined) delete process.env.NSFW_ENABLED;
+  else process.env.NSFW_ENABLED = previousEnabled;
+  if (previousGroups === undefined) delete process.env.NSFW_ALLOWED_GROUPS;
+  else process.env.NSFW_ALLOWED_GROUPS = previousGroups;
+});
+
 test("adult-image commands are listed and dispatched without network access when blocked", async () => {
   assert.ok(Object.hasOwn(NSFW_COMMANDS, "hentai"));
   assert.match(nsfwHelp(), /!hentai/);

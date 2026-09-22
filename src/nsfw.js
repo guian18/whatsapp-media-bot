@@ -54,7 +54,7 @@ function accessMessage(context) {
     return "Por seguridad, las imágenes para adultos solo están disponibles en grupos autorizados; no se envían por chat privado.";
   }
   const groups = configuredGroups();
-  if (!groups.size || !groups.has(groupKey(context.jid))) {
+  if (groups.size && !groups.has(groupKey(context.jid))) {
     return "Este grupo no está autorizado para comandos de imágenes para adultos.";
   }
   return null;
@@ -83,7 +83,7 @@ function cleanup(now) {
 
 export function nsfwHelp() {
   const names = Object.keys(NSFW_COMMANDS).map((name) => `!${name}`).join(", ");
-  return `Imágenes para adultos (solo grupos autorizados): ${names}\nConfigura NSFW_ENABLED=true y NSFW_ALLOWED_GROUPS con los ID numéricos de los grupos.`;
+  return `Imágenes para adultos (disponibles en grupos): ${names}\nConfigura NSFW_ENABLED=true. Usa NSFW_ALLOWED_GROUPS solo si quieres limitar el acceso a grupos concretos.`;
 }
 
 export async function sendNsfwImage(command, context = {}) {

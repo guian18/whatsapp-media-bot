@@ -52,15 +52,15 @@ Backends locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](h
 
 ## Imágenes para adultos en WhatsApp
 
-La función está desactivada por defecto y solo puede enviar imágenes en grupos incluidos explícitamente en `NSFW_ALLOWED_GROUPS`; los chats privados siempre quedan bloqueados. Configura los ID numéricos de los grupos separados por comas:
+La función queda habilitada al configurar el archivo `.env` y funciona en todos los grupos por defecto; los chats privados siempre quedan bloqueados. Las URLs externas también están habilitadas por defecto. Para limitar el acceso, configura los ID numéricos de los grupos separados por comas:
 
 ```env
 NSFW_ENABLED=true
-NSFW_ALLOWED_GROUPS=120363012345678901,120363098765432109
-NSFW_ALLOW_EXTERNAL_URLS=false
+NSFW_ALLOWED_GROUPS=
+NSFW_ALLOW_EXTERNAL_URLS=true
 ```
 
-Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Por defecto, el bot solo acepta imágenes HTTPS del dominio de la API. Si necesitas aceptar cualquier URL HTTP/HTTPS, cambia `NSFW_ALLOW_EXTERNAL_URLS=true`; hazlo solo con fuentes confiables. También limita una solicitud por grupo cada 10 segundos. Usa esta función solo en grupos donde todas las personas tengan la edad y el consentimiento necesarios.
+Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; si lo rellenas, solo se permiten los grupos indicados. `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por grupo cada 10 segundos. Usa esta función solo en grupos donde todas las personas tengan la edad y el consentimiento necesarios.
 
 ## Instalación en Termux
 
