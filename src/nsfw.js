@@ -1,9 +1,31 @@
 import axios from "axios";
 
-const DEFAULT_API_URL = "https://nekobot.xyz/api/image";
+const NEKOBOT_API_URL = "https://nekobot.xyz/api/image";
+const WAIFU_IM_API_URL = "https://api.waifu.im/images";
+const DEFAULT_API_SOURCES = Object.freeze(["nekobot", "waifuim"]);
 const MIN_INTERVAL_MS = 10_000;
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const lastRequestByChat = new Map();
+
+// Waifu.im es un respaldo para Nekobot. No dispone de una etiqueta equivalente
+// para todas las categorías, por lo que en esos casos devuelve una imagen NSFW
+// aleatoria en lugar de fallar el comando.
+const WAIFU_IM_TAGS = Object.freeze({
+  anal: "hentai",
+  ass: "ass",
+  blowjob: "oral",
+  boobs: "oppai",
+  gonewild: "ero",
+  hass: "ero",
+  hboobs: "oppai",
+  hentai: "hentai",
+  hentaianal: "hentai",
+  lewd: "ero",
+  lewdneko: "waifu",
+  paizuri: "paizuri",
+  pussy: "hentai",
+  yaoi: "hentai",
+});
 
 export const NSFW_COMMANDS = Object.freeze({
   "4k": "4k",
@@ -32,12 +54,47 @@ export const NSFW_COMMANDS = Object.freeze({
   yaoi: "yaoi",
 });
 
-function configuredApiUrls() {
-  const raw = process.env.NSFW_API_URLS || process.env.NSFW_API_URL || DEFAULT_API_URL;
-  return [...new Set(String(raw)
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean))];
+function settingMs(name, fallback, minimum, maximum) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) ? Math.min(maximum, Math.max(minimum, value)) : fallback;
+}
+
+function settingInteger(name, fallback, minimum, maximum) {
+  const value = Number(process.env[name]);
+  return Number.isInteger(value) ? Math.min(maximum, Math.max(minimum, value)) : fallback;
+}
+
+function sourceFromValue(value) {
+  const raw = String(value || "").trim();
+  const normalized = raw.toLowerCase();
+  if (normalized === "nekobot" || normalized === NEKOBOT_API_URL) {
+    return { id: "nekobot", name: "Nekobot", url: NEKOBOT_API_URL };
+  }
+  if (normalized === "waifuim" || normalized === "waifu.im" || normalized === WAIFU_IM_API_URL) {
+    return { id: "waifuim", name: "Waifu.im", url: WAIFU_IM_API_URL };
+  }
+  return { id: "custom", name: "API configurada", url: raw };
+}
+
+function configuredApiSources() {
+  const explicitSources = String(process.env.NSFW_API_URLS || "").trim();
+  const legacySource = String(process.env.NSFW_API_URL || "").trim();
+  const configured = explicitSources
+    ? explicitSources.split(",")
+    : legacySource
+      ? [legacySource]
+      : DEFAULT_API_SOURCES;
+  const sources = configured
+    .map(sourceFromValue)
+    .filter((source) => source.url);
+
+  // Instalaciones previas solo tenían Nekobot configurado. Conservamos ese valor
+  // y añadimos el respaldo seguro automáticamente sin exigir editar el .env.
+  if (!explicitSources && sources.length === 1 && sources[0].id === "nekobot") {
+    sources.push(sourceFromValue("waifuim"));
+  }
+
+  return [...new Map(sources.map((source) => [`${source.id}:${source.url}`, source])).values()];
 }
 
 function configuredGroups() {
@@ -65,15 +122,53 @@ function accessMessage(context) {
   return null;
 }
 
+function isTrustedImageHost(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  return host === "nekobot.xyz"
+    || host.endsWith(".nekobot.xyz")
+    || host === "waifu.im"
+    || host.endsWith(".waifu.im");
+}
+
+function isPrivateIpv4(hostname) {
+  const parts = String(hostname || "").split(".");
+  if (parts.length !== 4 || parts.some((part) => !/^\d{1,3}$/.test(part))) return false;
+  const values = parts.map(Number);
+  if (values.some((part) => part > 255)) return true;
+  const [a, b] = values;
+  return a === 0
+    || a === 10
+    || a === 127
+    || a >= 224
+    || (a === 100 && b >= 64 && b <= 127)
+    || (a === 169 && b === 254)
+    || (a === 172 && b >= 16 && b <= 31)
+    || (a === 192 && b === 168)
+    || (a === 198 && (b === 18 || b === 19));
+}
+
+function isPrivateHost(hostname) {
+  const host = String(hostname || "").toLowerCase().replace(/^\[|\]$/g, "");
+  return host === "localhost"
+    || host.endsWith(".localhost")
+    || host === "::"
+    || host === "::1"
+    || host.startsWith("fc")
+    || host.startsWith("fd")
+    || host.startsWith("fe80:")
+    || host.startsWith("::ffff:127.")
+    || isPrivateIpv4(host);
+}
+
 export function validImageUrl(value) {
   try {
     const url = new URL(value);
     const isHttp = url.protocol === "http:" || url.protocol === "https:";
-    if (!isHttp || url.username || url.password) return null;
-    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS !== "false";
-    const isApiHost = url.protocol === "https:"
-      && (url.hostname === "nekobot.xyz" || url.hostname.endsWith(".nekobot.xyz"));
-    return (isApiHost || allowExternal) ? url.toString() : null;
+    if (!isHttp || url.username || url.password || isPrivateHost(url.hostname)) return null;
+    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS === "true";
+    const isTrusted = url.protocol === "https:" && isTrustedImageHost(url.hostname);
+    const isApprovedExternal = allowExternal && url.protocol === "https:";
+    return (isTrusted || isApprovedExternal) ? url.toString() : null;
   } catch {
     return null;
   }
@@ -83,11 +178,11 @@ function isImagePayload(data, contentType = "") {
   if (!data || !Buffer.isBuffer(data) || data.length < 12) return false;
   if (/^image\//i.test(contentType)) return true;
   return (
-    data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ||
-    data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) ||
-    data.subarray(0, 6).toString("ascii") === "GIF87a" ||
-    data.subarray(0, 6).toString("ascii") === "GIF89a" ||
-    (data.subarray(0, 4).toString("ascii") === "RIFF" && data.subarray(8, 12).toString("ascii") === "WEBP")
+    data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))
+    || data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+    || data.subarray(0, 6).toString("ascii") === "GIF87a"
+    || data.subarray(0, 6).toString("ascii") === "GIF89a"
+    || (data.subarray(0, 4).toString("ascii") === "RIFF" && data.subarray(8, 12).toString("ascii") === "WEBP")
   );
 }
 
@@ -112,6 +207,17 @@ function imageUrlFromApiResponse(data) {
   return null;
 }
 
+function imageUrlFromWaifuImResponse(data) {
+  const item = Array.isArray(data?.items) ? data.items[0] : null;
+  return validImageUrl(item?.url);
+}
+
+function providerError(status, message) {
+  const error = new Error(message);
+  error.response = { status: Number(status) || 0 };
+  return error;
+}
+
 function cleanup(now) {
   for (const [jid, timestamp] of lastRequestByChat) {
     if (now - timestamp > MIN_INTERVAL_MS * 6) lastRequestByChat.delete(jid);
@@ -119,7 +225,7 @@ function cleanup(now) {
 }
 
 function transientStatus(status) {
-  return [408, 425, 429, 500, 502, 503, 504, 522, 523, 524].includes(Number(status));
+  return [408, 425, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524].includes(Number(status));
 }
 
 function errorStatus(error) {
@@ -127,7 +233,9 @@ function errorStatus(error) {
 }
 
 function sendImageByUrl() {
-  return process.env.NSFW_DIRECT_URL !== "false";
+  // Descargar primero permite validar el tamaño y el tipo de archivo, y evita
+  // que Baileys oculte errores HTTP del CDN al resolver la URL remota.
+  return process.env.NSFW_DIRECT_URL === "true";
 }
 
 function transientNetworkError(error) {
@@ -136,24 +244,31 @@ function transientNetworkError(error) {
     || /timeout|timed out|socket hang up/i.test(String(error?.message || ""));
 }
 
-function settingMs(name, fallback, minimum, maximum) {
-  const value = Number(process.env[name]);
-  return Number.isFinite(value) ? Math.min(maximum, Math.max(minimum, value)) : fallback;
+function retryAfterMs(error) {
+  const value = error?.response?.headers?.["retry-after"];
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds <= 0) return 0;
+  return Math.min(seconds * 1000, 5_000);
 }
 
 function retryDelay(attempt, error) {
+  const fromHeader = retryAfterMs(error);
+  if (fromHeader) return fromHeader;
   const status = errorStatus(error);
-  const base = status === 522 || status === 523 || status === 524 ? 1200 : 500;
-  return base * (attempt + 1) + Math.floor(Math.random() * 250);
+  const base = status === 522 || status === 523 || status === 524 ? 900 : 400;
+  return base * (attempt + 1) + Math.floor(Math.random() * 200);
 }
 
-function friendlyApiError(error) {
+function friendlyApiError(error, source) {
   const status = errorStatus(error);
-  if (status === 522 || status === 523 || status === 524) return `el servidor de imágenes no responde temporalmente (HTTP ${status})`;
-  if (status === 429) return "el servidor de imágenes está limitando solicitudes (HTTP 429)";
-  if (status >= 500) return `el servidor de imágenes respondió con HTTP ${status}`;
-  if (transientNetworkError(error)) return "la conexión con el servidor de imágenes agotó el tiempo; inténtalo de nuevo";
-  return error?.message || "error de API";
+  const provider = source?.name || "el servidor de imágenes";
+  if (status === 401 || status === 403) return `${provider} rechazó la solicitud (HTTP ${status})`;
+  if (status === 404) return `${provider} no tiene una imagen disponible para esa categoría (HTTP 404)`;
+  if (status === 408 || status === 522 || status === 523 || status === 524) return `${provider} no respondió a tiempo (HTTP ${status})`;
+  if (status === 429) return `${provider} está limitando solicitudes (HTTP 429)`;
+  if (status >= 500) return `${provider} respondió temporalmente con HTTP ${status}`;
+  if (transientNetworkError(error)) return `la conexión con ${provider} agotó el tiempo; inténtalo de nuevo`;
+  return `${provider}: ${String(error?.message || "error de API").slice(0, 160)}`;
 }
 
 async function sendResolvedImage(imageUrl, command, context) {
@@ -164,14 +279,9 @@ async function sendResolvedImage(imageUrl, command, context) {
         caption: `Contenido para adultos: ${command}`,
       });
       return;
-    } catch (directError) {
-      // Some WhatsApp clients cannot fetch particular CDN URLs; retry locally with Axios.
-      const imageBuffer = await downloadImage(imageUrl);
-      await context.sendMessage(context.jid, {
-        image: imageBuffer,
-        caption: `Contenido para adultos: ${command}`,
-      });
-      return;
+    } catch {
+      // Algunos clientes no pueden descargar determinados CDN; se reintenta con
+      // un buffer validado por el bot.
     }
   }
   const imageBuffer = await downloadImage(imageUrl);
@@ -181,23 +291,40 @@ async function sendResolvedImage(imageUrl, command, context) {
   });
 }
 
-async function requestImageUrl(apiUrl, type) {
+async function requestImageUrl(source, type) {
+  const timeout = settingMs("NSFW_API_TIMEOUT_MS", 10_000, 5_000, 30_000);
+  const retries = settingInteger("NSFW_API_RETRIES", 1, 0, 3);
   let lastError;
-  const timeout = settingMs("NSFW_API_TIMEOUT_MS", 12_000, 5_000, 30_000);
-  // Cloudflare 522 es temporal: reintentamos cuatro veces antes de probar otra URL.
-  for (let attempt = 0; attempt < 4; attempt += 1) {
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      const { data } = await axios.get(apiUrl, {
-        params: { type },
-        headers: { accept: "application/json", "user-agent": "WhatsAppMediaBot/1.0" },
-        timeout,
-      });
-      const imageUrl = imageUrlFromApiResponse(data);
-      if (!imageUrl) throw new Error("la API no devolvió una URL de imagen válida");
+      const request = source.id === "waifuim"
+        ? {
+            params: {
+              IsNsfw: "True",
+              PageSize: 1,
+              ...(WAIFU_IM_TAGS[type] ? { IncludedTags: WAIFU_IM_TAGS[type] } : {}),
+            },
+            headers: { accept: "application/json", "user-agent": "WhatsAppMediaBot/1.0" },
+            timeout,
+          }
+        : {
+            params: { type },
+            headers: { accept: "application/json", "user-agent": "WhatsAppMediaBot/1.0" },
+            timeout,
+          };
+      const { data } = await axios.get(source.url, request);
+      if (data?.success === false || Number(data?.status) >= 400) {
+        throw providerError(data?.status, String(data?.message || "la API rechazó la solicitud"));
+      }
+      const imageUrl = source.id === "waifuim"
+        ? imageUrlFromWaifuImResponse(data)
+        : imageUrlFromApiResponse(data);
+      if (!imageUrl) throw providerError(502, "la API no devolvió una URL de imagen válida");
       return imageUrl;
     } catch (error) {
       lastError = error;
-      if (!transientNetworkError(error) || attempt === 3) break;
+      if (!transientNetworkError(error) || attempt === retries) break;
       await new Promise((resolve) => setTimeout(resolve, retryDelay(attempt, error)));
     }
   }
@@ -205,9 +332,10 @@ async function requestImageUrl(apiUrl, type) {
 }
 
 async function downloadImage(imageUrl) {
-  let lastError;
   const timeout = settingMs("NSFW_IMAGE_TIMEOUT_MS", 30_000, 8_000, 90_000);
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  const retries = settingInteger("NSFW_IMAGE_RETRIES", 1, 0, 2);
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const imageResponse = await axios.get(imageUrl, {
         responseType: "arraybuffer",
@@ -215,6 +343,7 @@ async function downloadImage(imageUrl) {
         timeout,
         maxContentLength: MAX_IMAGE_BYTES,
         maxBodyLength: MAX_IMAGE_BYTES,
+        maxRedirects: 3,
       });
       const imageBuffer = Buffer.isBuffer(imageResponse.data)
         ? imageResponse.data
@@ -225,7 +354,7 @@ async function downloadImage(imageUrl) {
       return imageBuffer;
     } catch (error) {
       lastError = error;
-      if (!transientNetworkError(error) || attempt === 2) break;
+      if (!transientNetworkError(error) || attempt === retries) break;
       await new Promise((resolve) => setTimeout(resolve, retryDelay(attempt, error)));
     }
   }
@@ -261,17 +390,18 @@ export async function sendNsfwImage(command, context = {}) {
   }
   lastRequestByChat.set(context.jid, now);
 
-  let lastError;
-  for (const apiUrl of configuredApiUrls()) {
+  let lastFailure;
+  for (const source of configuredApiSources()) {
     try {
-      const imageUrl = await requestImageUrl(apiUrl, type);
+      const imageUrl = await requestImageUrl(source, type);
       await sendResolvedImage(imageUrl, command, context);
       return null;
     } catch (error) {
-      lastError = error;
+      lastFailure = { error, source };
+      console.warn(`NSFW: ${source.name} falló para ${command}:`, error?.message || error);
     }
   }
   // Un fallo temporal no debe bloquear el siguiente intento durante el rate limit.
   lastRequestByChat.delete(context.jid);
-  return `No pude obtener esa imagen ahora: ${friendlyApiError(lastError)}`;
+  return `No pude obtener esa imagen ahora: ${friendlyApiError(lastFailure?.error, lastFailure?.source)}`;
 }

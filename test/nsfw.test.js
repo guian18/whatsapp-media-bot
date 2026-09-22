@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import axios from "axios";
 import { handleCommand } from "../src/commands.js";
 import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage, validImageUrl } from "../src/nsfw.js";
 
@@ -11,7 +12,7 @@ test("adult-image commands are disabled by default", async () => {
   else process.env.NSFW_ENABLED = previous;
 });
 
-test("missing NSFW settings use permissive defaults", async () => {
+test("missing NSFW settings allow trusted image CDNs only", async () => {
   const previousEnabled = process.env.NSFW_ENABLED;
   const previousPrivate = process.env.NSFW_ALLOW_PRIVATE_CHATS;
   const previousExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS;
@@ -19,7 +20,8 @@ test("missing NSFW settings use permissive defaults", async () => {
   delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
   delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
   assert.match(await sendNsfwImage("not-a-category", { jid: "new-install", isGroup: false, sendMessage() {} }), /!hentai/);
-  assert.equal(validImageUrl("https://images.example.test/a.jpg"), "https://images.example.test/a.jpg");
+  assert.equal(validImageUrl("https://cdn.nekobot.xyz/a.jpg"), "https://cdn.nekobot.xyz/a.jpg");
+  assert.equal(validImageUrl("https://images.example.test/a.jpg"), null);
   if (previousEnabled === undefined) delete process.env.NSFW_ENABLED;
   else process.env.NSFW_ENABLED = previousEnabled;
   if (previousPrivate === undefined) delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
@@ -81,16 +83,59 @@ test("adult-image commands are listed and dispatched without network access when
   else process.env.NSFW_ENABLED = previous;
 });
 
-test("external image URLs are allowed by default and can be disabled", () => {
+test("external image URLs require explicit opt-in and reject private hosts", () => {
   const previous = process.env.NSFW_ALLOW_EXTERNAL_URLS;
   delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
-  assert.equal(validImageUrl("https://images.example.test/adult.jpg"), "https://images.example.test/adult.jpg");
-  process.env.NSFW_ALLOW_EXTERNAL_URLS = "false";
   assert.equal(validImageUrl("https://images.example.test/adult.jpg"), null);
   process.env.NSFW_ALLOW_EXTERNAL_URLS = "true";
-  assert.equal(validImageUrl("http://images.example.test/adult.jpg"), "http://images.example.test/adult.jpg");
+  assert.equal(validImageUrl("https://images.example.test/adult.jpg"), "https://images.example.test/adult.jpg");
+  assert.equal(validImageUrl("http://images.example.test/adult.jpg"), null);
   assert.equal(validImageUrl("https://user:password@images.example.test/adult.jpg"), null);
+  assert.equal(validImageUrl("http://127.0.0.1/secret.jpg"), null);
+  assert.equal(validImageUrl("http://169.254.169.254/latest/meta-data"), null);
+  assert.equal(validImageUrl("http://localhost/admin.jpg"), null);
   assert.equal(validImageUrl("javascript:alert(1)"), null);
   if (previous === undefined) delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
   else process.env.NSFW_ALLOW_EXTERNAL_URLS = previous;
+});
+
+test("uses automatic Waifu.im fallback when legacy Nekobot returns a temporary HTTP error", async (t) => {
+  const originalGet = axios.get;
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URL", "NSFW_API_URLS", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
+  );
+  const calls = [];
+  const sent = [];
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URL = "https://nekobot.xyz/api/image";
+  delete process.env.NSFW_API_URLS;
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  axios.get = async (url) => {
+    calls.push(url);
+    if (url.includes("nekobot.xyz")) {
+      const error = new Error("Cloudflare timeout");
+      error.response = { status: 522 };
+      throw error;
+    }
+    return { data: { items: [{ url: "https://cdn.waifu.im/test-image.png" }] } };
+  };
+  t.after(() => {
+    axios.get = originalGet;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  const reply = await sendNsfwImage("hentai", {
+    jid: "fallback-group",
+    isGroup: true,
+    sendMessage: async (_jid, payload) => sent.push(payload),
+  });
+  assert.equal(reply, null);
+  assert.equal(calls.length, 2);
+  assert.match(calls[0], /nekobot\.xyz/);
+  assert.match(calls[1], /api\.waifu\.im/);
+  assert.equal(sent[0]?.image?.url, "https://cdn.waifu.im/test-image.png");
 });

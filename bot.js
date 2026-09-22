@@ -363,8 +363,9 @@ async function start() {
       if (text.length > 500) continue;
       if (msg.key.fromMe && !ALLOW_SELF) continue;
 
+      const commandName = text.slice(1).split(/\s+/, 1)[0].slice(0, 32).toLowerCase();
       console.log(
-        `[${isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] ${text}`,
+        `[${isGroup ? "grupo" : "privado"} ${jid}${msg.key.fromMe ? " (yo)" : ""}] comando !${commandName}`,
       );
 
       try {
