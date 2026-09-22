@@ -57,9 +57,10 @@ La función está desactivada por defecto y solo puede enviar imágenes en grupo
 ```env
 NSFW_ENABLED=true
 NSFW_ALLOWED_GROUPS=120363012345678901,120363098765432109
+NSFW_ALLOW_EXTERNAL_URLS=false
 ```
 
-Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. El bot valida que la imagen proceda por HTTPS del dominio de la API y limita una solicitud por grupo cada 10 segundos. Usa esta función solo en grupos donde todas las personas tengan la edad y el consentimiento necesarios.
+Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Por defecto, el bot solo acepta imágenes HTTPS del dominio de la API. Si necesitas aceptar cualquier URL HTTP/HTTPS, cambia `NSFW_ALLOW_EXTERNAL_URLS=true`; hazlo solo con fuentes confiables. También limita una solicitud por grupo cada 10 segundos. Usa esta función solo en grupos donde todas las personas tengan la edad y el consentimiento necesarios.
 
 ## Instalación en Termux
 

@@ -60,12 +60,16 @@ function accessMessage(context) {
   return null;
 }
 
-function validImageUrl(value) {
+export function validImageUrl(value) {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && (url.hostname === "nekobot.xyz" || url.hostname.endsWith(".nekobot.xyz"))
-      ? url.toString()
-      : null;
+    const isHttp = url.protocol === "http:" || url.protocol === "https:";
+    if (!isHttp) return null;
+
+    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS === "true";
+    const isApiHost = url.protocol === "https:"
+      && (url.hostname === "nekobot.xyz" || url.hostname.endsWith(".nekobot.xyz"));
+    return (isApiHost || allowExternal) ? url.toString() : null;
   } catch {
     return null;
   }

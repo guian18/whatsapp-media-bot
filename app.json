@@ -80,6 +80,11 @@
       "value": "",
       "required": false
     },
+    "NSFW_ALLOW_EXTERNAL_URLS": {
+      "description": "Allow image URLs from HTTP/HTTPS hosts outside the API domain.",
+      "value": "false",
+      "required": false
+    },
     "CONTROL_API_TOKEN": {
       "description": "Leave empty to disable the local control API on Heroku.",
       "required": false,
