@@ -70,7 +70,7 @@ export function validImageUrl(value) {
     const url = new URL(value);
     const isHttp = url.protocol === "http:" || url.protocol === "https:";
     if (!isHttp || url.username || url.password) return null;
-    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS === "true";
+    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS !== "false";
     const isApiHost = url.protocol === "https:"
       && (url.hostname === "nekobot.xyz" || url.hostname.endsWith(".nekobot.xyz"));
     return (isApiHost || allowExternal) ? url.toString() : null;

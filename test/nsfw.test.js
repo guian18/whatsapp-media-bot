@@ -11,7 +11,7 @@ test("adult-image commands are disabled by default", async () => {
   else process.env.NSFW_ENABLED = previous;
 });
 
-test("missing NSFW settings are disabled safely by default", async () => {
+test("missing NSFW settings use permissive defaults", async () => {
   const previousEnabled = process.env.NSFW_ENABLED;
   const previousPrivate = process.env.NSFW_ALLOW_PRIVATE_CHATS;
   const previousExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS;
@@ -19,7 +19,7 @@ test("missing NSFW settings are disabled safely by default", async () => {
   delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
   delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
   assert.match(await sendNsfwImage("not-a-category", { jid: "new-install", isGroup: false, sendMessage() {} }), /!hentai/);
-  assert.equal(validImageUrl("https://images.example.test/a.jpg"), null);
+  assert.equal(validImageUrl("https://images.example.test/a.jpg"), "https://images.example.test/a.jpg");
   if (previousEnabled === undefined) delete process.env.NSFW_ENABLED;
   else process.env.NSFW_ENABLED = previousEnabled;
   if (previousPrivate === undefined) delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
@@ -81,12 +81,13 @@ test("adult-image commands are listed and dispatched without network access when
   else process.env.NSFW_ENABLED = previous;
 });
 
-test("external image URLs require an explicit opt-in", () => {
+test("external image URLs are allowed by default and can be disabled", () => {
   const previous = process.env.NSFW_ALLOW_EXTERNAL_URLS;
+  delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
+  assert.equal(validImageUrl("https://images.example.test/adult.jpg"), "https://images.example.test/adult.jpg");
   process.env.NSFW_ALLOW_EXTERNAL_URLS = "false";
   assert.equal(validImageUrl("https://images.example.test/adult.jpg"), null);
   process.env.NSFW_ALLOW_EXTERNAL_URLS = "true";
-  assert.equal(validImageUrl("https://images.example.test/adult.jpg"), "https://images.example.test/adult.jpg");
   assert.equal(validImageUrl("http://images.example.test/adult.jpg"), "http://images.example.test/adult.jpg");
   assert.equal(validImageUrl("https://user:password@images.example.test/adult.jpg"), null);
   assert.equal(validImageUrl("javascript:alert(1)"), null);

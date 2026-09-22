@@ -112,7 +112,7 @@ export function startControlServer({ getStatus, testAI, notifySettingsChange = a
   const token = (process.env.CONTROL_API_TOKEN || "").trim();
   const port = Number(process.env.CONTROL_API_PORT || 8787);
   const host = process.env.CONTROL_API_HOST || "127.0.0.1";
-  if (host === "0.0.0.0" && process.env.CONTROL_API_ALLOW_PUBLIC !== "true") {
+  if (host === "0.0.0.0" && process.env.CONTROL_API_ALLOW_PUBLIC === "false") {
     console.warn("API de control desactivada: CONTROL_API_HOST=0.0.0.0 requiere CONTROL_API_ALLOW_PUBLIC=true.");
     return null;
   }
