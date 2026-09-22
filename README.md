@@ -15,7 +15,7 @@ Bot de WhatsApp para IA, imágenes y automatizaciones multimedia.
 pkg update -y && pkg upgrade -y
 pkg install -y nodejs-lts git
 termux-setup-storage
-git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+git clone https://github.com/guian18/whatsapp-media-bot.git
 cd whatsapp-media-bot
 npm ci
 cp .env.example .env
@@ -42,7 +42,7 @@ Para actualizar una instalación existente:
 ```bash
 cd ~/whatsapp-media-bot
 git pull --ff-only origin main
-npm install
+npm ci
 npm test
 npm start
 ```
@@ -51,7 +51,7 @@ Si tu carpeta todavía se llama `infoplayerleft`:
 
 ```bash
 cd ~/infoplayerleft
-git remote set-url origin https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+git remote set-url origin https://github.com/guian18/whatsapp-media-bot.git
 git pull --ff-only origin main
 ```
 
@@ -62,7 +62,7 @@ Compatible con Ubuntu, Debian y distribuciones similares.
 ```bash
 sudo apt update
 sudo apt install -y git curl nodejs npm
-git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+git clone https://github.com/guian18/whatsapp-media-bot.git
 cd whatsapp-media-bot
 npm ci
 cp .env.example .env
@@ -77,7 +77,7 @@ La versión de Node.js debe ser 20 o superior.
 Instala [Node.js LTS](https://nodejs.org/en/download) y [Git para Windows](https://git-scm.com/download/win). Después abre PowerShell:
 
 ```powershell
-git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+git clone https://github.com/guian18/whatsapp-media-bot.git
 Set-Location whatsapp-media-bot
 npm ci
 Copy-Item .env.example .env
@@ -91,7 +91,7 @@ Instala [Homebrew](https://brew.sh/) si aún no lo tienes:
 
 ```bash
 brew install node git
-git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+git clone https://github.com/guian18/whatsapp-media-bot.git
 cd whatsapp-media-bot
 npm ci
 cp .env.example .env
@@ -112,7 +112,7 @@ GROUPS_ENABLED=true
 REPLY_IN_PRIVATE=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
-NSFW_ALLOW_EXTERNAL_URLS=true
+NSFW_ALLOW_EXTERNAL_URLS=false
 ALLOW_SELF=true
 AUTO_RESET=true
 ```
@@ -164,9 +164,9 @@ Enlaces directos para crear claves:
 
 ## Deploy en Railway
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/guian18/whatsapp-media-bot)
 
-También puedes crear el proyecto desde [Railway](https://railway.app/) seleccionando **Deploy from GitHub repo** y el repositorio `guianpierrcastillolazo-rgb/whatsapp-media-bot`.
+También puedes crear el proyecto desde [Railway](https://railway.app/) seleccionando **Deploy from GitHub repo** y el repositorio `guian18/whatsapp-media-bot`.
 
 El repositorio incluye `railway.json` con la instalación y el arranque configurados. Las variables se editan en **Service → Variables**.
 
@@ -184,7 +184,12 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | Variable | Qué debes colocar |
 |---|---|
 | `ENV_FILE` | Ruta a un archivo `.env` alternativo. En Railway normalmente déjala vacía; el bot usa `.env` por defecto y Railway entrega directamente sus variables al proceso. En Termux/Linux puedes usar, por ejemplo, `/home/usuario/whatsapp-media-bot/.env`. |
-| `NSFW_API_KEY` | Déjala vacía. La API NSFW configurada actualmente no necesita una clave y esta variable no es utilizada por el bot. |
+| `NSFW_API_KEY` | Déjala vacía. El bot no utiliza esta variable ni necesita una clave para sus proveedores incluidos. |
+| `NSFW_API_URLS` | Orígenes NSFW separados por comas. El valor recomendado es `nekobot,waifuim`: el bot consulta Waifu.im automáticamente si Nekobot devuelve un error HTTP temporal. También admite URLs de una API propia compatible con el formato de Nekobot. |
+| `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si contiene la URL de Nekobot, Waifu.im se añadirá como respaldo automáticamente. |
+| `NSFW_API_RETRIES` y `NSFW_IMAGE_RETRIES` | Reintentos adicionales por origen y por descarga, respectivamente. El valor recomendado es `1`; se admiten de `0` a `3` para API y de `0` a `2` para imágenes. |
+| `NSFW_DIRECT_URL` | `false` (recomendado) descarga y valida la imagen antes de enviarla a WhatsApp, por lo que el bot puede informar y reintentar fallos HTTP del CDN. Usa `true` solo si prefieres que WhatsApp descargue la URL directamente. |
+| `NSFW_ALLOW_EXTERNAL_URLS` | Déjala en `false` para aceptar únicamente los CDN HTTPS de Nekobot y Waifu.im. Cámbiala a `true` solo si configuraste una API propia que devuelve imágenes desde otro dominio HTTPS de confianza. |
 | `ALLOWED_GROUPS` | IDs de grupos permitidos, separados por comas. Déjala vacía para permitir todos los grupos. Ejemplo: `120363012345678901@g.us,120363098765432109@g.us`. |
 | `GEMINI_API_KEY` | Una clave de [Google AI Studio](https://aistudio.google.com/app/apikey). Solo es necesaria si usas `AI_PROVIDER=gemini`; en otro caso, déjala vacía. |
 | `OLLAMA_API_KEY` | La clave de tu servidor Ollama si está protegido por autenticación. Para Ollama local sin autenticación, déjala vacía. |
@@ -200,6 +205,10 @@ Si quieres usar el modo local y permitir todos los grupos, puedes dejar las vari
 ```env
 ENV_FILE=
 NSFW_API_KEY=
+NSFW_API_URLS=nekobot,waifuim
+NSFW_API_RETRIES=1
+NSFW_IMAGE_RETRIES=1
+NSFW_DIRECT_URL=false
 ALLOWED_GROUPS=
 GEMINI_API_KEY=
 OLLAMA_API_KEY=
@@ -225,7 +234,7 @@ GROUPS_ENABLED=true
 REPLY_IN_PRIVATE=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
-NSFW_ALLOW_EXTERNAL_URLS=true
+NSFW_ALLOW_EXTERNAL_URLS=false
 ALLOW_SELF=true
 AUTO_RESET=true
 ```
