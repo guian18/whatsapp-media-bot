@@ -92,8 +92,24 @@ function isImagePayload(data, contentType = "") {
 }
 
 function imageUrlFromApiResponse(data) {
-  const candidate = data?.message || data?.url || data?.image || data?.data?.url;
-  return validImageUrl(candidate);
+  const candidates = [
+    data?.message,
+    data?.url,
+    data?.image,
+    data?.video,
+    data?.data?.url,
+    data?.data?.image,
+    data?.result?.url,
+    data?.result?.image,
+    ...(Array.isArray(data?.images) ? data.images : []),
+    ...(Array.isArray(data?.data) ? data.data : []),
+  ];
+  for (const candidate of candidates) {
+    const value = typeof candidate === "string" ? candidate : candidate?.url || candidate?.image;
+    const imageUrl = validImageUrl(value);
+    if (imageUrl) return imageUrl;
+  }
+  return null;
 }
 
 function cleanup(now) {
@@ -125,7 +141,33 @@ function friendlyApiError(error) {
   if (status === 522 || status === 523 || status === 524) return `el servidor de imágenes no responde temporalmente (HTTP ${status})`;
   if (status === 429) return "el servidor de imágenes está limitando solicitudes (HTTP 429)";
   if (status >= 500) return `el servidor de imágenes respondió con HTTP ${status}`;
+  if (transientNetworkError(error)) return "la conexión con el servidor de imágenes agotó el tiempo; inténtalo de nuevo";
   return error?.message || "error de API";
+}
+
+async function sendResolvedImage(imageUrl, command, context) {
+  if (sendImageByUrl()) {
+    try {
+      await context.sendMessage(context.jid, {
+        image: { url: imageUrl },
+        caption: `Contenido para adultos: ${command}`,
+      });
+      return;
+    } catch (directError) {
+      // Some WhatsApp clients cannot fetch particular CDN URLs; retry locally with Axios.
+      const imageBuffer = await downloadImage(imageUrl);
+      await context.sendMessage(context.jid, {
+        image: imageBuffer,
+        caption: `Contenido para adultos: ${command}`,
+      });
+      return;
+    }
+  }
+  const imageBuffer = await downloadImage(imageUrl);
+  await context.sendMessage(context.jid, {
+    image: imageBuffer,
+    caption: `Contenido para adultos: ${command}`,
+  });
 }
 
 async function requestImageUrl(apiUrl, type) {
@@ -209,18 +251,7 @@ export async function sendNsfwImage(command, context = {}) {
   for (const apiUrl of configuredApiUrls()) {
     try {
       const imageUrl = await requestImageUrl(apiUrl, type);
-      if (sendImageByUrl()) {
-        await context.sendMessage(context.jid, {
-          image: { url: imageUrl },
-          caption: `Contenido para adultos: ${command}`,
-        });
-      } else {
-        const imageBuffer = await downloadImage(imageUrl);
-        await context.sendMessage(context.jid, {
-          image: imageBuffer,
-          caption: `Contenido para adultos: ${command}`,
-        });
-      }
+      await sendResolvedImage(imageUrl, command, context);
       return null;
     } catch (error) {
       lastError = error;
