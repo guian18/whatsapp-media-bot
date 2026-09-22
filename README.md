@@ -168,21 +168,63 @@ Enlaces directos para crear claves:
 
 También puedes crear el proyecto desde [Railway](https://railway.app/) seleccionando **Deploy from GitHub repo** y el repositorio `guianpierrcastillolazo-rgb/whatsapp-media-bot`.
 
-El repositorio incluye `railway.json` con la instalación y el arranque configurados. En Railway, las variables se pueden editar en **Service → Variables**. Configura como mínimo:
+El repositorio incluye `railway.json` con la instalación y el arranque configurados. Las variables se editan en **Service → Variables**.
+
+### Variables mínimas
 
 ```env
 WHATSAPP_NUMBER=
 PAIRING_CODE=false
 ```
 
-Para conservar la sesión entre deploys, crea un volumen montado en `/app/data` y configura:
+Configura también los permisos que quieras utilizar. Los valores recomendados son:
+
+```env
+GROUPS_ENABLED=true
+REPLY_IN_PRIVATE=true
+NSFW_ENABLED=true
+NSFW_ALLOW_PRIVATE_CHATS=true
+NSFW_ALLOW_EXTERNAL_URLS=true
+ALLOW_SELF=true
+AUTO_RESET=true
+```
+
+### Volumen persistente para WhatsApp
+
+Railway puede crear un contenedor nuevo durante cada deploy. Para que la sesión no desaparezca, crea un volumen conectado al mismo servicio que ejecuta `npm start`:
+
+1. Abre el proyecto en Railway.
+2. Selecciona el servicio del bot.
+3. Entra en **Volumes**.
+4. Pulsa **Add Volume** o **New Volume**.
+5. Ponle un nombre, por ejemplo `whatsapp-data`.
+6. Usa exactamente esta ruta de montaje:
+
+```text
+/app/data
+```
+
+7. Guarda el volumen y comprueba que está conectado al servicio del bot.
+8. En **Variables**, añade:
 
 ```env
 AUTH_DIR=/app/data/auth_info
 AI_MEMORY_FILE=/app/data/ai-memory.json
 ```
 
-Si Railway ya tiene variables antiguas con valor `false`, actualízalas manualmente desde **Variables**. Después pulsa **Redeploy**.
+La estructura persistente será:
+
+```text
+/app/data/
+├── auth_info/
+└── ai-memory.json
+```
+
+Después de guardar las variables, pulsa **Redeploy**. Vincula WhatsApp después del primer deploy. En los siguientes cambios, Railway reutilizará la sesión mientras conserves el mismo volumen.
+
+No borres el volumen ni cambies `/app/data` después de vincular WhatsApp. Tampoco ejecutes `npm run reset` si quieres conservar la sesión. No uses `/tmp/auth_info`, `/app/auth_info` ni `./auth_info` como ruta de producción porque pueden desaparecer durante un redeploy.
+
+Si Railway ya tiene variables antiguas con valor `false`, actualízalas manualmente desde **Variables** y vuelve a desplegar. Las variables del repositorio sirven como ejemplo; las variables configuradas en el panel de Railway son las que se aplican al servicio.
 
 ## Sesión de WhatsApp
 
