@@ -99,6 +99,21 @@ VIDEO_USER_AGENT=Mozilla/5.0
 
 La cookie se envía tanto al consultar la página como al descargar el video. Esto no resuelve CAPTCHAs, desafíos anti-bot ni renovaciones de sesión; cuando la cookie caduque debes reemplazarla manualmente.
 
+Para páginas que crean el reproductor mediante JavaScript, activa opcionalmente el modo de navegador automatizado. Debes instalar Chromium por separado y señalar su ejecutable; `playwright-core` no descarga un navegador automáticamente:
+
+```env
+VIDEO_BROWSER_EXECUTABLE_PATH=/ruta/al/ejecutable/chromium
+VIDEO_BROWSER_WAIT_MS=3000
+```
+
+También puedes conectar un navegador Chromium ya iniciado mediante Chrome DevTools Protocol:
+
+```env
+VIDEO_BROWSER_CDP_URL=http://127.0.0.1:9222
+```
+
+Si configuras `VIDEO_BROWSER_EXECUTABLE_PATH` o `VIDEO_BROWSER_CDP_URL`, `!video` abre `VIDEO_SOURCE_URL`, espera el tiempo indicado y busca las etiquetas `video`/`source`. No intenta saltar CAPTCHA, DRM, controles de acceso ni verificaciones humanas. Si el reproductor usa una URL `blob:` o segmentos protegidos, no podrá convertirlos en un archivo descargable.
+
 También puedes configurar `VIDEO_API_URL` si tienes una API que devuelve JSON con una URL en `url`, `video`, `message`, `result.url` o `data.url`:
 
 ```env

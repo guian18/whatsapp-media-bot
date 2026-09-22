@@ -1,4 +1,5 @@
 import axios from "axios";
+import { chromium } from "playwright-core";
 
 const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 const MAX_SOURCE_PAGE_BYTES = 2 * 1024 * 1024;
@@ -37,7 +38,6 @@ function isVideoContent(data, contentType = "", urlValue = "") {
   const mime = String(contentType).split(";", 1)[0].trim().toLowerCase();
   if (["application/octet-stream", "binary/octet-stream"].includes(mime)) {
     const header = Buffer.from(data || []).subarray(0, 64);
-    // MP4/M4V/MOV, WebM/Matroska, AVI and OGG containers.
     return header.includes(Buffer.from("ftyp")) ||
       header.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3])) ||
       (header.subarray(0, 4).toString("latin1") === "RIFF" && header.subarray(8, 12).toString("latin1") === "AVI ") ||
@@ -65,10 +65,6 @@ function decodeHtmlAttribute(value) {
     .trim();
 }
 
-/**
- * Extracts direct video links from common HTML media attributes.
- * Relative URLs are resolved against the configured page URL.
- */
 export function extractVideoUrlsFromHtml(html, pageUrl) {
   const baseUrl = validVideoUrl(pageUrl);
   if (!baseUrl) return [];
@@ -109,6 +105,92 @@ async function videoUrlsFromPage(pageUrl) {
   return extractVideoUrlsFromHtml(html, pageUrl);
 }
 
+function browserConfigured() {
+  return Boolean(process.env.VIDEO_BROWSER_EXECUTABLE_PATH || process.env.VIDEO_BROWSER_CDP_URL);
+}
+
+function cookieEntries(pageUrl) {
+  const url = new URL(pageUrl);
+  return String(process.env.VIDEO_SOURCE_COOKIE || "")
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const separator = part.indexOf("=");
+      if (separator <= 0) return null;
+      return {
+        name: part.slice(0, separator).trim(),
+        value: part.slice(separator + 1).trim(),
+        domain: url.hostname,
+        path: "/",
+        secure: url.protocol === "https:",
+      };
+    })
+    .filter(Boolean);
+}
+
+function browserExecutablePath() {
+  return String(process.env.VIDEO_BROWSER_EXECUTABLE_PATH || "").trim();
+}
+
+async function launchVideoBrowser() {
+  const cdpUrl = String(process.env.VIDEO_BROWSER_CDP_URL || "").trim();
+  if (cdpUrl) return { browser: await chromium.connectOverCDP(cdpUrl), ownsBrowser: false };
+  const executablePath = browserExecutablePath();
+  if (!executablePath) throw new Error("falta VIDEO_BROWSER_EXECUTABLE_PATH o VIDEO_BROWSER_CDP_URL");
+  return {
+    browser: await chromium.launch({
+      executablePath,
+      headless: true,
+      args: ["--no-sandbox"],
+    }),
+    ownsBrowser: true,
+  };
+}
+
+async function browserVideoBuffer(pageUrl) {
+  const { browser, ownsBrowser } = await launchVideoBrowser();
+  let context;
+  try {
+    context = await browser.newContext({
+      userAgent: process.env.VIDEO_USER_AGENT || undefined,
+      viewport: { width: 1280, height: 900 },
+    });
+    const cookies = cookieEntries(pageUrl);
+    if (cookies.length) await context.addCookies(cookies);
+    const page = await context.newPage();
+    await page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await page.waitForTimeout(Number(process.env.VIDEO_BROWSER_WAIT_MS || 3_000));
+    const result = await page.evaluate(() => {
+      const candidates = [
+        ...Array.from(document.querySelectorAll("video"), (element) => element.currentSrc || element.src || element.dataset.src || ""),
+        ...Array.from(document.querySelectorAll("source"), (element) => element.src || element.dataset.src || ""),
+      ].filter(Boolean);
+      const url = candidates[0];
+      if (!url || url.startsWith("blob:") || url.startsWith("data:")) return { error: "no-direct-source" };
+      return { url };
+    });
+    if (result.error) throw new Error(`el navegador no encontró un video directo (${result.error})`);
+    const response = await context.request.get(result.url, {
+      headers: { accept: "video/*" },
+      timeout: 30_000,
+      maxRedirects: 5,
+    });
+    if (!response.ok()) throw new Error(`video-http-${response.status()}`);
+    const contentType = response.headers()["content-type"] || "application/octet-stream";
+    const buffer = await response.body();
+    if (buffer.length > MAX_VIDEO_BYTES) throw new Error("too-large");
+    return {
+      buffer,
+      contentType,
+      url: result.url,
+    };
+  } finally {
+    await context?.close().catch(() => {});
+    if (ownsBrowser) await browser.close().catch(() => {});
+  }
+}
+
 export async function randomVideoUrl() {
   const urls = configuredVideoUrls();
   if (urls.length) return urls[Math.floor(Math.random() * urls.length)];
@@ -146,16 +228,25 @@ async function sendVideoUrl(urlValue, context = {}) {
   });
   const contentLength = Number(response.headers?.["content-length"] || 0);
   const buffer = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || "");
-  if (contentLength > MAX_VIDEO_BYTES || buffer.length > MAX_VIDEO_BYTES) {
-    return "El video supera el límite de 25 MB.";
-  }
-  if (!isVideoContent(buffer, response.headers?.["content-type"] || "", url)) {
-    return "La URL no devolvió un video directo compatible. Usa un enlace .mp4 público.";
-  }
+  if (contentLength > MAX_VIDEO_BYTES || buffer.length > MAX_VIDEO_BYTES) return "El video supera el límite de 25 MB.";
+  if (!isVideoContent(buffer, response.headers?.["content-type"] || "", url)) return "La URL no devolvió un video directo compatible. Usa un enlace .mp4 público.";
   await context.sendMessage(context.jid, {
     video: buffer,
     mimetype: response.headers?.["content-type"]?.split(";")[0] || "video/mp4",
     caption: "Video enviado desde URL",
+  });
+  return null;
+}
+
+async function sendVideoFromBrowser(pageUrl, context) {
+  const result = await browserVideoBuffer(pageUrl);
+  if (!isVideoContent(result.buffer, result.contentType, result.url)) {
+    return "El navegador encontró un recurso, pero no devolvió un video compatible.";
+  }
+  await context.sendMessage(context.jid, {
+    video: result.buffer,
+    mimetype: result.contentType.split(";", 1)[0] || "video/mp4",
+    caption: "Video enviado desde navegador automatizado",
   });
   return null;
 }
@@ -169,14 +260,12 @@ export async function sendVideoFromUrl(urlValue, context = {}) {
 }
 
 export async function sendRandomVideo(context = {}) {
-  if (!context.jid || typeof context.sendMessage !== "function") {
-    return "Este comando solo está disponible desde WhatsApp.";
-  }
+  if (!context.jid || typeof context.sendMessage !== "function") return "Este comando solo está disponible desde WhatsApp.";
   try {
+    const sourcePage = validVideoUrl(process.env.VIDEO_SOURCE_URL);
+    if (sourcePage && browserConfigured()) return await sendVideoFromBrowser(sourcePage, context);
     const url = await randomVideoUrl();
-    if (!url) {
-    return "No hay videos aleatorios configurados. Añade VIDEO_URLS, VIDEO_SOURCE_URL o VIDEO_API_URL en tu .env.";
-    }
+    if (!url) return "No hay videos aleatorios configurados. Añade VIDEO_URLS, VIDEO_SOURCE_URL o VIDEO_API_URL en tu .env.";
     return await sendVideoUrl(url, context);
   } catch (error) {
     return `No pude obtener un video aleatorio: ${error?.message || "error de API"}`;
