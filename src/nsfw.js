@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://nekobot.xyz/api/image";
+const API_URL = process.env.NSFW_API_URL || "https://nekobot.xyz/api/image";
 const MIN_INTERVAL_MS = 10_000;
 const lastRequestByChat = new Map();
 
@@ -87,6 +87,11 @@ function isImagePayload(data, contentType = "") {
   );
 }
 
+function imageUrlFromApiResponse(data) {
+  const candidate = data?.message || data?.url || data?.image || data?.data?.url;
+  return validImageUrl(candidate);
+}
+
 function cleanup(now) {
   for (const [jid, timestamp] of lastRequestByChat) {
     if (now - timestamp > MIN_INTERVAL_MS * 6) lastRequestByChat.delete(jid);
@@ -128,7 +133,7 @@ export async function sendNsfwImage(command, context = {}) {
       headers: { accept: "application/json", "user-agent": "InfoPlayerLeft/1.0" },
       timeout: 15_000,
     });
-    const imageUrl = validImageUrl(data?.message);
+    const imageUrl = imageUrlFromApiResponse(data);
     if (!imageUrl) throw new Error("la API no devolvió una URL de imagen válida");
     const imageResponse = await axios.get(imageUrl, {
       responseType: "arraybuffer",

@@ -59,6 +59,7 @@ La función está activa por defecto y funciona en todos los grupos y chats priv
 
 ```env
 NSFW_ENABLED=true
+NSFW_API_URL=https://nekobot.xyz/api/image
 NSFW_ALLOWED_GROUPS=
 NSFW_ALLOW_EXTERNAL_URLS=true
 NSFW_ALLOW_PRIVATE_CHATS=true
