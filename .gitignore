@@ -24,3 +24,5 @@ l4d2-official-addresses.txt
 Thumbs.db
 .vscode/
 .idea/
+__pycache__/
+*.py[cod]
