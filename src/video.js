@@ -22,10 +22,20 @@ export function validVideoUrl(value) {
   }
 }
 
-function isVideoContent(data, contentType = "") {
+function isVideoContent(data, contentType = "", urlValue = "") {
   if (/^video\//i.test(contentType)) return true;
-  const header = Buffer.from(data || []).subarray(0, 12).toString("latin1");
-  return header.includes("ftyp") || header.startsWith("RIFF");
+  const mime = String(contentType).split(";", 1)[0].trim().toLowerCase();
+  if (["application/octet-stream", "binary/octet-stream"].includes(mime)) {
+    const header = Buffer.from(data || []).subarray(0, 64);
+    // MP4/M4V/MOV, WebM/Matroska, AVI and OGG containers.
+    return header.includes(Buffer.from("ftyp")) ||
+      header.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3])) ||
+      (header.subarray(0, 4).toString("latin1") === "RIFF" && header.subarray(8, 12).toString("latin1") === "AVI ") ||
+      header.subarray(0, 4).equals(Buffer.from("OggS"));
+  }
+  const header = Buffer.from(data || []).subarray(0, 64).toString("latin1");
+  return header.includes("ftyp") || header.startsWith("RIFF") || header.startsWith("\u001aE\u00df\u00a3") || header.startsWith("OggS") ||
+    VIDEO_EXTENSIONS.test(urlValue);
 }
 
 function configuredVideoUrls() {
@@ -123,7 +133,7 @@ async function sendVideoUrl(urlValue, context = {}) {
   if (contentLength > MAX_VIDEO_BYTES || buffer.length > MAX_VIDEO_BYTES) {
     return "El video supera el límite de 25 MB.";
   }
-  if (!isVideoContent(buffer, response.headers?.["content-type"] || "")) {
+  if (!isVideoContent(buffer, response.headers?.["content-type"] || "", url)) {
     return "La URL no devolvió un video directo compatible. Usa un enlace .mp4 público.";
   }
   await context.sendMessage(context.jid, {
