@@ -4,6 +4,16 @@ const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 const MAX_SOURCE_PAGE_BYTES = 2 * 1024 * 1024;
 const VIDEO_EXTENSIONS = /\.(?:mp4|m4v|webm|mov|mkv|avi)(?:$|[?#])/i;
 
+function videoRequestHeaders(accept) {
+  const headers = {
+    accept,
+    "user-agent": process.env.VIDEO_USER_AGENT || "InfoPlayerLeft/1.0",
+  };
+  const cookie = process.env.VIDEO_SOURCE_COOKIE || process.env.VIDEO_COOKIE;
+  if (cookie) headers.cookie = cookie;
+  return headers;
+}
+
 function isPrivateHost(hostname) {
   const host = String(hostname || "").toLowerCase();
   if (["localhost", "127.0.0.1", "::1"].includes(host)) return true;
@@ -91,7 +101,7 @@ function urlFromApiResponse(data) {
 async function videoUrlsFromPage(pageUrl) {
   const { data: html } = await axios.get(pageUrl, {
     responseType: "text",
-    headers: { accept: "text/html,application/xhtml+xml", "user-agent": "InfoPlayerLeft/1.0" },
+    headers: videoRequestHeaders("text/html,application/xhtml+xml"),
     timeout: 15_000,
     maxContentLength: MAX_SOURCE_PAGE_BYTES,
     maxBodyLength: MAX_SOURCE_PAGE_BYTES,
@@ -129,7 +139,7 @@ async function sendVideoUrl(urlValue, context = {}) {
 
   const response = await axios.get(url, {
     responseType: "arraybuffer",
-    headers: { accept: "video/*", "user-agent": "InfoPlayerLeft/1.0" },
+    headers: videoRequestHeaders("video/*"),
     timeout: 30_000,
     maxContentLength: MAX_VIDEO_BYTES,
     maxBodyLength: MAX_VIDEO_BYTES,

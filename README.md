@@ -90,6 +90,15 @@ VIDEO_SOURCE_URL=https://ejemplo.com/videos/
 
 `VIDEO_PAGE_URL` es un alias compatible para la misma función. Si defines `VIDEO_URLS`, esa lista tiene prioridad; después se consulta `VIDEO_SOURCE_URL`/`VIDEO_PAGE_URL`, y por último `VIDEO_API_URL`.
 
+Si la página requiere una sesión, puedes proporcionar la cookie completa en una variable privada del entorno, sin escribirla en el código ni compartirla:
+
+```env
+VIDEO_SOURCE_COOKIE=session=tu_valor; otra_cookie=otro_valor
+VIDEO_USER_AGENT=Mozilla/5.0
+```
+
+La cookie se envía tanto al consultar la página como al descargar el video. Esto no resuelve CAPTCHAs, desafíos anti-bot ni renovaciones de sesión; cuando la cookie caduque debes reemplazarla manualmente.
+
 También puedes configurar `VIDEO_API_URL` si tienes una API que devuelve JSON con una URL en `url`, `video`, `message`, `result.url` o `data.url`:
 
 ```env
