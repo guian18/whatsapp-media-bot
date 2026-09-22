@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
-const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+// WhatsApp clients commonly reject larger media even when the upload succeeds.
+const MAX_VIDEO_BYTES = 16 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
 
 function privateHost(hostname) {
@@ -52,14 +53,15 @@ async function convertPlaylist(url) {
   try {
     await execFileAsync(ffmpeg, [
       "-y", "-i", url,
-      "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
-      "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output,
+      "-vf", "scale=min(720\,iw):-2",
+      "-c:v", "libx264", "-preset", "veryfast", "-b:v", "650k", "-maxrate", "650k", "-bufsize", "1300k", "-pix_fmt", "yuv420p",
+      "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", output,
     ], {
       timeout: Number(process.env.FFMPEG_TIMEOUT_MS || 180_000),
       maxBuffer: 2 * 1024 * 1024,
     });
     const buffer = await readFile(output);
-    if (!buffer.length || buffer.length > MAX_VIDEO_BYTES) throw new Error("ffmpeg produjo un archivo vacío o mayor de 25 MB");
+    if (!buffer.length || buffer.length > MAX_VIDEO_BYTES) throw new Error("ffmpeg produjo un archivo vacío o mayor de 16 MB; reduce la duración del video");
     return buffer;
   } catch (error) {
     if (error?.code === "ENOENT") throw new Error("Apify devolvió M3U8; instala ffmpeg o configura FFMPEG_PATH");
@@ -81,7 +83,7 @@ export async function sendVideoFromUrl(urlValue, context = {}) {
     maxBodyLength: MAX_VIDEO_BYTES,
   });
   const buffer = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || "");
-  if (buffer.length > MAX_VIDEO_BYTES) return "El video supera el límite de 25 MB.";
+  if (buffer.length > MAX_VIDEO_BYTES) return "El video supera el límite compatible de 16 MB para WhatsApp.";
   const contentType = response.headers?.["content-type"] || "";
   const output = isPlaylist(buffer, contentType, url) ? await convertPlaylist(url) : buffer;
   if (!looksLikeVideo(output, "video/mp4", url)) return "El proveedor no devolvió un archivo de video compatible.";
