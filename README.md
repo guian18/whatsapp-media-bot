@@ -139,7 +139,38 @@ VIDEO_SAVEHUB_ENABLED=true
 VIDEO_SAVEHUB_URL=https://savehub.cc/d/
 ```
 
-El adaptador usa únicamente el endpoint público que SaveHub muestra en su página (`GET /d/?url=...`), busca los enlaces de descarga MP4 que devuelve y luego los procesa con el límite normal de 25 MB. Está desactivado por defecto y solo se aplica a URLs públicas estándar de Pornhub; no funciona para videos privados, premium, DRM o CAPTCHA. Guarda únicamente contenido que tengas derecho a descargar y respeta los términos del servicio.
+El adaptador usa únicamente el endpoint público que SaveHub muestra en su página (`GET /d/?url=...`), busca los enlaces de descarga MP4 que devuelve y luego los procesa con el límite normal de 25 MB. Está habilitado en el ejemplo de configuración y solo se aplica a URLs públicas estándar de Pornhub; no funciona para videos privados, premium, DRM o CAPTCHA. Guarda únicamente contenido que tengas derecho a descargar y respeta los términos del servicio.
+
+### Proveedores independientes: `!apify` y `!phub`
+
+También existen dos comandos separados para probar proveedores alternativos con una URL pública:
+
+```text
+!apify https://www.pornhub.com/view_video.php?viewkey=...
+!phub https://www.pornhub.com/view_video.php?viewkey=...
+```
+
+`!apify` requiere un token privado de Apify y usa el actor configurado para obtener una URL de video. Configúralo sin subirlo al repositorio:
+
+```env
+APIFY_API_TOKEN=tu_token_privado
+APIFY_ACTOR_ID=pintxuki/pornhub-video-downloader
+```
+
+`!phub` está desactivado por defecto. Es una integración local opcional con la biblioteca Python PHUB y requiere Python, `phub` y normalmente `ffmpeg` dentro del entorno donde corre el bot:
+
+```bash
+python3 -m pip install phub
+```
+
+```env
+PHUB_ENABLED=true
+PHUB_PYTHON=python3
+PHUB_SCRIPT=scripts/phub_download.py
+PHUB_TIMEOUT_MS=180000
+```
+
+La documentación de PHUB advierte que su uso puede contradecir los términos del sitio. Ambos comandos aceptan solo URLs HTTP(S) públicas; no intentan acceder a contenido privado, premium, DRM o CAPTCHA. El límite de envío sigue siendo 25 MB.
 
 También puedes configurar `VIDEO_API_URL` si tienes una API que devuelve JSON con una URL en `url`, `video`, `message`, `result.url` o `data.url`:
 

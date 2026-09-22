@@ -5,6 +5,7 @@ import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage } from "./nsfw.js";
 import { sendRandomVideo, sendVideoFromUrl } from "./video.js";
+import { apifyVideoUrl, phubVideoFile } from "./video-providers.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
@@ -38,6 +39,48 @@ async function sendSfwAnimeImage(context) {
     return null;
   } catch (error) {
     return `No pude obtener una imagen SFW de anime ahora: ${error.message}`;
+  }
+}
+
+function publicPageUrl(value) {
+  try {
+    const url = new URL(String(value || "").trim());
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return null;
+    const host = url.hostname.toLowerCase();
+    if (["localhost", "127.0.0.1", "::1"].includes(host) || host.endsWith(".local") || host.endsWith(".internal")) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+async function sendApifyVideo(args, context) {
+  const pageUrl = publicPageUrl(args);
+  if (!pageUrl) return "Uso: `!apify <URL pública>`";
+  if (!context.jid || typeof context.sendMessage !== "function") return "Este comando solo está disponible desde WhatsApp.";
+  try {
+    const videoUrl = await apifyVideoUrl(pageUrl);
+    return await sendVideoFromUrl(videoUrl, context);
+  } catch (error) {
+    return `No pude obtener el video con Apify: ${error?.message || "error del proveedor"}`;
+  }
+}
+
+async function sendPhubVideo(args, context) {
+  const pageUrl = publicPageUrl(args);
+  if (!pageUrl) return "Uso: `!phub <URL pública>`";
+  if (process.env.PHUB_ENABLED !== "true") return "PHUB está desactivado. Configura PHUB_ENABLED=true solo si instalaste la biblioteca PHUB.";
+  if (!context.jid || typeof context.sendMessage !== "function") return "Este comando solo está disponible desde WhatsApp.";
+  try {
+    const buffer = await phubVideoFile(pageUrl);
+    await context.sendMessage(context.jid, {
+      video: buffer,
+      mimetype: "video/mp4",
+      caption: "Video enviado mediante PHUB",
+    });
+    return null;
+  } catch (error) {
+    return `No pude obtener el video con PHUB: ${error?.message || "error del proveedor"}`;
   }
 }
 
@@ -102,6 +145,8 @@ export function ayuda() {
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
     `\`${name("video")}\` <URL> — extrae y envía un video o página HTML de hasta 25 MB`,
+    `\`${name("apify")}\` <URL> — obtiene un video público mediante Apify`,
+    `\`${name("phub")}\` <URL> — obtiene un video público mediante PHUB local`,
     `\`${name("vigilar")} <nick|SteamID|URL>\` — avisa cuando un jugador se conecta a L4D2`,
     `\`${name("novigilar")} <nick|SteamID|URL>\` — cancela una vigilancia`,
     `\`${name("lista")}\` — muestra los jugadores vigilados en este chat`,
@@ -277,6 +322,10 @@ export async function handleCommand(text, context = {}) {
       return sendSfwAnimeImage(context);
     case "video":
       return args ? sendVideoFromUrl(args, context) : sendRandomVideo(context);
+    case "apify":
+      return sendApifyVideo(args, context);
+    case "phub":
+      return sendPhubVideo(args, context);
     case "nsfw":
       return nsfwHelp();
     case "vigilar":
