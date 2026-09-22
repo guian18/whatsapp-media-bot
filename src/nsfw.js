@@ -1,7 +1,8 @@
 import axios from "axios";
 
-const API_URL = process.env.NSFW_API_URL || "https://nekobot.xyz/api/image";
+const DEFAULT_API_URL = "https://nekobot.xyz/api/image";
 const MIN_INTERVAL_MS = 10_000;
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const lastRequestByChat = new Map();
 
 export const NSFW_COMMANDS = Object.freeze({
@@ -31,6 +32,14 @@ export const NSFW_COMMANDS = Object.freeze({
   yaoi: "yaoi",
 });
 
+function configuredApiUrls() {
+  const raw = process.env.NSFW_API_URLS || process.env.NSFW_API_URL || DEFAULT_API_URL;
+  return [...new Set(String(raw)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean))];
+}
+
 function configuredGroups() {
   return new Set(
     String(process.env.NSFW_ALLOWED_GROUPS || "")
@@ -46,17 +55,13 @@ function groupKey(jid) {
 }
 
 function accessMessage(context) {
-  if (process.env.NSFW_ENABLED === "false") {
-    return "Los comandos de imágenes para adultos están desactivados.";
-  }
+  if (process.env.NSFW_ENABLED === "false") return "Los comandos de imágenes para adultos están desactivados.";
   if (!context.isGroup && process.env.NSFW_ALLOW_PRIVATE_CHATS === "false") {
     return "Por seguridad, las imágenes para adultos solo están disponibles en grupos autorizados; no se envían por chat privado.";
   }
   if (!context.isGroup) return null;
   const groups = configuredGroups();
-  if (groups.size && !groups.has(groupKey(context.jid))) {
-    return "Este grupo no está autorizado para comandos de imágenes para adultos.";
-  }
+  if (groups.size && !groups.has(groupKey(context.jid))) return "Este grupo no está autorizado para comandos de imágenes para adultos.";
   return null;
 }
 
@@ -65,7 +70,6 @@ export function validImageUrl(value) {
     const url = new URL(value);
     const isHttp = url.protocol === "http:" || url.protocol === "https:";
     if (!isHttp || url.username || url.password) return null;
-
     const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS !== "false";
     const isApiHost = url.protocol === "https:"
       && (url.hostname === "nekobot.xyz" || url.hostname.endsWith(".nekobot.xyz"));
@@ -98,6 +102,60 @@ function cleanup(now) {
   }
 }
 
+function transientStatus(status) {
+  return [408, 425, 429, 500, 502, 503, 504, 522, 523, 524].includes(Number(status));
+}
+
+function errorStatus(error) {
+  return Number(error?.response?.status || error?.status || 0);
+}
+
+function friendlyApiError(error) {
+  const status = errorStatus(error);
+  if (status === 522 || status === 523 || status === 524) return `el servidor de imágenes no responde temporalmente (HTTP ${status})`;
+  if (status === 429) return "el servidor de imágenes está limitando solicitudes (HTTP 429)";
+  if (status >= 500) return `el servidor de imágenes respondió con HTTP ${status}`;
+  return error?.message || "error de API";
+}
+
+async function requestImageUrl(apiUrl, type) {
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const { data } = await axios.get(apiUrl, {
+        params: { type },
+        headers: { accept: "application/json", "user-agent": "InfoPlayerLeft/1.0" },
+        timeout: 15_000,
+      });
+      const imageUrl = imageUrlFromApiResponse(data);
+      if (!imageUrl) throw new Error("la API no devolvió una URL de imagen válida");
+      return imageUrl;
+    } catch (error) {
+      lastError = error;
+      if (!transientStatus(errorStatus(error)) || attempt === 1) break;
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
+async function downloadImage(imageUrl) {
+  const imageResponse = await axios.get(imageUrl, {
+    responseType: "arraybuffer",
+    headers: { accept: "image/*", "user-agent": "InfoPlayerLeft/1.0" },
+    timeout: 20_000,
+    maxContentLength: MAX_IMAGE_BYTES,
+    maxBodyLength: MAX_IMAGE_BYTES,
+  });
+  const imageBuffer = Buffer.isBuffer(imageResponse.data)
+    ? imageResponse.data
+    : Buffer.from(imageResponse.data || "");
+  if (!isImagePayload(imageBuffer, imageResponse.headers?.["content-type"] || "")) {
+    throw new Error("la URL no devolvió una imagen válida");
+  }
+  return imageBuffer;
+}
+
 export function nsfwHelp() {
   const names = Object.keys(NSFW_COMMANDS).map((name) => `!${name}`).join(", ");
   return [
@@ -127,33 +185,19 @@ export async function sendNsfwImage(command, context = {}) {
   }
   lastRequestByChat.set(context.jid, now);
 
-  try {
-    const { data } = await axios.get(API_URL, {
-      params: { type },
-      headers: { accept: "application/json", "user-agent": "InfoPlayerLeft/1.0" },
-      timeout: 15_000,
-    });
-    const imageUrl = imageUrlFromApiResponse(data);
-    if (!imageUrl) throw new Error("la API no devolvió una URL de imagen válida");
-    const imageResponse = await axios.get(imageUrl, {
-      responseType: "arraybuffer",
-      headers: { accept: "image/*", "user-agent": "InfoPlayerLeft/1.0" },
-      timeout: 20_000,
-      maxContentLength: 15 * 1024 * 1024,
-      maxBodyLength: 15 * 1024 * 1024,
-    });
-    const imageBuffer = Buffer.isBuffer(imageResponse.data)
-      ? imageResponse.data
-      : Buffer.from(imageResponse.data || "");
-    if (!isImagePayload(imageBuffer, imageResponse.headers?.["content-type"] || "")) {
-      throw new Error("la URL no devolvió una imagen válida");
+  let lastError;
+  for (const apiUrl of configuredApiUrls()) {
+    try {
+      const imageUrl = await requestImageUrl(apiUrl, type);
+      const imageBuffer = await downloadImage(imageUrl);
+      await context.sendMessage(context.jid, {
+        image: imageBuffer,
+        caption: `Contenido para adultos: ${command}`,
+      });
+      return null;
+    } catch (error) {
+      lastError = error;
     }
-    await context.sendMessage(context.jid, {
-      image: imageBuffer,
-      caption: `Contenido para adultos: ${command}`,
-    });
-    return null;
-  } catch (error) {
-    return `No pude obtener esa imagen ahora: ${error?.message || "error de API"}`;
   }
+  return `No pude obtener esa imagen ahora: ${friendlyApiError(lastError)}`;
 }
