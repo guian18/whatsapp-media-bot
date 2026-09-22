@@ -100,7 +100,13 @@ VIDEO_ACCEPT_LANGUAGE=es-ES,es;q=0.9,en;q=0.8
 
 La cookie se envía tanto al consultar la página como al descargar el video. Esto no resuelve CAPTCHAs, desafíos anti-bot ni renovaciones de sesión; cuando la cookie caduque debes reemplazarla manualmente.
 
-Para páginas que crean el reproductor mediante JavaScript, activa opcionalmente el modo de navegador automatizado. Debes instalar Chromium por separado y señalar su ejecutable; `playwright-core` no descarga un navegador automáticamente:
+Para páginas que crean el reproductor mediante JavaScript, el ejemplo de configuración usa esta fuente por defecto:
+
+```env
+VIDEO_SOURCE_URL=https://it.pornhub.com/
+```
+
+Activa opcionalmente el modo de navegador automatizado. Debes instalar Chromium por separado y señalar su ejecutable; `playwright-core` no descarga un navegador automáticamente:
 
 ```env
 VIDEO_BROWSER_EXECUTABLE_PATH=/ruta/al/ejecutable/chromium
