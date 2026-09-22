@@ -1,6 +1,6 @@
 # WhatsApp Media Bot
 
-Bot de WhatsApp para IA, descargas de vídeo y automatizaciones multimedia.
+Bot de WhatsApp para IA, imágenes y automatizaciones multimedia.
 
 ## Instalación en Termux
 
@@ -143,4 +143,4 @@ GROUPS_ENABLED=true
 REPLY_IN_PRIVATE=true
 ```
 
-Las opciones de seguridad del archivo `.env.example` están configuradas con defaults restrictivos. Cambia solo las variables que necesites.
+Las opciones principales del archivo `.env.example` están habilitadas por defecto y pueden cambiarse desde `.env`.

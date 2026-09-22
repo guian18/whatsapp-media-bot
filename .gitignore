@@ -8,6 +8,7 @@ coverage/
 # WhatsApp credentials and local secrets
 auth_info/
 .env
+.env.backup*
 *.log
 *.pem
 *.key
