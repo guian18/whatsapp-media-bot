@@ -79,9 +79,7 @@ Los comandos NSFW tienen un límite de una solicitud por chat cada 10 segundos. 
 
 | Comando | Uso | Función y requisitos |
 |---|---|---|
-| `!video` | `!video` | Envía un video aleatorio de `VIDEO_URLS`, `VIDEO_SOURCE_URL` o `VIDEO_API_URL`. |
-| `!video` | `!video <URL directa>` | Descarga un video HTTP(S) público. |
-| `!video` | `!video <URL de página>` | Extrae un reproductor o recurso de una página; requiere Playwright/Kali si la página depende de JavaScript. |
+| `!video` | `!video`<br>`!video <URL directa>`<br>`!video <URL de página>` | Sin argumentos, envía un video aleatorio de `VIDEO_URLS`, `VIDEO_SOURCE_URL` o `VIDEO_API_URL`. Con una URL directa, descarga un video HTTP(S) público. Con una página, extrae el reproductor o recurso; requiere Playwright/Kali si depende de JavaScript. |
 | `!apify` | `!apify <URL pública>` | Consulta el actor configurado de Apify; requiere `APIFY_API_TOKEN`. |
 | `!phub` | `!phub <URL pública>` | Descarga mediante la biblioteca local PHUB; requiere `PHUB_ENABLED=true`, Python, PHUB y normalmente `ffmpeg`. |
 
