@@ -71,7 +71,6 @@ Ejemplos:
 |---|---|---|
 | `!anime` | `!anime` | Envía una imagen SFW aleatoria de anime. |
 | `!nsfw` | `!nsfw` | Muestra las categorías NSFW disponibles. |
-| `!apify` | `!apify <URL pública>` | Obtiene un video público con Apify y convierte M3U8 a MP4 con ffmpeg. Requiere `APIFY_API_TOKEN`. |
 | `!phub` | `!phub <URL pública>` | Descarga un video público con PHUB local. Requiere `PHUB_ENABLED=true`, Python, PHUB y ffmpeg. |
 | Categorías NSFW | `!4k`, `!anal`, `!ass`, `!blowjob`, `!boobs`, `!feet`, `!gonewild`, `!hass`, `!hboobs`, `!hentai`, `!hentaianal`, `!hkitsune`, `!hmidriff`, `!htigh`, `!hyuri`, `!kanna`, `!lewd`, `!lewdneko`, `!paizuri`, `!pgif`, `!pussy`, `!tentacle`, `!thigh`, `!yaoi` | Solicita una imagen de la categoría configurada. |
 
@@ -133,7 +132,6 @@ Railway ofrece una prueba de $5 durante 30 días y después $1 mensual de crédi
 | OpenRouter | [Crear OpenRouter API Key](https://openrouter.ai/keys) | `OPENROUTER_API_KEY` |
 | Hugging Face | [Crear Hugging Face Token](https://huggingface.co/settings/tokens) | `AI_API_KEY` |
 | Ollama Cloud | [Crear Ollama API Key](https://ollama.com/settings/keys) | `OLLAMA_API_KEY` |
-| Apify | [Crear Apify API Token](https://console.apify.com/account/integrations) | `APIFY_API_TOKEN` |
 
 Backends locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](https://github.com/ggml-org/llama.cpp) y [LocalAI](https://github.com/mudler/LocalAI). Las claves reales deben guardarse en `.env` o en las variables del hosting, nunca en el código, el README ni GitHub.
 
@@ -148,7 +146,6 @@ GEMINI_API_KEY=tu_clave
 MISTRAL_API_KEY=tu_clave
 OPENROUTER_API_KEY=tu_clave
 OLLAMA_API_KEY=tu_clave
-APIFY_API_TOKEN=tu_token
 ```
 
 No pegues tokens en comandos de WhatsApp ni en capturas de pantalla. Si una clave se filtra, revócala desde el enlace del proveedor y genera otra.
@@ -171,23 +168,12 @@ NSFW_ALLOW_PRIVATE_CHATS=true
 
 Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Si no responde ningún comando, comprueba que `GROUPS_ENABLED=true`, `REPLY_IN_PRIVATE=true` y que `ALLOWED_GROUPS` esté vacío o contenga el ID numérico correcto. `NSFW_DIRECT_URL=true` envía la URL a WhatsApp directamente y es el modo rápido; usa `false` para que el bot descargue y valide el archivo con Axios antes de enviarlo. `NSFW_API_URLS` acepta varias APIs separadas por comas; el bot reintenta errores transitorios como HTTP 522 y timeouts, y prueba la siguiente API si la primera no responde. No pongas claves ni cookies en esa variable. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
 
-## Proveedores de video independientes
+## Proveedor de video PHUB
 
-El comando `!video` fue eliminado. Se conservan únicamente estos comandos independientes:
+El comando `!video` y el proveedor anterior fueron eliminados. Se conserva únicamente:
 
 ```text
-!apify https://www.pornhub.com/view_video.php?viewkey=...
 !phub https://www.pornhub.com/view_video.php?viewkey=...
-```
-
-`!apify` requiere un token privado de Apify:
-
-```env
-APIFY_API_TOKEN=tu_token_privado
-APIFY_ACTOR_ID=pintxuki/pornhub-video-downloader
-APIFY_USE_PROXY=false
-FFMPEG_PATH=ffmpeg
-FFMPEG_TIMEOUT_MS=180000
 ```
 
 `!phub` está desactivado por defecto. Para activarlo, instala Python, PHUB y normalmente `ffmpeg` en el mismo entorno del bot:
@@ -203,7 +189,7 @@ PHUB_SCRIPT=scripts/phub_download.py
 PHUB_TIMEOUT_MS=180000
 ```
 
-Apify puede devolver una lista M3U8; el bot intenta convertirla a MP4 con `ffmpeg`. `APIFY_USE_PROXY=false` es el modo predeterminado y evita errores de permisos de proxy; actívalo solo si tu cuenta y el actor necesitan el proxy (`APIFY_USE_PROXY=true`). En Termux instala `ffmpeg` con `pkg install ffmpeg`; en Kali/Debian usa `apt install ffmpeg`. Ambos comandos aceptan únicamente URLs públicas HTTP(S) y conservan el límite de 25 MB. No acceden a contenido privado, premium, DRM o CAPTCHA. Usa estas funciones solo con contenido que tengas derecho a guardar.
+En Termux instala `ffmpeg` con `pkg install ffmpeg`; en Kali/Debian usa `apt install ffmpeg`. PHUB acepta únicamente URLs públicas HTTP(S) y conserva el límite de 25 MB. No accede a contenido privado, premium, DRM o CAPTCHA. Usa esta función solo con contenido que tengas derecho a guardar.
 
 ## Instalación en Termux
 

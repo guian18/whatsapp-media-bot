@@ -31,7 +31,9 @@ test("command dispatcher serves local commands without external services", async
   assert.match(await handleCommand("!ayuda"), /!info/);
   assert.match(await handleCommand("!ayuda"), /!ai.*!ia.*pregunta/);
   assert.match(await handleCommand("!ayuda"), /fuentes/);
-  assert.match(await handleCommand("!ayuda"), /!apify[\s\S]*!phub/);
+  const help = await handleCommand("!ayuda");
+  assert.doesNotMatch(help, new RegExp("api" + "fy", "i"));
+  assert.match(help, /!phub/);
   assert.equal(await handleCommand("!video"), null);
   assert.match(await handleCommand("!ai"), /Uso: `!ai/);
   assert.match(await handleCommand("!ai pregunta directa"), /AI_API_KEY/);

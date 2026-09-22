@@ -4,8 +4,7 @@ import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage } from "./nsfw.js";
-import { sendVideoFromUrl } from "./video-delivery.js";
-import { apifyVideoUrl, phubVideoFile } from "./video-providers.js";
+import { phubVideoFile } from "./video-providers.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
@@ -51,18 +50,6 @@ function publicPageUrl(value) {
     return url.toString();
   } catch {
     return null;
-  }
-}
-
-async function sendApifyVideo(args, context) {
-  const pageUrl = publicPageUrl(args);
-  if (!pageUrl) return "Uso: `!apify <URL pública>`";
-  if (!context.jid || typeof context.sendMessage !== "function") return "Este comando solo está disponible desde WhatsApp.";
-  try {
-    const videoUrl = await apifyVideoUrl(pageUrl);
-    return await sendVideoFromUrl(videoUrl, { ...context, sourceUrl: pageUrl });
-  } catch (error) {
-    return `No pude obtener el video con Apify: ${error?.message || "error del proveedor"}`;
   }
 }
 
@@ -144,7 +131,6 @@ export function ayuda() {
     `\`${name("proveedor")} <nombre>\` — cambia la IA y el modelo`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
-    `\`${name("apify")}\` <URL> — obtiene un video público mediante Apify`,
     `\`${name("phub")}\` <URL> — obtiene un video público mediante PHUB local`,
     `\`${name("vigilar")} <nick|SteamID|URL>\` — avisa cuando un jugador se conecta a L4D2`,
     `\`${name("novigilar")} <nick|SteamID|URL>\` — cancela una vigilancia`,
@@ -319,8 +305,6 @@ export async function handleCommand(text, context = {}) {
       return cmdProveedor(args);
     case "anime":
       return sendSfwAnimeImage(context);
-    case "apify":
-      return sendApifyVideo(args, context);
     case "phub":
       return sendPhubVideo(args, context);
     case "nsfw":
