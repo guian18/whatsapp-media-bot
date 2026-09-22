@@ -26,6 +26,9 @@ def main() -> int:
     output_path = Path(output).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     configured_cookie = os.getenv("XVIDEOS_COOKIE", "").strip()
+    if not configured_cookie:
+        print("XVIDEOS_COOKIE es obligatorio para xvideos-dl; configura la cookie de tu sesión de xvideos.com en .env", file=sys.stderr)
+        return 2
 
     with tempfile.TemporaryDirectory(prefix="infoplayerleft-xvideos-") as work_dir:
         work = Path(work_dir)
