@@ -35,6 +35,8 @@ const COMMAND_NAMES = new Set([
   "help",
 ]);
 
+const BUILTIN_ALIASES = Object.freeze({ gatus: "anime" });
+
 function validName(value) {
   return /^[a-z][a-z0-9_]{0,31}$/i.test(value);
 }
@@ -67,6 +69,7 @@ export function resolveCommandAlias(command) {
   const aliases = parseCommandAliases(process.env.COMMAND_ALIASES || "");
   if (aliases[command]) return aliases[command];
   if (Object.values(aliases).includes(command)) return null;
+  if (BUILTIN_ALIASES[command]) return BUILTIN_ALIASES[command];
   return command;
 }
 

@@ -167,7 +167,7 @@ export function validImageUrl(value) {
     const url = new URL(value);
     const isHttp = url.protocol === "http:" || url.protocol === "https:";
     if (!isHttp || url.username || url.password || isPrivateHost(url.hostname)) return null;
-    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS === "true";
+    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS !== "false";
     const isTrusted = url.protocol === "https:" && isTrustedImageHost(url.hostname);
     const isApprovedExternal = allowExternal && url.protocol === "https:";
     return (isTrusted || isApprovedExternal) ? url.toString() : null;

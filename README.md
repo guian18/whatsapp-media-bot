@@ -112,7 +112,7 @@ GROUPS_ENABLED=true
 REPLY_IN_PRIVATE=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
-NSFW_ALLOW_EXTERNAL_URLS=false
+NSFW_ALLOW_EXTERNAL_URLS=true
 ALLOW_SELF=true
 AUTO_RESET=true
 ```
@@ -157,8 +157,8 @@ Enlaces directos para crear claves:
 - `!idioma` — muestra los idiomas disponibles.
 - `!idioma list` — muestra la lista de idiomas.
 - `!proveedor` — muestra los proveedores disponibles.
-- `!proveedor list` — muestra la lista de proveedores.
-- `!anime` — envía una imagen SFW de anime.
+- `!proveedor list` — muestra la lista de proveedores disponibles.
+- `!anime` o `!gatus` — envía una imagen SFW de anime.
 - `!nsfw` — muestra las categorías de imágenes para adultos.
 - `!hentai`, `!boobs`, `!ass` y otras categorías — solicitan una imagen si NSFW está habilitado.
 
@@ -195,7 +195,7 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si contiene la URL de Nekobot, Waifu.im se añadirá como respaldo automáticamente. |
 | `NSFW_API_RETRIES` y `NSFW_IMAGE_RETRIES` | Reintentos adicionales por origen y por descarga, respectivamente. El valor recomendado es `1`; se admiten de `0` a `3` para API y de `0` a `2` para imágenes. |
 | `NSFW_DIRECT_URL` | `false` (recomendado) descarga y valida la imagen antes de enviarla a WhatsApp, por lo que el bot puede informar y reintentar fallos HTTP del CDN. Usa `true` solo si prefieres que WhatsApp descargue la URL directamente. |
-| `NSFW_ALLOW_EXTERNAL_URLS` | Déjala en `false` para aceptar únicamente los CDN HTTPS de Nekobot y Waifu.im. Cámbiala a `true` solo si configuraste una API propia que devuelve imágenes desde otro dominio HTTPS de confianza. |
+| `NSFW_ALLOW_EXTERNAL_URLS` | Está en `true` para permitir fuentes HTTPS externas por defecto. El bot sigue bloqueando HTTP, credenciales en URL y hosts privados/locales. Usa `false` si quieres limitarlo solo a los CDN de Nekobot y Waifu.im. |
 | `ALLOWED_GROUPS` | IDs de grupos permitidos, separados por comas. Déjala vacía para permitir todos los grupos. Ejemplo: `120363012345678901@g.us,120363098765432109@g.us`. |
 | `GEMINI_API_KEY` | Una clave de [Google AI Studio](https://aistudio.google.com/app/apikey). Solo es necesaria si usas `AI_PROVIDER=gemini`; en otro caso, déjala vacía. |
 | `OLLAMA_API_KEY` | La clave de tu servidor Ollama si está protegido por autenticación. Para Ollama local sin autenticación, déjala vacía. |
@@ -230,7 +230,7 @@ NSFW_API_RETRIES=1
 NSFW_IMAGE_RETRIES=1
 NSFW_DIRECT_URL=false
 ALLOWED_GROUPS=
-NSFW_ALLOW_EXTERNAL_URLS=false
+NSFW_ALLOW_EXTERNAL_URLS=true
 ALLOW_SELF=true
 AUTO_RESET=true
 AUTH_DIR=/app/data/auth_info
@@ -265,7 +265,7 @@ GROUPS_ENABLED=true
 REPLY_IN_PRIVATE=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
-NSFW_ALLOW_EXTERNAL_URLS=false
+NSFW_ALLOW_EXTERNAL_URLS=true
 ALLOW_SELF=true
 AUTO_RESET=true
 ```
