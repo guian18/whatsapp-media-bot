@@ -167,6 +167,37 @@ NSFW_ALLOW_PRIVATE_CHATS=true
 
 Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Si no responde ningún comando, comprueba que `GROUPS_ENABLED=true`, `REPLY_IN_PRIVATE=true` y que `ALLOWED_GROUPS` esté vacío o contenga el ID numérico correcto. `NSFW_DIRECT_URL=true` envía la URL a WhatsApp directamente y es el modo rápido; usa `false` para que el bot descargue y valide el archivo con Axios antes de enviarlo. `NSFW_API_URLS` acepta varias APIs separadas por comas; el bot reintenta errores transitorios como HTTP 522 y timeouts, y prueba la siguiente API si la primera no responde. No pongas claves ni cookies en esa variable. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
 
+## Proveedores de video independientes
+
+El comando `!video` fue eliminado. Se conservan únicamente estos comandos independientes:
+
+```text
+!apify https://www.pornhub.com/view_video.php?viewkey=...
+!phub https://www.pornhub.com/view_video.php?viewkey=...
+```
+
+`!apify` requiere un token privado de Apify:
+
+```env
+APIFY_API_TOKEN=tu_token_privado
+APIFY_ACTOR_ID=pintxuki/pornhub-video-downloader
+```
+
+`!phub` está desactivado por defecto. Para activarlo, instala Python, PHUB y normalmente `ffmpeg` en el mismo entorno del bot:
+
+```bash
+python3 -m pip install phub
+```
+
+```env
+PHUB_ENABLED=true
+PHUB_PYTHON=python3
+PHUB_SCRIPT=scripts/phub_download.py
+PHUB_TIMEOUT_MS=180000
+```
+
+Ambos comandos aceptan únicamente URLs públicas HTTP(S) y conservan el límite de 25 MB. No acceden a contenido privado, premium, DRM o CAPTCHA. Usa estas funciones solo con contenido que tengas derecho a guardar.
+
 ## Instalación en Termux
 
 ```bash
