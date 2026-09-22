@@ -170,6 +170,12 @@ También puedes crear el proyecto desde [Railway](https://railway.app/) seleccio
 
 El repositorio incluye `railway.json` con la instalación y el arranque configurados. Las variables se editan en **Service → Variables**.
 
+### Estado de compatibilidad
+
+El código está preparado para ejecutarse como un **Worker/Service de Railway**: usa Node.js 20 o superior, instala las dependencias con `npm ci`, arranca con `npm start` y reinicia el proceso si termina con error. No necesita exponer un puerto HTTP porque funciona como bot persistente de WhatsApp; no configures un healthcheck HTTP ni un dominio público para este servicio.
+
+Para que la sesión de WhatsApp sobreviva a los redeploys, el volumen persistente y las variables de almacenamiento son obligatorios. Sin ellos, el bot puede arrancar, pero Railway perderá `auth_info` cuando cree un contenedor nuevo y tendrás que vincular WhatsApp otra vez.
+
 ### Variables mínimas
 
 ```env
@@ -197,32 +203,51 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | `LLAMA_CPP_API_KEY` | La clave configurada en tu servidor `llama.cpp` si exige autenticación. Para un servidor local sin autenticación, déjala vacía. |
 | `NSFW_ALLOWED_GROUPS` | IDs de grupos donde se permiten específicamente los comandos NSFW, separados por comas. Déjala vacía para no limitar por grupo cuando `NSFW_ENABLED=true`. |
 | `AI_API_KEY` | Clave genérica del proveedor de IA elegido. Úsala como alternativa si no configuras la variable específica del proveedor; por ejemplo, una clave compatible con Gemini, OpenRouter u otro proveedor remoto. Para `local`, `ollama`, `llama_cpp` o `localai` sin autenticación, déjala vacía. |
+| `AI_PROVIDER` | En Railway no uses `local`, `ollama`, `llama_cpp` ni `localai` salvo que también hayas desplegado ese servidor dentro de una red accesible. Para usar `!ai`, elige un proveedor remoto como `groq`, `gemini`, `mistral` u `openrouter` y configura únicamente su clave. |
+| `AUTH_DIR` | Debe ser `/app/data/auth_info` cuando uses el volumen recomendado. No lo dejes en `auth_info` en producción si quieres conservar la sesión. |
+| `AI_MEMORY_FILE` | Debe ser `/app/data/ai-memory.json` cuando uses memoria de IA persistente. |
 
-### Proveedor NSFW de respaldo
+### Proveedor NSFW principal y de respaldo
 
 Después de comparar alternativas de GitHub, el respaldo utilizado es **Waifu.im API**, cuyo código está publicado en [Waifu-im/waifu-api](https://github.com/Waifu-im/waifu-api). Se eligió porque ofrece una API REST operativa, documentación versionada, lectura NSFW sin clave y una respuesta JSON compatible con Node.js. Los repositorios de bots completos y wrappers revisados no se incorporaron porque requerían desplegar otro bot, dependían de scraping o estaban abandonados.
 
 El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra `Fuente: Waifu.im` en el pie de la imagen. Esto no reemplaza la verificación de edad, el consentimiento ni el cumplimiento de las políticas de WhatsApp, la legislación local y los términos del proveedor. Waifu.im no ofrece un SLA: Waifu.im es el primer origen y Nekobot funciona como respaldo secundario.
 
-#### Ejemplo recomendado para Railway
+#### Variables recomendadas para Railway
 
-Si quieres usar el modo local y permitir todos los grupos, puedes dejar las variables opcionales vacías:
+Este bloque sirve como base para un bot que usa medios y NSFW. No pongas comillas y no copies claves de ejemplo:
 
 ```env
-ENV_FILE=
-NSFW_API_KEY=
+WHATSAPP_NUMBER=51987654321
+PAIRING_CODE=false
+GROUPS_ENABLED=true
+REPLY_IN_PRIVATE=true
+NSFW_ENABLED=true
+NSFW_ALLOW_PRIVATE_CHATS=true
+NSFW_ALLOWED_GROUPS=
 NSFW_API_URLS=waifuim,nekobot
 NSFW_API_RETRIES=1
 NSFW_IMAGE_RETRIES=1
 NSFW_DIRECT_URL=false
 ALLOWED_GROUPS=
-GEMINI_API_KEY=
-OLLAMA_API_KEY=
-OPENROUTER_API_KEY=
-LLAMA_CPP_API_KEY=
-NSFW_ALLOWED_GROUPS=
-AI_API_KEY=
+NSFW_ALLOW_EXTERNAL_URLS=false
+ALLOW_SELF=true
+AUTO_RESET=true
+AUTH_DIR=/app/data/auth_info
+AI_MEMORY_FILE=/app/data/ai-memory.json
 ```
+
+`WHATSAPP_NUMBER` debe contener solo dígitos con código internacional. Con un número configurado, el bot solicita el código de vinculación en los logs de Railway; introdúcelo en WhatsApp desde **Dispositivos vinculados → Vincular con número de teléfono**. Si prefieres QR, deja `WHATSAPP_NUMBER` vacío y revisa los logs del servicio.
+
+El bloque anterior no configura IA. Para habilitar `!ai` en Railway, añade una sola configuración remota, por ejemplo:
+
+```env
+AI_PROVIDER=groq
+GROQ_API_KEY=tu_clave_de_groq
+AI_MODEL=openai/gpt-oss-20b
+```
+
+No configures `AI_PROVIDER=local` esperando que Railway encuentre tu llama.cpp u Ollama del ordenador: `127.0.0.1` dentro de Railway apunta al propio contenedor y no a tu dispositivo.
 
 Configura una sola opción de IA remota cuando la necesites. Por ejemplo, para OpenRouter:
 
@@ -245,7 +270,7 @@ ALLOW_SELF=true
 AUTO_RESET=true
 ```
 
-### Volumen persistente para WhatsApp
+### Volumen persistente para WhatsApp — obligatorio en producción
 
 Railway puede crear un contenedor nuevo durante cada deploy. Para que la sesión no desaparezca, crea un volumen conectado al mismo servicio que ejecuta `npm start`:
 
@@ -278,9 +303,20 @@ La estructura persistente será:
 
 Después de guardar las variables, pulsa **Redeploy**. Vincula WhatsApp después del primer deploy. En los siguientes cambios, Railway reutilizará la sesión mientras conserves el mismo volumen.
 
+Comprueba en los logs que el proceso muestra `Conectado a WhatsApp` y que no aparece un error de permisos para `/app/data`. Si la vinculación se completa, no ejecutes `npm run reset` y no elimines el volumen.
+
 No borres el volumen ni cambies `/app/data` después de vincular WhatsApp. Tampoco ejecutes `npm run reset` si quieres conservar la sesión. No uses `/tmp/auth_info`, `/app/auth_info` ni `./auth_info` como ruta de producción porque pueden desaparecer durante un redeploy.
 
 Si Railway ya tiene variables antiguas con valor `false`, actualízalas manualmente desde **Variables** y vuelve a desplegar. Las variables del repositorio sirven como ejemplo; las variables configuradas en el panel de Railway son las que se aplican al servicio.
+
+### Actualizar el servicio sin perder la sesión
+
+Desde Railway, usa **Redeploy** después de cambiar variables o de fusionar una actualización en `main`. No borres el volumen ni cambies `/app/data`. Para comprobar el mismo flujo localmente antes de desplegar:
+
+```bash
+npm ci
+npm test
+```
 
 ## Sesión de WhatsApp
 
