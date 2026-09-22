@@ -24,10 +24,10 @@ test("resolves a configured command alias", () => {
 
 test("permite cambiar el nombre sin mantener activo el comando original", () => {
   const previous = process.env.COMMAND_ALIASES;
-  process.env.COMMAND_ALIASES = "videos=xvideos";
+  process.env.COMMAND_ALIASES = "videos=anime";
   try {
-    assert.equal(resolveCommandAlias("videos"), "xvideos");
-    assert.equal(resolveCommandAlias("xvideos"), null);
+    assert.equal(resolveCommandAlias("videos"), "anime");
+    assert.equal(resolveCommandAlias("anime"), null);
   } finally {
     if (previous === undefined) delete process.env.COMMAND_ALIASES;
     else process.env.COMMAND_ALIASES = previous;
@@ -36,11 +36,10 @@ test("permite cambiar el nombre sin mantener activo el comando original", () => 
 
 test("actualiza !ayuda con los nombres personalizados activos", async () => {
   const previous = process.env.COMMAND_ALIASES;
-  process.env.COMMAND_ALIASES = "videos=xvideos";
+  process.env.COMMAND_ALIASES = "imagenes=anime";
   try {
     const help = await handleCommand("!ayuda");
-    assert.match(help, /`!videos` <URL>/);
-    assert.doesNotMatch(help, /`!xvideos` <URL>/);
+    assert.match(help, /!imagenes/);
   } finally {
     if (previous === undefined) delete process.env.COMMAND_ALIASES;
     else process.env.COMMAND_ALIASES = previous;

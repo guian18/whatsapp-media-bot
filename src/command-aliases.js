@@ -6,8 +6,6 @@ const COMMAND_NAMES = new Set([
   "idioma",
   "proveedor",
   "anime",
-  "phub",
-  "xvideos",
   "nsfw",
   "4k",
   "anal",

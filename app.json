@@ -73,8 +73,8 @@
       "value": ""
     },
     "NSFW_ENABLED": {
-      "description": "Set true only to enable adult-image commands in explicitly allowed groups.",
-      "value": "false",
+      "description": "Adult-image commands are enabled by default; set false to disable them.",
+      "value": "true",
       "required": false
     },
     "NSFW_ALLOWED_GROUPS": {
@@ -89,7 +89,7 @@
     },
     "NSFW_ALLOW_PRIVATE_CHATS": {
       "description": "Allow adult-image commands in private chats.",
-      "value": "false",
+      "value": "true",
       "required": false
     },
     "CONTROL_API_TOKEN": {

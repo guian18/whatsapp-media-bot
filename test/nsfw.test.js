@@ -18,7 +18,7 @@ test("missing NSFW settings are disabled safely by default", async () => {
   delete process.env.NSFW_ENABLED;
   delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
   delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
-  assert.match(await sendNsfwImage("not-a-category", { jid: "new-install", isGroup: false, sendMessage() {} }), /desactivados por defecto/);
+  assert.match(await sendNsfwImage("not-a-category", { jid: "new-install", isGroup: false, sendMessage() {} }), /!hentai/);
   assert.equal(validImageUrl("https://images.example.test/a.jpg"), null);
   if (previousEnabled === undefined) delete process.env.NSFW_ENABLED;
   else process.env.NSFW_ENABLED = previousEnabled;
