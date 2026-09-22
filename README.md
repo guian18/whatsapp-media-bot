@@ -179,7 +179,8 @@ El comando `!video` y el proveedor anterior fueron eliminados. Se conserva únic
 `!phub` está desactivado por defecto. Para activarlo, instala Python, PHUB y normalmente `ffmpeg` en el mismo entorno del bot:
 
 ```bash
-python3 -m pip install phub
+python3 -m pip install --no-cache-dir --force-reinstall phub==5.1.2
+python3 -m pip install --no-cache-dir --force-reinstall --no-deps eaf-base-api==3.3.5
 ```
 
 ```env
