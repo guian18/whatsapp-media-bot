@@ -22,6 +22,7 @@ def main() -> int:
     async def download_video() -> None:
         client = phub.Client()
         video = await phub.Video(url=url, core=client.core).init()
+        await video.ensure_html()
         await video.download(path=output, quality="best", no_title=True, remux=True)
 
     try:
