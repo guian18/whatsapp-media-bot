@@ -21,6 +21,12 @@ test("resolves a configured command alias", () => {
   }
 });
 
+test("mantiene !anime y añade !gatus como alias incorporado", async () => {
+  assert.equal(resolveCommandAlias("anime"), "anime");
+  assert.equal(resolveCommandAlias("gatus"), "anime");
+  assert.match(await handleCommand("!gatus"), /solo está disponible desde WhatsApp/);
+});
+
 test("permite cambiar el nombre sin mantener activo el comando original", () => {
   const previous = process.env.COMMAND_ALIASES;
   process.env.COMMAND_ALIASES = "videos=anime";
