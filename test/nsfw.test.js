@@ -141,6 +141,58 @@ test("uses Waifu.im as the default primary provider", async (t) => {
   assert.match(calls[0], /api\.waifu\.im/);
 });
 
+test("uses an exact Waifu.im tag and falls back for unsupported categories", async (t) => {
+  const originalGet = axios.get;
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
+  );
+  const calls = [];
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "waifuim,nekobot";
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  axios.get = async (url, options) => {
+    calls.push({ url, options });
+    if (url.includes("waifu.im")) {
+      assert.match(String(options.params), /IncludedTags=oppai/);
+      return {
+        data: {
+          items: [{
+            url: "https://cdn.waifu.im/oppai.png",
+            isNsfw: true,
+            tags: [{ slug: "oppai" }],
+          }],
+        },
+      };
+    }
+    return { data: { message: "https://cdn.nekobot.xyz/feet.jpg" } };
+  };
+  t.after(() => {
+    axios.get = originalGet;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  const exact = await sendNsfwImage("boobs", {
+    jid: "exact-tag",
+    isGroup: true,
+    sendMessage() {},
+  });
+  assert.equal(exact, null);
+  assert.match(calls[0].url, /api\.waifu\.im/);
+
+  calls.length = 0;
+  const unsupported = await sendNsfwImage("feet", {
+    jid: "unsupported-tag",
+    isGroup: true,
+    sendMessage() {},
+  });
+  assert.equal(unsupported, null);
+  assert.match(calls[0].url, /nekobot\.xyz\/api\/image/);
+});
+
 test("uses automatic Waifu.im fallback when legacy Nekobot returns a temporary HTTP error", async (t) => {
   const originalGet = axios.get;
   const previous = Object.fromEntries(

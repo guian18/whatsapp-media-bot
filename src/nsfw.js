@@ -9,23 +9,15 @@ const MIN_INTERVAL_MS = 10_000;
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const lastRequestByChat = new Map();
 
-// Waifu.im es un respaldo para Nekobot. No dispone de una etiqueta equivalente
-// para todas las categorías, por lo que en esos casos devuelve una imagen NSFW
-// aleatoria en lugar de fallar el comando.
+// Solo usamos etiquetas reales de Waifu.im. Si un comando no tiene una etiqueta
+// equivalente, se omite este proveedor y se intenta el siguiente (Nekobot).
 const WAIFU_IM_TAGS = Object.freeze({
-  anal: "hentai",
   ass: "ass",
   blowjob: "oral",
   boobs: "oppai",
-  gonewild: "ero",
-  hass: "ero",
   hboobs: "oppai",
   hentai: "hentai",
-  hentaianal: "hentai",
-  lewd: "ero",
-  lewdneko: "waifu",
   paizuri: "paizuri",
-  pussy: "hentai",
   yaoi: "hentai",
 });
 
@@ -209,19 +201,26 @@ function imageUrlFromApiResponse(data) {
   return null;
 }
 
-function imageFromWaifuImResponse(data) {
+function imageFromWaifuImResponse(data, requestedTag) {
   const item = Array.isArray(data?.items) ? data.items[0] : null;
   if (!item?.isNsfw) throw providerError(502, "Waifu.im devolvió una imagen que no está marcada como NSFW");
   const tags = Array.isArray(item.tags) ? item.tags : [];
   const tagNames = tags
     .map((tag) => String(tag?.slug || tag?.name || "").trim().toLowerCase())
     .filter(Boolean);
+  if (requestedTag && !tagNames.includes(requestedTag)) {
+    throw providerError(502, `Waifu.im no confirmó la categoría ${requestedTag}`);
+  }
   if (WAIFU_IM_EXCLUDED_TAGS.some((tag) => tagNames.includes(tag))) {
     throw providerError(502, "Waifu.im devolvió una etiqueta excluida");
   }
   const url = validImageUrl(item.url);
   if (!url) throw providerError(502, "Waifu.im no devolvió una URL de imagen válida");
   return { url, source: "Waifu.im" };
+}
+
+function waifuTagForCommand(command) {
+  return WAIFU_IM_TAGS[command] || null;
 }
 
 function providerError(status, message) {
@@ -311,12 +310,16 @@ async function requestImageUrl(source, type) {
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
+      const waifuTag = source.id === "waifuim" ? waifuTagForCommand(type) : null;
+      if (source.id === "waifuim" && !waifuTag) {
+        throw providerError(422, `Waifu.im no tiene una categoría exacta para ${type}`);
+      }
       const request = source.id === "waifuim"
         ? {
             params: new URLSearchParams([
               ["IsNsfw", "True"],
               ["PageSize", "1"],
-              ...(WAIFU_IM_TAGS[type] ? [["IncludedTags", WAIFU_IM_TAGS[type]]] : []),
+              ["IncludedTags", waifuTag],
               ...WAIFU_IM_EXCLUDED_TAGS.map((tag) => ["ExcludedTags", tag]),
             ]),
             headers: {
@@ -335,7 +338,7 @@ async function requestImageUrl(source, type) {
       if (data?.success === false || Number(data?.status) >= 400) {
         throw providerError(data?.status, String(data?.message || "la API rechazó la solicitud"));
       }
-      if (source.id === "waifuim") return imageFromWaifuImResponse(data);
+      if (source.id === "waifuim") return imageFromWaifuImResponse(data, waifuTag);
       const imageUrl = imageUrlFromApiResponse(data);
       if (!imageUrl) throw providerError(502, "la API no devolvió una URL de imagen válida");
       return { url: imageUrl, source: source.name };
