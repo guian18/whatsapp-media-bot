@@ -43,7 +43,6 @@ const ALLOW_SELF = process.env.ALLOW_SELF !== "false";
 const AUTO_RESET = process.env.AUTO_RESET !== "false";
 
 const AUTH_DIR = getAuthDir();
-const BOT_STARTED_AT = new Date().toISOString();
 
 let yaReseteado = false;
 let reiniciando = false;

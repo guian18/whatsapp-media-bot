@@ -4,7 +4,6 @@ import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage } from "./nsfw.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
-const MAX_RESULTS = 8;
 const ANIME_API = "https://nekos.best/api/v2/neko?amount=1";
 
 async function sendSfwAnimeImage(context) {
@@ -28,18 +27,6 @@ async function sendSfwAnimeImage(context) {
     return null;
   } catch (error) {
     return `No pude obtener una imagen SFW de anime ahora: ${error.message}`;
-  }
-}
-
-function publicPageUrl(value) {
-  try {
-    const url = new URL(String(value || "").trim());
-    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return null;
-    const host = url.hostname.toLowerCase();
-    if (["localhost", "127.0.0.1", "::1"].includes(host) || host.endsWith(".local") || host.endsWith(".internal")) return null;
-    return url.toString();
-  } catch {
-    return null;
   }
 }
 
