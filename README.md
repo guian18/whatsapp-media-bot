@@ -146,6 +146,78 @@ tmux new -s infoplayerleft
 npm start
 ```
 
+## Ejecutar el bot dentro de Kali en Termux
+
+Usa este modo cuando `VIDEO_SOURCE_URL` dependa de JavaScript y necesites el Chromium instalado dentro de Kali. El proyecto y su `.env` permanecen en el almacenamiento de Termux, pero Node.js, npm, Playwright y Chromium se ejecutan dentro del contenedor Linux.
+
+Desde Termux, instala Kali si todavía no existe y prepara sus paquetes:
+
+```bash
+pkg update -y
+pkg install -y proot-distro
+proot-distro list
+proot-distro install kali-rolling
+proot-distro login kali-rolling
+```
+
+Ya dentro de Kali, instala Node.js, npm y las herramientas necesarias:
+
+```bash
+apt update
+apt install -y nodejs npm ca-certificates
+cd /data/data/com.termux/files/home/infoplayerleft
+npm ci --ignore-scripts
+/usr/lib/chromium/chromium --version
+```
+
+Si Chromium todavía no existe dentro de Kali:
+
+```bash
+apt install -y chromium
+```
+
+Configura el `.env` compartido desde Kali, sin reemplazar las claves existentes:
+
+```bash
+nano /data/data/com.termux/files/home/infoplayerleft/.env
+```
+
+Añade o ajusta únicamente estas variables:
+
+```env
+VIDEO_SOURCE_URL=https://tu-pagina-real.com/
+VIDEO_BROWSER_EXECUTABLE_PATH=/usr/lib/chromium/chromium
+VIDEO_BROWSER_WAIT_MS=5000
+```
+
+Si tienes una cookie autorizada para esa fuente, mantenla solo en `.env`:
+
+```env
+VIDEO_SOURCE_COOKIE=nombre=valor; otra_cookie=valor
+```
+
+Inicia el bot dentro de Kali:
+
+```bash
+cd /data/data/com.termux/files/home/infoplayerleft
+npm start
+```
+
+Para salir de Kali sin detener procesos en primer plano, pulsa `Ctrl+D` solo cuando el bot no esté ejecutándose; para detener el bot usa `Ctrl+C`. En una nueva sesión de Termux puedes volver a iniciarlo con:
+
+```bash
+cd ~/infoplayerleft
+sh scripts/start-kali.sh
+```
+
+El script acepta otro nombre de distribución o ruta del proyecto si lo necesitas:
+
+```bash
+KALI_DISTRO=kali-rolling PROJECT_DIR="$HOME/infoplayerleft" sh scripts/start-kali.sh
+```
+
+No ejecutes `npm start` directamente desde Termux cuando quieras el modo Playwright: allí Node informa `process.platform=android`, mientras que dentro de Kali informa `linux`. El modo navegador tampoco supera CAPTCHA, DRM ni verificaciones humanas.
+
 ## Ollama en Termux
 
 Ollama no ofrece un paquete Android/Termux oficial. En Termux puedes ejecutarlo dentro de Debian mediante `proot-distro`. Abre una sesión de Termux y ejecuta:
