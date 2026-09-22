@@ -85,6 +85,51 @@ tmux new -s infoplayerleft
 npm start
 ```
 
+## Ollama en Termux
+
+Ollama no ofrece un paquete Android/Termux oficial. En Termux puedes ejecutarlo dentro de Debian mediante `proot-distro`. Abre una sesión de Termux y ejecuta:
+
+```bash
+pkg update -y
+pkg install proot-distro -y
+proot-distro install debian
+proot-distro login debian
+apt update && apt install -y curl ca-certificates
+curl -fsSL https://ollama.com/install.sh | sh
+ollama serve > "$HOME/ollama.log" 2>&1 &
+sleep 3
+ollama pull llama3.2:3b
+```
+
+Deja esa sesión abierta para mantener Ollama activo. En otra sesión de Termux, configura el bot sin reemplazar tus claves actuales:
+
+```bash
+cd ~/infoplayerleft
+touch .env
+
+agregar_si_falta() {
+  clave="$1"
+  valor="$2"
+  if ! grep -qE "^${clave}=" .env; then
+    printf "\n%s=%s\n" "$clave" "$valor" >> .env
+  fi
+}
+
+agregar_si_falta AI_PROVIDER ollama
+agregar_si_falta AI_MODEL llama3.2:3b
+agregar_si_falta OLLAMA_URL http://127.0.0.1:11434/v1/chat/completions
+
+npm start
+```
+
+Para comprobar que Ollama responde desde Termux:
+
+```bash
+curl http://127.0.0.1:11434/api/tags
+```
+
+En teléfonos con poca memoria, usa un modelo pequeño como `llama3.2:1b`. El rendimiento y la disponibilidad dependen del dispositivo; si Ollama no inicia dentro de `proot-distro`, ejecútalo en un ordenador o servidor y cambia `OLLAMA_URL` por la dirección accesible de ese equipo.
+
 Para volver a vincular WhatsApp:
 
 ```bash
