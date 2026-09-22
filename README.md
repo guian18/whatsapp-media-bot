@@ -52,11 +52,11 @@ Backends locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](h
 
 ## Imágenes para adultos en WhatsApp
 
-La función está desactivada por defecto y solo puede enviar imágenes en grupos incluidos explícitamente en `NSFW_ALLOWED_GROUPS`; los chats privados siempre quedan bloqueados. Configura los JID de grupos separados por comas:
+La función está desactivada por defecto y solo puede enviar imágenes en grupos incluidos explícitamente en `NSFW_ALLOWED_GROUPS`; los chats privados siempre quedan bloqueados. Configura los ID numéricos de los grupos separados por comas:
 
 ```env
 NSFW_ENABLED=true
-NSFW_ALLOWED_GROUPS=120363012345678901@g.us,120363098765432109@g.us
+NSFW_ALLOWED_GROUPS=120363012345678901,120363098765432109
 ```
 
 Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. El bot valida que la imagen proceda por HTTPS del dominio de la API y limita una solicitud por grupo cada 10 segundos. Usa esta función solo en grupos donde todas las personas tengan la edad y el consentimiento necesarios.
