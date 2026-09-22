@@ -6,6 +6,7 @@ import path from "node:path";
 
 const execFileAsync = promisify(execFile);
 const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+const MAX_ERROR_LENGTH = 900;
 
 export async function phubVideoFile(pageUrl) {
   const python = String(process.env.PHUB_PYTHON || "python3").trim();
@@ -24,7 +25,12 @@ export async function phubVideoFile(pageUrl) {
     return buffer;
   } catch (error) {
     if (error?.code === "ENOENT") throw new Error(`no se encontró ${python} o el script PHUB`);
-    throw new Error(error?.stderr?.trim() || error?.message || "PHUB no pudo descargar el video");
+    const raw = String(error?.stderr || error?.message || "PHUB no pudo descargar el video").trim();
+    const timeout = error?.code === "ETIMEDOUT" || /timed out|timeout|curl: \(28\)/i.test(raw);
+    const detail = raw.replace(/\s+/g, " ").slice(0, MAX_ERROR_LENGTH);
+    throw new Error(timeout
+      ? `la descarga agotó el tiempo. Prueba PHUB_QUALITY=worst o aumenta PHUB_TIMEOUT_MS; detalle: ${detail}`
+      : detail || "PHUB no pudo descargar el video");
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => {});
   }

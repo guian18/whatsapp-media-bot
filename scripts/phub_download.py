@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Download one public video with PHUB for the optional !phub command."""
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -23,10 +24,44 @@ def main() -> int:
         client = phub.Client()
         video = await phub.Video(url=url, core=client.core).init()
         await video.ensure_html()
-        await video.download(path=output, quality="best", no_title=True, remux=True)
+        quality = os.getenv("PHUB_QUALITY", "half").strip().lower() or "half"
+        if quality not in {"best", "half", "worst"}:
+            quality = "half"
+
+        downloader_name = os.getenv("PHUB_DOWNLOADER", "default").strip().lower() or "default"
+        if downloader_name == "ffmpeg":
+            import phub.download as download
+            downloader = download.FFMPEG
+        elif downloader_name == "threaded":
+            import phub.download as download
+            try:
+                workers = int(os.getenv("PHUB_MAX_WORKERS", "4"))
+                timeout = int(os.getenv("PHUB_SEGMENT_TIMEOUT_SECONDS", "45"))
+            except ValueError:
+                workers, timeout = 4, 45
+            downloader = download.threaded(
+                max_workers=max(1, min(8, workers)),
+                timeout=max(10, min(120, timeout)),
+            )
+        else:
+            # Secuencial: evita decenas de conexiones HLS simultáneas y es
+            # más estable en Termux, Railway y conexiones lentas.
+            import phub.download as download
+            downloader = download.default
+
+        await video.download(
+            path=output,
+            quality=quality,
+            no_title=True,
+            downloader=downloader,
+            remux=True,
+        )
 
     try:
         asyncio.run(download_video())
+    except (ValueError, TypeError) as exc:
+        print(f"configuración PHUB inválida: {exc}", file=sys.stderr)
+        return 2
     except Exception as exc:
         print(str(exc), file=sys.stderr)
         return 1
