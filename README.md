@@ -172,7 +172,7 @@ El repositorio incluye `railway.json` con la instalación y el arranque configur
 
 ### Estado de compatibilidad
 
-El código está preparado para ejecutarse como un **Worker/Service de Railway**: usa Node.js 20 o superior, instala las dependencias con `npm ci`, arranca con `npm start` y reinicia el proceso si termina con error. No necesita exponer un puerto HTTP porque funciona como bot persistente de WhatsApp; no configures un healthcheck HTTP ni un dominio público para este servicio.
+El código está preparado para ejecutarse como un **Worker/Service de Railway**: usa Node.js 20 o superior, instala las dependencias con `npm install --omit=dev`, arranca con `npm start` y reinicia el proceso si termina con error. Se usa `npm install` en Railway para evitar el error `npm EBUSY` que puede aparecer cuando el builder reutiliza el directorio cacheado `/app/node_modules`; localmente y en CI se mantiene `npm ci`. No necesita exponer un puerto HTTP porque funciona como bot persistente de WhatsApp; no configures un healthcheck HTTP ni un dominio público para este servicio.
 
 Para que la sesión de WhatsApp sobreviva a los redeploys, el volumen persistente y las variables de almacenamiento son obligatorios. Sin ellos, el bot puede arrancar, pero Railway perderá `auth_info` cuando cree un contenedor nuevo y tendrás que vincular WhatsApp otra vez.
 
