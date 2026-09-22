@@ -60,7 +60,7 @@ async function sendApifyVideo(args, context) {
   if (!context.jid || typeof context.sendMessage !== "function") return "Este comando solo está disponible desde WhatsApp.";
   try {
     const videoUrl = await apifyVideoUrl(pageUrl);
-    return await sendVideoFromUrl(videoUrl, context);
+    return await sendVideoFromUrl(videoUrl, { ...context, sourceUrl: pageUrl });
   } catch (error) {
     return `No pude obtener el video con Apify: ${error?.message || "error del proveedor"}`;
   }
