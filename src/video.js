@@ -9,7 +9,7 @@ function videoRequestHeaders(accept) {
     accept,
     "user-agent": process.env.VIDEO_USER_AGENT || "InfoPlayerLeft/1.0",
   };
-  const cookie = process.env.VIDEO_SOURCE_COOKIE || process.env.VIDEO_COOKIE;
+  const cookie = process.env.VIDEO_SOURCE_COOKIE;
   if (cookie) headers.cookie = cookie;
   return headers;
 }
@@ -113,7 +113,7 @@ export async function randomVideoUrl() {
   const urls = configuredVideoUrls();
   if (urls.length) return urls[Math.floor(Math.random() * urls.length)];
 
-  const sourcePage = validVideoUrl(process.env.VIDEO_SOURCE_URL || process.env.VIDEO_PAGE_URL);
+  const sourcePage = validVideoUrl(process.env.VIDEO_SOURCE_URL);
   if (sourcePage) {
     const pageVideos = await videoUrlsFromPage(sourcePage);
     if (pageVideos.length) return pageVideos[Math.floor(Math.random() * pageVideos.length)];
@@ -175,12 +175,10 @@ export async function sendRandomVideo(context = {}) {
   try {
     const url = await randomVideoUrl();
     if (!url) {
-      return "No hay videos aleatorios configurados. Añade VIDEO_URLS, VIDEO_SOURCE_URL o VIDEO_API_URL en tu .env.";
+    return "No hay videos aleatorios configurados. Añade VIDEO_URLS, VIDEO_SOURCE_URL o VIDEO_API_URL en tu .env.";
     }
     return await sendVideoUrl(url, context);
   } catch (error) {
     return `No pude obtener un video aleatorio: ${error?.message || "error de API"}`;
   }
 }
-
-export const VIDEO_LIMIT_BYTES = MAX_VIDEO_BYTES;

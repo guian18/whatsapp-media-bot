@@ -88,7 +88,7 @@ También puedes configurar una página HTML pública que contenga enlaces direct
 VIDEO_SOURCE_URL=https://ejemplo.com/videos/
 ```
 
-`VIDEO_PAGE_URL` es un alias compatible para la misma función. Si defines `VIDEO_URLS`, esa lista tiene prioridad; después se consulta `VIDEO_SOURCE_URL`/`VIDEO_PAGE_URL`, y por último `VIDEO_API_URL`.
+Si defines `VIDEO_URLS`, esa lista tiene prioridad; después se consulta `VIDEO_SOURCE_URL`, y por último `VIDEO_API_URL`.
 
 Si la página requiere una sesión, puedes proporcionar la cookie completa en una variable privada del entorno, sin escribirla en el código ni compartirla:
 
