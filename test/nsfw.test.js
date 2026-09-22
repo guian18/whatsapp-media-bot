@@ -11,15 +11,15 @@ test("adult-image commands are disabled by default", async () => {
   else process.env.NSFW_ENABLED = previous;
 });
 
-test("missing new NSFW settings use the requested enabled defaults", async () => {
+test("missing NSFW settings are disabled safely by default", async () => {
   const previousEnabled = process.env.NSFW_ENABLED;
   const previousPrivate = process.env.NSFW_ALLOW_PRIVATE_CHATS;
   const previousExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS;
   delete process.env.NSFW_ENABLED;
   delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
   delete process.env.NSFW_ALLOW_EXTERNAL_URLS;
-  assert.match(await sendNsfwImage("not-a-category", { jid: "new-install", isGroup: false, sendMessage() {} }), /Menú de imágenes NSFW/);
-  assert.equal(validImageUrl("https://images.example.test/a.jpg"), "https://images.example.test/a.jpg");
+  assert.match(await sendNsfwImage("not-a-category", { jid: "new-install", isGroup: false, sendMessage() {} }), /desactivados por defecto/);
+  assert.equal(validImageUrl("https://images.example.test/a.jpg"), null);
   if (previousEnabled === undefined) delete process.env.NSFW_ENABLED;
   else process.env.NSFW_ENABLED = previousEnabled;
   if (previousPrivate === undefined) delete process.env.NSFW_ALLOW_PRIVATE_CHATS;

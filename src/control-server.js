@@ -25,7 +25,9 @@ const PROVIDERS = new Set(["local", "ollama", "llama_cpp", "localai", "groq", "g
 function json(res, status, body) {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": "*",
+    "cache-control": "no-store",
+    "x-content-type-options": "nosniff",
+    "access-control-allow-origin": process.env.CONTROL_API_ORIGIN || "http://localhost",
     "access-control-allow-headers": "Authorization, Content-Type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
   });
@@ -35,20 +37,28 @@ function json(res, status, body) {
 function authorized(req, token) {
   if (!token) return false;
   const value = req.headers.authorization || "";
-  return value === `Bearer ${token}`;
+  return value.length === `Bearer ${token}`.length && value === `Bearer ${token}`;
 }
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let data = "";
+    let settled = false;
     req.on("data", (chunk) => {
+      if (settled) return;
       data += chunk;
-      if (data.length > 32_000) reject(new Error("cuerpo demasiado grande"));
+      if (data.length > 32_000) {
+        settled = true;
+        reject(new Error("cuerpo demasiado grande"));
+        req.destroy();
+      }
     });
     req.on("end", () => {
+      if (settled) return;
+      settled = true;
       try { resolve(data ? JSON.parse(data) : {}); } catch { reject(new Error("JSON inválido")); }
     });
-    req.on("error", reject);
+    req.on("error", (error) => { if (!settled) { settled = true; reject(error); } });
   });
 }
 
@@ -76,7 +86,9 @@ function validSettings(body) {
   if (!Number.isInteger(maxTokens) || maxTokens < 8 || maxTokens > 4096) throw new Error("maxTokens debe estar entre 8 y 4096");
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 600000) throw new Error("timeoutMs no válido");
   const url = String(body.llamaUrl || "").trim();
-  if (!/^https?:\/\//i.test(url)) throw new Error("llamaUrl debe ser una URL HTTP(S)");
+  let parsedUrl;
+  try { parsedUrl = new URL(url); } catch { throw new Error("llamaUrl debe ser una URL válida"); }
+  if (!['http:', 'https:'].includes(parsedUrl.protocol) || parsedUrl.username || parsedUrl.password) throw new Error("llamaUrl debe ser una URL HTTP(S) sin credenciales");
   const notificationJid = String(body.notificationJid || "").trim();
   const aliasesText = String(body.commandAliases || "").trim();
   if (notificationJid) normalizePrivateJid(notificationJid);
@@ -100,6 +112,10 @@ export function startControlServer({ getStatus, testAI, notifySettingsChange = a
   const token = (process.env.CONTROL_API_TOKEN || "").trim();
   const port = Number(process.env.CONTROL_API_PORT || 8787);
   const host = process.env.CONTROL_API_HOST || "127.0.0.1";
+  if (host === "0.0.0.0" && process.env.CONTROL_API_ALLOW_PUBLIC !== "true") {
+    console.warn("API de control desactivada: CONTROL_API_HOST=0.0.0.0 requiere CONTROL_API_ALLOW_PUBLIC=true.");
+    return null;
+  }
   if (!token) {
     console.warn("API de control desactivada: falta CONTROL_API_TOKEN.");
     return null;

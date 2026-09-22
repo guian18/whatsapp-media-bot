@@ -44,7 +44,7 @@ const GROUPS_ENABLED = process.env.GROUPS_ENABLED !== "false";
 // Se puede desactivar explícitamente con REPLY_IN_PRIVATE=false.
 const REPLY_IN_PRIVATE = process.env.REPLY_IN_PRIVATE !== "false";
 // La cuenta vinculada también puede probar comandos enviados desde sí misma.
-const ALLOW_SELF = true;
+const ALLOW_SELF = process.env.ALLOW_SELF === "true";
 const AUTO_RESET = process.env.AUTO_RESET === "true";
 
 const AUTH_DIR = getAuthDir();
@@ -421,9 +421,9 @@ async function start() {
           await sock.sendMessage(jid, { text: reply }, { quoted: msg });
         }
       } catch (err) {
-        console.error("Error procesando comando:", err);
+        console.error("Error procesando comando:", err?.stack || err);
         try {
-          await sock.sendMessage(jid, { text: `❌ Error: ${err.message}` }, { quoted: msg });
+          await sock.sendMessage(jid, { text: "❌ No pude completar ese comando. Inténtalo de nuevo más tarde." }, { quoted: msg });
         } catch (sendErr) {
           console.error("No se pudo enviar el error al chat:", sendErr?.message || sendErr);
         }
@@ -444,5 +444,20 @@ function iniciarConReintentos(delayMs = 1000) {
     setTimeout(() => iniciarConReintentos(Math.min(delayMs * 2, 30_000)), delayMs);
   });
 }
+
+async function shutdown(signal) {
+  console.log(`Recibida señal ${signal}; cerrando el bot...`);
+  cerrandoManual = true;
+  try { await cerrarSocket(); } catch (error) { console.error("Error cerrando WhatsApp:", error?.message || error); }
+  process.exit(0);
+}
+
+process.once("SIGINT", () => void shutdown("SIGINT"));
+process.once("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("unhandledRejection", (error) => console.error("Promesa no controlada:", error?.stack || error));
+process.on("uncaughtException", (error) => {
+  console.error("Excepción no controlada; el proceso se cerrará para que el supervisor lo reinicie:", error?.stack || error);
+  process.exit(1);
+});
 
 iniciarConReintentos();

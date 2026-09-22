@@ -152,21 +152,21 @@ No pegues tokens en comandos de WhatsApp ni en capturas de pantalla. Si una clav
 
 ## Imágenes para adultos en WhatsApp
 
-La función está activa por defecto y funciona en todos los grupos y chats privados. Las URLs externas también están habilitadas por defecto. Para desactivarla usa `NSFW_ENABLED=false`; para limitar el acceso, configura los ID numéricos de los grupos separados por comas o cambia `NSFW_ALLOW_PRIVATE_CHATS=false` para bloquear chats privados:
+La función está **desactivada por defecto** y las URLs externas y chats privados también están bloqueados por defecto. Para activarla de forma explícita, configura `NSFW_ENABLED=true` y, preferiblemente, limita el acceso con IDs de grupos autorizados y `NSFW_ALLOW_PRIVATE_CHATS=false`:
 
 ```env
-NSFW_ENABLED=true
+NSFW_ENABLED=false
 NSFW_API_URL=https://nekobot.xyz/api/image
 NSFW_API_URLS=
 NSFW_API_TIMEOUT_MS=20000
 NSFW_IMAGE_TIMEOUT_MS=60000
 NSFW_DIRECT_URL=true
 NSFW_ALLOWED_GROUPS=
-NSFW_ALLOW_EXTERNAL_URLS=true
-NSFW_ALLOW_PRIVATE_CHATS=true
+NSFW_ALLOW_EXTERNAL_URLS=false
+NSFW_ALLOW_PRIVATE_CHATS=false
 ```
 
-Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Si no responde ningún comando, comprueba que `GROUPS_ENABLED=true`, `REPLY_IN_PRIVATE=true` y que `ALLOWED_GROUPS` esté vacío o contenga el ID numérico correcto. `NSFW_DIRECT_URL=true` envía la URL a WhatsApp directamente y es el modo rápido; usa `false` para que el bot descargue y valide el archivo con Axios antes de enviarlo. `NSFW_API_URLS` acepta varias APIs separadas por comas; el bot reintenta errores transitorios como HTTP 522 y timeouts, y prueba la siguiente API si la primera no responde. No pongas claves ni cookies en esa variable. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
+Usa `!nsfw` para ver las categorías disponibles o escribe directamente una categoría como `!hentai`, `!boobs`, `!ass`, `!feet`, `!lewd`, `!yaoi` o `!4k`. Con `NSFW_ALLOWED_GROUPS` vacío se permiten todos los grupos una vez activada la función; `NSFW_ALLOW_PRIVATE_CHATS=true` permite chats privados; `NSFW_ALLOW_EXTERNAL_URLS=true` acepta URLs externas HTTP/HTTPS. También limita una solicitud por chat cada 10 segundos. Si no responde ningún comando, comprueba que `GROUPS_ENABLED=true`, `REPLY_IN_PRIVATE=true` y que `ALLOWED_GROUPS` esté vacío o contenga el ID numérico correcto. `NSFW_DIRECT_URL=true` envía la URL a WhatsApp directamente y es el modo rápido; usa `false` para que el bot descargue y valide el archivo con Axios antes de enviarlo. `NSFW_API_URLS` acepta varias APIs separadas por comas; el bot reintenta errores transitorios como HTTP 522 y timeouts, y prueba la siguiente API si la primera no responde. No pongas claves ni cookies en esa variable. Usa esta función solo con personas que tengan la edad y el consentimiento necesarios.
 
 ## Proveedor de video PHUB
 

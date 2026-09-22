@@ -1,8 +1,26 @@
 node_modules/
+control-app/node_modules/
+.expo/
+dist/
+build/
+coverage/
+
+# WhatsApp credentials and local secrets
 auth_info/
 .env
 *.log
 .steam_key
+*.pem
+*.key
+
+# Runtime state
 watchlist.json
 ai-memory.json
 l4d2-official-addresses.txt
+*.tmp
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

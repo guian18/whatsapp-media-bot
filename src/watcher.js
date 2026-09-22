@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { masterServerList, parseAddress, serverInfo, serverPlayers } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { saveOfficialAddresses } from "./official-addresses.js";
@@ -36,7 +36,9 @@ function loadState() {
 
 function saveState() {
   try {
-    writeFileSync(STATE_FILE, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+    const temporary = `${STATE_FILE}.${process.pid}.tmp`;
+    writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+    renameSync(temporary, STATE_FILE);
   } catch (error) {
     console.error("No se pudo guardar watchlist.json:", error?.message || error);
   }

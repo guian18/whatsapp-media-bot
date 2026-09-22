@@ -55,8 +55,8 @@ function groupKey(jid) {
 }
 
 function accessMessage(context) {
-  if (process.env.NSFW_ENABLED === "false") return "Los comandos de imágenes para adultos están desactivados.";
-  if (!context.isGroup && process.env.NSFW_ALLOW_PRIVATE_CHATS === "false") {
+  if (process.env.NSFW_ENABLED !== "true") return "Los comandos de imágenes para adultos están desactivados por defecto. Configura NSFW_ENABLED=true para activarlos.";
+  if (!context.isGroup && process.env.NSFW_ALLOW_PRIVATE_CHATS !== "true") {
     return "Por seguridad, las imágenes para adultos solo están disponibles en grupos autorizados; no se envían por chat privado.";
   }
   if (!context.isGroup) return null;
@@ -70,7 +70,7 @@ export function validImageUrl(value) {
     const url = new URL(value);
     const isHttp = url.protocol === "http:" || url.protocol === "https:";
     if (!isHttp || url.username || url.password) return null;
-    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS !== "false";
+    const allowExternal = process.env.NSFW_ALLOW_EXTERNAL_URLS === "true";
     const isApiHost = url.protocol === "https:"
       && (url.hostname === "nekobot.xyz" || url.hostname.endsWith(".nekobot.xyz"));
     return (isApiHost || allowExternal) ? url.toString() : null;
