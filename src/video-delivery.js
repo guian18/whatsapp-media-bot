@@ -1,12 +1,13 @@
 import axios from "axios";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
 // WhatsApp clients commonly reject larger media even when the upload succeeds.
 const MAX_VIDEO_BYTES = 16 * 1024 * 1024;
+const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
 
 function privateHost(hostname) {
@@ -46,17 +47,23 @@ function isPlaylist(buffer, contentType, url) {
     || Buffer.from(buffer || []).subarray(0, 32).toString("utf8").startsWith("#EXTM3U");
 }
 
-async function convertPlaylist(url) {
+function ffmpegArguments(input, output) {
+  return [
+    "-y", "-i", input,
+    "-vf", "scale=min(720\\,iw):-2",
+    "-c:v", "libx264", "-preset", "veryfast", "-b:v", "650k", "-maxrate", "650k", "-bufsize", "1300k", "-pix_fmt", "yuv420p",
+    "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", output,
+  ];
+}
+
+async function transcode(input, inputIsUrl = false) {
   const ffmpeg = String(process.env.FFMPEG_PATH || "ffmpeg").trim();
   const workDir = await mkdtemp(path.join(tmpdir(), "infoplayerleft-apify-"));
+  const source = inputIsUrl ? input : path.join(workDir, "source.bin");
   const output = path.join(workDir, "video.mp4");
   try {
-    await execFileAsync(ffmpeg, [
-      "-y", "-i", url,
-      "-vf", "scale=min(720\,iw):-2",
-      "-c:v", "libx264", "-preset", "veryfast", "-b:v", "650k", "-maxrate", "650k", "-bufsize", "1300k", "-pix_fmt", "yuv420p",
-      "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", output,
-    ], {
+    if (!inputIsUrl) await writeFile(source, input);
+    await execFileAsync(ffmpeg, ffmpegArguments(source, output), {
       timeout: Number(process.env.FFMPEG_TIMEOUT_MS || 180_000),
       maxBuffer: 2 * 1024 * 1024,
     });
@@ -71,6 +78,10 @@ async function convertPlaylist(url) {
   }
 }
 
+async function convertPlaylist(url) {
+  return transcode(url, true);
+}
+
 export async function sendVideoFromUrl(urlValue, context = {}) {
   const url = validPublicUrl(urlValue);
   if (!url) return "Apify no devolvió una URL HTTP(S) pública válida.";
@@ -79,13 +90,13 @@ export async function sendVideoFromUrl(urlValue, context = {}) {
     responseType: "arraybuffer",
     headers: { accept: "video/*,application/octet-stream,*/*;q=0.8", "user-agent": process.env.VIDEO_USER_AGENT || "InfoPlayerLeft/1.0" },
     timeout: 60_000,
-    maxContentLength: MAX_VIDEO_BYTES,
-    maxBodyLength: MAX_VIDEO_BYTES,
+    maxContentLength: MAX_DOWNLOAD_BYTES,
+    maxBodyLength: MAX_DOWNLOAD_BYTES,
   });
   const buffer = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || "");
   if (buffer.length > MAX_VIDEO_BYTES) return "El video supera el límite compatible de 16 MB para WhatsApp.";
   const contentType = response.headers?.["content-type"] || "";
-  const output = isPlaylist(buffer, contentType, url) ? await convertPlaylist(url) : buffer;
+  const output = isPlaylist(buffer, contentType, url) ? await convertPlaylist(url) : await transcode(buffer);
   if (!looksLikeVideo(output, "video/mp4", url)) return "El proveedor no devolvió un archivo de video compatible.";
   await context.sendMessage(context.jid, {
     video: output,
