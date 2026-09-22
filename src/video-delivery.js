@@ -42,9 +42,20 @@ function looksLikeVideo(buffer, contentType, url) {
 
 function isPlaylist(buffer, contentType, url) {
   const mime = String(contentType || "").toLowerCase();
+  const text = Buffer.from(buffer || []).subarray(0, 256).toString("utf8").replace(/^\uFEFF/, "").trimStart();
   return /mpegurl|m3u8/i.test(mime)
     || /\.m3u8(?:$|[?#])/i.test(url)
-    || Buffer.from(buffer || []).subarray(0, 32).toString("utf8").startsWith("#EXTM3U");
+    || text.startsWith("#EXTM3U")
+    || text.startsWith("#EXT-X-");
+}
+
+function looksLikeErrorDocument(buffer, contentType) {
+  const mime = String(contentType || "").toLowerCase();
+  const text = Buffer.from(buffer || []).subarray(0, 512).toString("utf8").trimStart().toLowerCase();
+  return mime.includes("text/html")
+    || text.startsWith("<!doctype html")
+    || text.startsWith("<html")
+    || text.startsWith("{\"error");
 }
 
 function ffmpegArguments(input, output) {
@@ -72,7 +83,8 @@ async function transcode(input, inputIsUrl = false) {
     return buffer;
   } catch (error) {
     if (error?.code === "ENOENT") throw new Error("Apify devolvió M3U8; instala ffmpeg o configura FFMPEG_PATH");
-    throw new Error(error?.stderr?.trim() || error?.message || "no se pudo convertir el M3U8 con ffmpeg");
+    const stderr = error?.stderr?.trim().split("\n").filter(Boolean).slice(-3).join(" ");
+    throw new Error(stderr || error?.message || "no se pudo convertir el video con ffmpeg");
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => {});
   }
@@ -94,8 +106,8 @@ export async function sendVideoFromUrl(urlValue, context = {}) {
     maxBodyLength: MAX_DOWNLOAD_BYTES,
   });
   const buffer = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || "");
-  if (buffer.length > MAX_VIDEO_BYTES) return "El video supera el límite compatible de 16 MB para WhatsApp.";
   const contentType = response.headers?.["content-type"] || "";
+  if (looksLikeErrorDocument(buffer, contentType)) return "El proveedor devolvió una página de error en lugar del video.";
   const output = isPlaylist(buffer, contentType, url) ? await convertPlaylist(url) : await transcode(buffer);
   if (!looksLikeVideo(output, "video/mp4", url)) return "El proveedor no devolvió un archivo de video compatible.";
   await context.sendMessage(context.jid, {
