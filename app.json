@@ -21,7 +21,7 @@
       "required": false
     },
     "AI_PROVIDER": {
-      "description": "AI provider: local, gemini, groq, mistral or openrouter.",
+      "description": "AI provider: local, ollama, llama_cpp, localai, gemini, groq, mistral or openrouter.",
       "value": "groq",
       "required": false
     },
