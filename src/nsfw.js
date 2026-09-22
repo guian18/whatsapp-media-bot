@@ -136,6 +136,17 @@ function transientNetworkError(error) {
     || /timeout|timed out|socket hang up/i.test(String(error?.message || ""));
 }
 
+function settingMs(name, fallback, minimum, maximum) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) ? Math.min(maximum, Math.max(minimum, value)) : fallback;
+}
+
+function retryDelay(attempt, error) {
+  const status = errorStatus(error);
+  const base = status === 522 || status === 523 || status === 524 ? 1200 : 500;
+  return base * (attempt + 1) + Math.floor(Math.random() * 250);
+}
+
 function friendlyApiError(error) {
   const status = errorStatus(error);
   if (status === 522 || status === 523 || status === 524) return `el servidor de imágenes no responde temporalmente (HTTP ${status})`;
@@ -172,20 +183,22 @@ async function sendResolvedImage(imageUrl, command, context) {
 
 async function requestImageUrl(apiUrl, type) {
   let lastError;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  const timeout = settingMs("NSFW_API_TIMEOUT_MS", 12_000, 5_000, 30_000);
+  // Cloudflare 522 es temporal: reintentamos cuatro veces antes de probar otra URL.
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     try {
       const { data } = await axios.get(apiUrl, {
         params: { type },
         headers: { accept: "application/json", "user-agent": "WhatsAppMediaBot/1.0" },
-        timeout: Number(process.env.NSFW_API_TIMEOUT_MS || 20_000),
+        timeout,
       });
       const imageUrl = imageUrlFromApiResponse(data);
       if (!imageUrl) throw new Error("la API no devolvió una URL de imagen válida");
       return imageUrl;
     } catch (error) {
       lastError = error;
-      if (!transientNetworkError(error) || attempt === 2) break;
-      await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)));
+      if (!transientNetworkError(error) || attempt === 3) break;
+      await new Promise((resolve) => setTimeout(resolve, retryDelay(attempt, error)));
     }
   }
   throw lastError;
@@ -193,12 +206,13 @@ async function requestImageUrl(apiUrl, type) {
 
 async function downloadImage(imageUrl) {
   let lastError;
+  const timeout = settingMs("NSFW_IMAGE_TIMEOUT_MS", 30_000, 8_000, 90_000);
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       const imageResponse = await axios.get(imageUrl, {
         responseType: "arraybuffer",
         headers: { accept: "image/*", "user-agent": "WhatsAppMediaBot/1.0" },
-        timeout: Number(process.env.NSFW_IMAGE_TIMEOUT_MS || 60_000),
+        timeout,
         maxContentLength: MAX_IMAGE_BYTES,
         maxBodyLength: MAX_IMAGE_BYTES,
       });
@@ -212,7 +226,7 @@ async function downloadImage(imageUrl) {
     } catch (error) {
       lastError = error;
       if (!transientNetworkError(error) || attempt === 2) break;
-      await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay(attempt, error)));
     }
   }
   throw lastError;
@@ -257,5 +271,7 @@ export async function sendNsfwImage(command, context = {}) {
       lastError = error;
     }
   }
+  // Un fallo temporal no debe bloquear el siguiente intento durante el rate limit.
+  lastRequestByChat.delete(context.jid);
   return `No pude obtener esa imagen ahora: ${friendlyApiError(lastError)}`;
 }
