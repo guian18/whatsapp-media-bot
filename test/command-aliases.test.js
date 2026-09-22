@@ -44,4 +44,3 @@ test("actualiza !ayuda con los nombres personalizados activos", async () => {
     else process.env.COMMAND_ALIASES = previous;
   }
 });
-
