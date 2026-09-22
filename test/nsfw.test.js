@@ -14,14 +14,18 @@ test("adult-image commands are disabled by default", async () => {
 test("adult-image commands block private chats and unauthorized groups", async () => {
   const previousEnabled = process.env.NSFW_ENABLED;
   const previousGroups = process.env.NSFW_ALLOWED_GROUPS;
+  const previousPrivate = process.env.NSFW_ALLOW_PRIVATE_CHATS;
   process.env.NSFW_ENABLED = "true";
   process.env.NSFW_ALLOWED_GROUPS = "autorizado";
+  process.env.NSFW_ALLOW_PRIVATE_CHATS = "false";
   assert.match(await sendNsfwImage("hentai", { jid: "123@s.whatsapp.net", isGroup: false, sendMessage() {} }), /no se envían por chat privado/);
   assert.match(await sendNsfwImage("hentai", { jid: "otro", isGroup: true, sendMessage() {} }), /no está autorizado/);
   if (previousEnabled === undefined) delete process.env.NSFW_ENABLED;
   else process.env.NSFW_ENABLED = previousEnabled;
   if (previousGroups === undefined) delete process.env.NSFW_ALLOWED_GROUPS;
   else process.env.NSFW_ALLOWED_GROUPS = previousGroups;
+  if (previousPrivate === undefined) delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
+  else process.env.NSFW_ALLOW_PRIVATE_CHATS = previousPrivate;
 });
 
 test("empty allowed-group configuration permits any group", async () => {
@@ -34,6 +38,18 @@ test("empty allowed-group configuration permits any group", async () => {
   else process.env.NSFW_ENABLED = previousEnabled;
   if (previousGroups === undefined) delete process.env.NSFW_ALLOWED_GROUPS;
   else process.env.NSFW_ALLOWED_GROUPS = previousGroups;
+});
+
+test("private chats are allowed when explicitly enabled", async () => {
+  const previousEnabled = process.env.NSFW_ENABLED;
+  const previousPrivate = process.env.NSFW_ALLOW_PRIVATE_CHATS;
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_ALLOW_PRIVATE_CHATS = "true";
+  assert.match(await sendNsfwImage("not-a-category", { jid: "private-chat", isGroup: false, sendMessage() {} }), /!hentai/);
+  if (previousEnabled === undefined) delete process.env.NSFW_ENABLED;
+  else process.env.NSFW_ENABLED = previousEnabled;
+  if (previousPrivate === undefined) delete process.env.NSFW_ALLOW_PRIVATE_CHATS;
+  else process.env.NSFW_ALLOW_PRIVATE_CHATS = previousPrivate;
 });
 
 test("adult-image commands are listed and dispatched without network access when blocked", async () => {

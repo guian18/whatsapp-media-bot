@@ -50,9 +50,10 @@ function accessMessage(context) {
   if (process.env.NSFW_ENABLED !== "true") {
     return "Los comandos de imágenes para adultos están desactivados.";
   }
-  if (!context.isGroup) {
+  if (!context.isGroup && process.env.NSFW_ALLOW_PRIVATE_CHATS !== "true") {
     return "Por seguridad, las imágenes para adultos solo están disponibles en grupos autorizados; no se envían por chat privado.";
   }
+  if (!context.isGroup) return null;
   const groups = configuredGroups();
   if (groups.size && !groups.has(groupKey(context.jid))) {
     return "Este grupo no está autorizado para comandos de imágenes para adultos.";

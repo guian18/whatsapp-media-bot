@@ -85,6 +85,11 @@
       "value": "true",
       "required": false
     },
+    "NSFW_ALLOW_PRIVATE_CHATS": {
+      "description": "Allow adult-image commands in private chats.",
+      "value": "true",
+      "required": false
+    },
     "CONTROL_API_TOKEN": {
       "description": "Leave empty to disable the local control API on Heroku.",
       "required": false,
