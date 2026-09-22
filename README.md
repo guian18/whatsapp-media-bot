@@ -120,6 +120,8 @@ AUTH_DIR=/app/data/auth_info
 AI_MEMORY_FILE=/app/data/ai-memory.json
 ```
 
+Para que Railway use primero el código de vinculación por número, añade `WHATSAPP_NUMBER` con el número internacional, solo dígitos y código de país, por ejemplo `51987654321`. Si quieres usar QR, elimina el valor de `WHATSAPP_NUMBER` y vuelve a desplegar. No dejes ambos métodos configurados al mismo tiempo.
+
 Más información: [Documentación de Railway](https://docs.railway.com/).
 
 ## Deploy con Heroku

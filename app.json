@@ -63,7 +63,7 @@
       "required": false
     },
     "PAIRING_CODE": {
-      "description": "Set true to link WhatsApp with a phone number instead of QR.",
+      "description": "WHATSAPP_NUMBER has priority and uses pairing code; leave WHATSAPP_NUMBER empty to use QR.",
       "value": "false",
       "required": false
     },

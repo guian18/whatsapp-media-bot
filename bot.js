@@ -1,10 +1,10 @@
 /**
  * Bot de WhatsApp — WhatsApp Media Bot
- * Vinculación por código QR o por código de 8 caracteres con un número de celular.
+ * Vinculación por código de 8 caracteres con WHATSAPP_NUMBER; QR solo sin número.
  *
  * Variables de entorno (se leen de .env o del entorno del sistema):
  *   WHATSAPP_NUMBER       opcional; número internacional, solo dígitos.
- *   PAIRING_CODE          "true" para solicitar un número por consola.
+ *   PAIRING_CODE          "true" permite solicitar un número por consola si no está definido.
  *   GROUPS_ENABLED        "false" para ignorar grupos.
  *   ALLOWED_GROUPS        opcional; IDs de grupo separados por comas.
  *   REPLY_IN_PRIVATE      "false" para ignorar chats privados.
@@ -152,8 +152,8 @@ function esCodigoPairingValido(code) {
 }
 
 const ENV_NUMBER = normalizarNumero(process.env.WHATSAPP_NUMBER);
-// El QR es el comportamiento predeterminado. Un número configurado solicita
-// directamente el código; PAIRING_CODE=true permite escribirlo por consola.
+// Un número configurado siempre tiene prioridad y solicita código de vinculación.
+// Si WHATSAPP_NUMBER está vacío, Baileys muestra QR como alternativa.
 const WANTS_PAIRING_CODE = Boolean(ENV_NUMBER) || process.env.PAIRING_CODE === "true";
 
 async function askPhoneNumber() {
