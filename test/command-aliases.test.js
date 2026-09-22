@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseCommandAliases, resolveCommandAlias } from "../src/command-aliases.js";
 import { handleCommand } from "../src/commands.js";
-import { normalizePrivateJid } from "../src/owner-notifications.js";
 
 test("parses safe command aliases", () => {
   assert.deepEqual(parseCommandAliases("saludo=ping, asistente=ai"), { saludo: "ping", asistente: "ai" });
@@ -46,8 +45,3 @@ test("actualiza !ayuda con los nombres personalizados activos", async () => {
   }
 });
 
-test("accepts only private notification numbers", () => {
-  assert.equal(normalizePrivateJid("393803893208"), "393803893208@s.whatsapp.net");
-  assert.equal(normalizePrivateJid("393803893208@s.whatsapp.net"), "393803893208@s.whatsapp.net");
-  assert.throws(() => normalizePrivateJid("not-a-number"), /número privado/);
-});

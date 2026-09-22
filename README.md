@@ -184,12 +184,6 @@ AI_MEMORY_FILE=/app/data/ai-memory.json
 
 Si Railway ya tiene variables antiguas con valor `false`, actualízalas manualmente desde **Variables**. Después pulsa **Redeploy**.
 
-## Deploy en Heroku
-
-[![Deploy en Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
-
-Después del despliegue, configura las variables en **Settings → Config Vars**. Heroku utiliza almacenamiento efímero, por lo que la sesión puede perderse después de un reinicio; Railway con volumen persistente es preferible para uso continuo.
-
 ## Sesión de WhatsApp
 
 La sesión se guarda en `auth_info/` localmente o en la ruta indicada por `AUTH_DIR`. No borres esa carpeta si no quieres volver a vincular WhatsApp.

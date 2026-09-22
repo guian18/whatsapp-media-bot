@@ -8,7 +8,6 @@ import test from "node:test";
 
 import { ayuda, handleCommand } from "../src/commands.js";
 import { aiConfigured, cmdIA, containsRisk, detectStyle } from "../src/ai.js";
-import { startControlServer } from "../src/control-server.js";
 
 test("command dispatcher serves local commands without external services", async () => {
   const previousProvider = process.env.AI_PROVIDER;
@@ -75,68 +74,6 @@ test("local AI provider does not require an API key", () => {
   else process.env.AI_LOCAL_API_KEY = previousLocalKey;
 });
 
-test("control API protects status and preserves secret keys", async (t) => {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "whatsapp-media-bot-control-"));
-  const envFile = path.join(dir, ".env");
-  writeFileSync(envFile, "GROQ_API_KEY=keep-this-secret\nAI_PROVIDER=local\n", "utf8");
-  const previousToken = process.env.CONTROL_API_TOKEN;
-  const previousPort = process.env.CONTROL_API_PORT;
-  const previousHost = process.env.CONTROL_API_HOST;
-  const previousEnvFile = process.env.ENV_FILE;
-  const aiEnvKeys = ["AI_PROVIDER", "AI_MODEL", "AI_API_URL", "AI_LOCAL_URL", "AI_MAX_TOKENS", "AI_LOCAL_TIMEOUT_MS", "AI_LANGUAGE", "AI_DEFAULT_STYLE", "AI_LOCAL_SKIP_SEARCH", "AI_LOCAL_FAST"];
-  const previousAiEnv = Object.fromEntries(aiEnvKeys.map((key) => [key, process.env[key]]));
-  process.env.CONTROL_API_TOKEN = "test-control-token";
-  process.env.CONTROL_API_PORT = "0";
-  process.env.CONTROL_API_HOST = "127.0.0.1";
-  process.env.ENV_FILE = envFile;
-  const server = startControlServer({ getStatus: () => ({ whatsapp: "online" }), testAI: async () => "OK" });
-  assert.ok(server);
-  await new Promise((resolve) => server.once("listening", resolve));
-  t.after(() => {
-    server.close();
-    rmSync(dir, { recursive: true, force: true });
-    if (previousToken === undefined) delete process.env.CONTROL_API_TOKEN;
-    else process.env.CONTROL_API_TOKEN = previousToken;
-    if (previousPort === undefined) delete process.env.CONTROL_API_PORT;
-    else process.env.CONTROL_API_PORT = previousPort;
-    if (previousHost === undefined) delete process.env.CONTROL_API_HOST;
-    else process.env.CONTROL_API_HOST = previousHost;
-    if (previousEnvFile === undefined) delete process.env.ENV_FILE;
-    else process.env.ENV_FILE = previousEnvFile;
-    for (const key of aiEnvKeys) {
-      if (previousAiEnv[key] === undefined) delete process.env[key];
-      else process.env[key] = previousAiEnv[key];
-    }
-  });
-  const address = server.address();
-  const base = `http://127.0.0.1:${address.port}`;
-  const denied = await fetch(`${base}/api/control/status`);
-  assert.equal(denied.status, 401);
-  const response = await fetch(`${base}/api/control/settings`, {
-    method: "POST",
-    headers: { authorization: "Bearer test-control-token", "content-type": "application/json" },
-    body: JSON.stringify({ provider: "local", model: "local-model", llamaUrl: "http://127.0.0.1:8080/v1/chat/completions", maxTokens: 64, timeoutMs: 120000, language: "es-ES", tone: "breve", skipSearch: true, fastMode: true, notificationJid: "393803893208", commandAliases: "saludo=ping", GROQ_API_KEY: "overwrite-attempt" }),
-  });
-  assert.equal(response.status, 200);
-  const saved = readFileSync(envFile, "utf8");
-  assert.match(saved, /GROQ_API_KEY=keep-this-secret/);
-  assert.match(saved, /AI_MAX_TOKENS=64/);
-  assert.match(saved, /CONTROL_NOTIFY_JID=393803893208@s\.whatsapp\.net/);
-  assert.match(saved, /COMMAND_ALIASES=saludo=ping/);
-  assert.doesNotMatch(saved, /overwrite-attempt/);
-  const remoteResponse = await fetch(`${base}/api/control/settings`, {
-    method: "POST",
-    headers: { authorization: "Bearer test-control-token", "content-type": "application/json" },
-    body: JSON.stringify({ provider: "openrouter", model: "openrouter/auto", llamaUrl: "https://openrouter.ai/api/v1/chat/completions", maxTokens: 64, timeoutMs: 120000, language: "es-ES", tone: "breve", skipSearch: true, fastMode: true }),
-  });
-  assert.equal(remoteResponse.status, 200);
-  const updated = readFileSync(envFile, "utf8");
-  assert.match(updated, /AI_API_URL=https:\/\/openrouter\.ai\/api\/v1\/chat\/completions/);
-  assert.match(updated, /^AI_PROVIDER=openrouter$/m);
-  assert.match(updated, /^AI_MODEL=openrouter\/auto$/m);
-  assert.equal((updated.match(/^AI_PROVIDER=/gm) || []).length, 1);
-  assert.equal((updated.match(/^AI_MODEL=/gm) || []).length, 1);
-});
 
 test("local AI provider accepts an OpenAI-compatible response", async (t) => {
   const server = http.createServer((request, response) => {

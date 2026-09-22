@@ -26,10 +26,7 @@ import readline from "node:readline/promises";
 import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
-import { cmdIA } from "./src/ai.js";
 import { getAuthDir } from "./src/config.js";
-import { startControlServer } from "./src/control-server.js";
-import { formatSafeSettingsChange, normalizePrivateJid, ownPrivateJid } from "./src/owner-notifications.js";
 
 const normalizeGroupId = (value) => String(value || "").trim().replace(/@g\.us$/i, "");
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
@@ -59,41 +56,6 @@ let guardarCredsPendiente = Promise.resolve();
 let connectionState = "starting";
 const mensajesProcesados = new Map();
 
-async function notifyOwnerOfSettingsChange(changed) {
-  const sock = sockActual;
-  let jid = ownPrivateJid(sock);
-  if (process.env.CONTROL_NOTIFY_JID) {
-    try {
-      jid = normalizePrivateJid(process.env.CONTROL_NOTIFY_JID);
-    } catch {
-      console.warn("CONTROL_NOTIFY_JID no es válido; se usará el chat privado de la cuenta vinculada.");
-    }
-  }
-  if (!sock || !jid || connectionState !== "online") {
-    console.warn("No se notificaron los cambios: WhatsApp aún no está conectado.");
-    return;
-  }
-  const safeChanges = formatSafeSettingsChange(changed);
-  if (!safeChanges) return;
-  await sock.sendMessage(jid, {
-    text: `⚙️ Cambios guardados desde la app:\n${safeChanges}`,
-  });
-}
-
-startControlServer({
-  getStatus: () => ({
-    ok: true,
-    whatsapp: connectionState === "online" ? "online" : connectionState,
-    provider: process.env.AI_PROVIDER || "local",
-    model: process.env.AI_MODEL || "local-model",
-    pid: process.pid,
-    startedAt: BOT_STARTED_AT,
-    uptimeSeconds: Math.floor(process.uptime()),
-    controlApi: true,
-  }),
-  testAI: (question) => cmdIA(question),
-  notifySettingsChange: notifyOwnerOfSettingsChange,
-});
 
 function borrarSesion() {
   if (existsSync(AUTH_DIR)) {
