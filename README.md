@@ -198,6 +198,12 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | `NSFW_ALLOWED_GROUPS` | IDs de grupos donde se permiten específicamente los comandos NSFW, separados por comas. Déjala vacía para no limitar por grupo cuando `NSFW_ENABLED=true`. |
 | `AI_API_KEY` | Clave genérica del proveedor de IA elegido. Úsala como alternativa si no configuras la variable específica del proveedor; por ejemplo, una clave compatible con Gemini, OpenRouter u otro proveedor remoto. Para `local`, `ollama`, `llama_cpp` o `localai` sin autenticación, déjala vacía. |
 
+### Proveedor NSFW de respaldo
+
+Después de comparar alternativas de GitHub, el respaldo utilizado es **Waifu.im API**, cuyo código está publicado en [Waifu-im/waifu-api](https://github.com/Waifu-im/waifu-api). Se eligió porque ofrece una API REST operativa, documentación versionada, lectura NSFW sin clave y una respuesta JSON compatible con Node.js. Los repositorios de bots completos y wrappers revisados no se incorporaron porque requerían desplegar otro bot, dependían de scraping o estaban abandonados.
+
+El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra `Fuente: Waifu.im` en el pie de la imagen. Esto no reemplaza la verificación de edad, el consentimiento ni el cumplimiento de las políticas de WhatsApp, la legislación local y los términos del proveedor. Waifu.im no ofrece un SLA: Nekobot sigue siendo el primer origen y Waifu.im funciona como respaldo.
+
 #### Ejemplo recomendado para Railway
 
 Si quieres usar el modo local y permitir todos los grupos, puedes dejar las variables opcionales vacías:

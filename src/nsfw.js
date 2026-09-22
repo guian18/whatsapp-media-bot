@@ -3,6 +3,8 @@ import axios from "axios";
 const NEKOBOT_API_URL = "https://nekobot.xyz/api/image";
 const WAIFU_IM_API_URL = "https://api.waifu.im/images";
 const DEFAULT_API_SOURCES = Object.freeze(["nekobot", "waifuim"]);
+const WAIFU_IM_API_VERSION = "v7";
+const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
 const MIN_INTERVAL_MS = 10_000;
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const lastRequestByChat = new Map();
@@ -207,9 +209,19 @@ function imageUrlFromApiResponse(data) {
   return null;
 }
 
-function imageUrlFromWaifuImResponse(data) {
+function imageFromWaifuImResponse(data) {
   const item = Array.isArray(data?.items) ? data.items[0] : null;
-  return validImageUrl(item?.url);
+  if (!item?.isNsfw) throw providerError(502, "Waifu.im devolvió una imagen que no está marcada como NSFW");
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  const tagNames = tags
+    .map((tag) => String(tag?.slug || tag?.name || "").trim().toLowerCase())
+    .filter(Boolean);
+  if (WAIFU_IM_EXCLUDED_TAGS.some((tag) => tagNames.includes(tag))) {
+    throw providerError(502, "Waifu.im devolvió una etiqueta excluida");
+  }
+  const url = validImageUrl(item.url);
+  if (!url) throw providerError(502, "Waifu.im no devolvió una URL de imagen válida");
+  return { url, source: "Waifu.im" };
 }
 
 function providerError(status, message) {
@@ -271,12 +283,13 @@ function friendlyApiError(error, source) {
   return `${provider}: ${String(error?.message || "error de API").slice(0, 160)}`;
 }
 
-async function sendResolvedImage(imageUrl, command, context) {
+async function sendResolvedImage(imageUrl, command, context, sourceName) {
+  const sourceCaption = sourceName ? ` · Fuente: ${sourceName}` : "";
   if (sendImageByUrl()) {
     try {
       await context.sendMessage(context.jid, {
         image: { url: imageUrl },
-        caption: `Contenido para adultos: ${command}`,
+        caption: `Contenido para adultos: ${command}${sourceCaption}`,
       });
       return;
     } catch {
@@ -287,7 +300,7 @@ async function sendResolvedImage(imageUrl, command, context) {
   const imageBuffer = await downloadImage(imageUrl);
   await context.sendMessage(context.jid, {
     image: imageBuffer,
-    caption: `Contenido para adultos: ${command}`,
+    caption: `Contenido para adultos: ${command}${sourceCaption}`,
   });
 }
 
@@ -300,12 +313,17 @@ async function requestImageUrl(source, type) {
     try {
       const request = source.id === "waifuim"
         ? {
-            params: {
-              IsNsfw: "True",
-              PageSize: 1,
-              ...(WAIFU_IM_TAGS[type] ? { IncludedTags: WAIFU_IM_TAGS[type] } : {}),
+            params: new URLSearchParams([
+              ["IsNsfw", "True"],
+              ["PageSize", "1"],
+              ...(WAIFU_IM_TAGS[type] ? [["IncludedTags", WAIFU_IM_TAGS[type]]] : []),
+              ...WAIFU_IM_EXCLUDED_TAGS.map((tag) => ["ExcludedTags", tag]),
+            ]),
+            headers: {
+              accept: "application/json",
+              "accept-version": WAIFU_IM_API_VERSION,
+              "user-agent": "WhatsAppMediaBot/1.0",
             },
-            headers: { accept: "application/json", "user-agent": "WhatsAppMediaBot/1.0" },
             timeout,
           }
         : {
@@ -317,11 +335,10 @@ async function requestImageUrl(source, type) {
       if (data?.success === false || Number(data?.status) >= 400) {
         throw providerError(data?.status, String(data?.message || "la API rechazó la solicitud"));
       }
-      const imageUrl = source.id === "waifuim"
-        ? imageUrlFromWaifuImResponse(data)
-        : imageUrlFromApiResponse(data);
+      if (source.id === "waifuim") return imageFromWaifuImResponse(data);
+      const imageUrl = imageUrlFromApiResponse(data);
       if (!imageUrl) throw providerError(502, "la API no devolvió una URL de imagen válida");
-      return imageUrl;
+      return { url: imageUrl, source: source.name };
     } catch (error) {
       lastError = error;
       if (!transientNetworkError(error) || attempt === retries) break;
@@ -393,8 +410,8 @@ export async function sendNsfwImage(command, context = {}) {
   let lastFailure;
   for (const source of configuredApiSources()) {
     try {
-      const imageUrl = await requestImageUrl(source, type);
-      await sendResolvedImage(imageUrl, command, context);
+      const image = await requestImageUrl(source, type);
+      await sendResolvedImage(image.url, command, context, image.source);
       return null;
     } catch (error) {
       lastFailure = { error, source };

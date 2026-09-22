@@ -118,7 +118,15 @@ test("uses automatic Waifu.im fallback when legacy Nekobot returns a temporary H
       error.response = { status: 522 };
       throw error;
     }
-    return { data: { items: [{ url: "https://cdn.waifu.im/test-image.png" }] } };
+    return {
+      data: {
+        items: [{
+          url: "https://cdn.waifu.im/test-image.png",
+          isNsfw: true,
+          tags: [{ slug: "hentai" }],
+        }],
+      },
+    };
   };
   t.after(() => {
     axios.get = originalGet;
@@ -138,4 +146,45 @@ test("uses automatic Waifu.im fallback when legacy Nekobot returns a temporary H
   assert.match(calls[0], /nekobot\.xyz/);
   assert.match(calls[1], /api\.waifu\.im/);
   assert.equal(sent[0]?.image?.url, "https://cdn.waifu.im/test-image.png");
+  assert.match(sent[0]?.caption, /Fuente: Waifu\.im/);
+});
+
+test("rejects Waifu.im responses without explicit NSFW marking or excluded tags", async () => {
+  const originalGet = axios.get;
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
+  );
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "waifuim";
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  let response = { items: [{ url: "https://cdn.waifu.im/test.png", isNsfw: false, tags: [] }] };
+  axios.get = async (_url, options) => {
+    assert.equal(options.headers["accept-version"], "v7");
+    assert.match(String(options.params), /IsNsfw=True/);
+    assert.match(String(options.params), /ExcludedTags=loli/);
+    return { data: response };
+  };
+  try {
+    const first = await sendNsfwImage("hentai", {
+      jid: "waifu-validation-1",
+      isGroup: true,
+      sendMessage() {},
+    });
+    assert.match(first, /no devolvió una imagen que no está marcada|No pude obtener esa imagen/);
+
+    response = { items: [{ url: "https://cdn.waifu.im/test.png", isNsfw: true, tags: [{ slug: "loli" }] }] };
+    const second = await sendNsfwImage("hentai", {
+      jid: "waifu-validation-2",
+      isGroup: true,
+      sendMessage() {},
+    });
+    assert.match(second, /etiqueta excluida|No pude obtener esa imagen/);
+  } finally {
+    axios.get = originalGet;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
