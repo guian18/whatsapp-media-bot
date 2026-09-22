@@ -2,6 +2,13 @@
 
 Bot de WhatsApp para IA, imágenes y automatizaciones multimedia.
 
+## Requisitos
+
+- Node.js 20 o superior.
+- Git.
+- Una cuenta de WhatsApp para vincular el bot.
+- Una clave de IA únicamente si utilizas un proveedor remoto como Groq, Gemini, Mistral u OpenRouter.
+
 ## Instalación en Termux
 
 ```bash
@@ -16,7 +23,7 @@ nano .env
 npm start
 ```
 
-Para mantenerlo activo en segundo plano:
+Para mantenerlo activo mientras Termux está abierto:
 
 ```bash
 pkg install -y tmux
@@ -24,10 +31,28 @@ tmux new -s whatsapp-media-bot
 npm start
 ```
 
-Para volver a vincular WhatsApp:
+Para salir de `tmux` sin detener el bot, pulsa `Ctrl+B` y después `D`. Para volver:
 
 ```bash
-npm run relink
+tmux attach -t whatsapp-media-bot
+```
+
+Para actualizar una instalación existente:
+
+```bash
+cd ~/whatsapp-media-bot
+git pull --ff-only origin main
+npm install
+npm test
+npm start
+```
+
+Si tu carpeta todavía se llama `infoplayerleft`:
+
+```bash
+cd ~/infoplayerleft
+git remote set-url origin https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
+git pull --ff-only origin main
 ```
 
 ## Instalación en Linux
@@ -45,11 +70,11 @@ nano .env
 npm start
 ```
 
-Si la versión de Node incluida por la distribución es inferior a 20, instala Node.js 20 o superior desde [Node.js](https://nodejs.org/en/download) antes de ejecutar `npm ci`.
+La versión de Node.js debe ser 20 o superior.
 
 ## Instalación en Windows
 
-Instala [Node.js LTS](https://nodejs.org/en/download) y [Git para Windows](https://git-scm.com/download/win). Después abre PowerShell y ejecuta:
+Instala [Node.js LTS](https://nodejs.org/en/download) y [Git para Windows](https://git-scm.com/download/win). Después abre PowerShell:
 
 ```powershell
 git clone https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot.git
@@ -60,15 +85,9 @@ notepad .env
 npm start
 ```
 
-Para volver a vincular WhatsApp:
-
-```powershell
-npm run relink
-```
-
 ## Instalación en macOS
 
-Instala [Homebrew](https://brew.sh/) si aún no lo tienes y ejecuta:
+Instala [Homebrew](https://brew.sh/) si aún no lo tienes:
 
 ```bash
 brew install node git
@@ -80,67 +99,118 @@ nano .env
 npm start
 ```
 
-También puedes editar `.env` con cualquier editor de texto. Para volver a vincular WhatsApp:
+## Configuración de `.env`
 
-```bash
-npm run relink
+Copia `.env.example` como `.env` y edita únicamente lo que necesites. Nunca publiques `.env` ni compartas sus claves.
+
+Configuración básica:
+
+```env
+WHATSAPP_NUMBER=
+PAIRING_CODE=false
+GROUPS_ENABLED=true
+REPLY_IN_PRIVATE=true
+NSFW_ENABLED=true
+NSFW_ALLOW_PRIVATE_CHATS=true
+NSFW_ALLOW_EXTERNAL_URLS=true
+ALLOW_SELF=true
+AUTO_RESET=true
 ```
 
-## Configuración de las APIs
+Para vincular mediante código con número, escribe el número internacional solo con dígitos:
 
-Copia `.env.example` como `.env` y añade únicamente las claves de los servicios que vayas a utilizar. Nunca publiques `.env` ni compartas sus claves.
-
-| Servicio | Enlace directo para crear la clave | Variable |
-|---|---|---|
-| Groq | [Crear Groq API Key](https://console.groq.com/keys) | `GROQ_API_KEY` |
-| Google Gemini | [Crear Gemini API Key](https://aistudio.google.com/app/apikey) | `GEMINI_API_KEY` |
-| Mistral | [Crear Mistral API Key](https://console.mistral.ai/api-keys) | `MISTRAL_API_KEY` |
-| OpenRouter | [Crear OpenRouter API Key](https://openrouter.ai/keys) | `OPENROUTER_API_KEY` |
-| Ollama Cloud | [Crear Ollama API Key](https://ollama.com/settings/keys) | `OLLAMA_API_KEY` |
-| Hugging Face | [Crear Hugging Face Token](https://huggingface.co/settings/tokens) | `AI_API_KEY` |
-
-Proveedores locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](https://github.com/ggml-org/llama.cpp) y [LocalAI](https://github.com/mudler/LocalAI).
-
-Después de editar `.env`, inicia el bot con:
-
-```bash
-npm start
+```env
+WHATSAPP_NUMBER=51987654321
+PAIRING_CODE=false
 ```
 
-## Deploy con Railway
+Para usar QR, deja el número vacío:
+
+```env
+WHATSAPP_NUMBER=
+PAIRING_CODE=false
+```
+
+Si utilizas una API de IA remota, configura el proveedor y su clave correspondiente. Por ejemplo, con Groq:
+
+```env
+AI_PROVIDER=groq
+AI_MODEL=openai/gpt-oss-20b
+GROQ_API_KEY=tu_clave_de_groq
+```
+
+Enlaces directos para crear claves:
+
+- [Groq](https://console.groq.com/keys)
+- [Google Gemini](https://aistudio.google.com/app/apikey)
+- [Mistral](https://console.mistral.ai/api-keys)
+- [OpenRouter](https://openrouter.ai/keys)
+- [Ollama](https://ollama.com/settings/keys)
+
+## Comandos disponibles
+
+- `!ayuda` — muestra la ayuda.
+- `!ping` — comprueba si el bot responde.
+- `!ai <pregunta>` o `!ia <pregunta>` — consulta la IA.
+- `!tono` — muestra los tonos disponibles.
+- `!tono list` — muestra la lista de tonos.
+- `!idioma` — muestra los idiomas disponibles.
+- `!idioma list` — muestra la lista de idiomas.
+- `!proveedor` — muestra los proveedores disponibles.
+- `!proveedor list` — muestra la lista de proveedores.
+- `!anime` — envía una imagen SFW de anime.
+- `!nsfw` — muestra las categorías de imágenes para adultos.
+- `!hentai`, `!boobs`, `!ass` y otras categorías — solicitan una imagen si NSFW está habilitado.
+
+## Deploy en Railway
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
 
-[Crear proyecto directamente en Railway](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
+También puedes crear el proyecto desde [Railway](https://railway.app/) seleccionando **Deploy from GitHub repo** y el repositorio `guianpierrcastillolazo-rgb/whatsapp-media-bot`.
 
-Después del despliegue, configura las variables de `.env` en **Variables** y revisa los logs para vincular WhatsApp. Para conservar la sesión y los datos, utiliza un volumen persistente y configura:
+El repositorio incluye `railway.json` con la instalación y el arranque configurados. En Railway, las variables se pueden editar en **Service → Variables**. Configura como mínimo:
+
+```env
+WHATSAPP_NUMBER=
+PAIRING_CODE=false
+```
+
+Para conservar la sesión entre deploys, crea un volumen montado en `/app/data` y configura:
 
 ```env
 AUTH_DIR=/app/data/auth_info
 AI_MEMORY_FILE=/app/data/ai-memory.json
 ```
 
-Para que Railway use primero el código de vinculación por número, añade `WHATSAPP_NUMBER` con el número internacional, solo dígitos y código de país, por ejemplo `51987654321`. Si quieres usar QR, elimina el valor de `WHATSAPP_NUMBER` y vuelve a desplegar. No dejes ambos métodos configurados al mismo tiempo.
+Si Railway ya tiene variables antiguas con valor `false`, actualízalas manualmente desde **Variables**. Después pulsa **Redeploy**.
 
-Más información: [Documentación de Railway](https://docs.railway.com/).
-
-## Deploy con Heroku
+## Deploy en Heroku
 
 [![Deploy en Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
 
-[Crear aplicación directamente en Heroku](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/whatsapp-media-bot)
+Después del despliegue, configura las variables en **Settings → Config Vars**. Heroku utiliza almacenamiento efímero, por lo que la sesión puede perderse después de un reinicio; Railway con volumen persistente es preferible para uso continuo.
 
-Después del despliegue, configura las variables de `.env` en **Settings → Config Vars** y revisa los logs para vincular WhatsApp. Heroku utiliza almacenamiento efímero; la sesión de WhatsApp y los archivos de estado pueden desaparecer después de un reinicio.
+## Sesión de WhatsApp
 
-## Variables mínimas
+La sesión se guarda en `auth_info/` localmente o en la ruta indicada por `AUTH_DIR`. No borres esa carpeta si no quieres volver a vincular WhatsApp.
 
-```env
-AI_PROVIDER=local
-AI_MODEL=local-model
-WHATSAPP_NUMBER=
-PAIRING_CODE=false
-GROUPS_ENABLED=true
-REPLY_IN_PRIVATE=true
+Para borrar la sesión y vincularla de nuevo intencionalmente:
+
+```bash
+npm run reset
+npm start
 ```
 
-Las opciones principales del archivo `.env.example` están habilitadas por defecto y pueden cambiarse desde `.env`.
+Con `AUTO_RESET=true`, el bot elimina automáticamente una sesión que WhatsApp marque como inválida. Los cortes normales de Internet no deberían borrar una sesión válida.
+
+## Pruebas
+
+```bash
+npm test
+```
+
+El proyecto debe terminar con todas las pruebas correctas y cero fallos.
+
+## Licencia y seguridad
+
+No subas `.env`, claves API, tokens, `auth_info/` ni copias de seguridad del entorno al repositorio. Revisa siempre los permisos y las políticas de WhatsApp antes de usar el bot en producción.
