@@ -18,6 +18,9 @@ Heroku utiliza almacenamiento efímero. La sesión `auth_info/`, `watchlist.json
 
 ## Railway
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
+
+- [Deploy directo en Railway](https://railway.com/new/template?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
 - [Crear proyecto desde GitHub](https://railway.com/new)
 - [Panel de Railway](https://railway.com/dashboard)
 - [Precios y plan gratuito](https://railway.com/pricing)
