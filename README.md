@@ -118,6 +118,8 @@ Activa opcionalmente el modo de navegador automatizado. Debes instalar Chromium 
 ```env
 VIDEO_BROWSER_EXECUTABLE_PATH=/ruta/al/ejecutable/chromium
 VIDEO_BROWSER_WAIT_MS=3000
+VIDEO_SAVEHUB_ENABLED=false
+VIDEO_SAVEHUB_URL=https://savehub.cc/d/
 ```
 
 También puedes conectar un navegador Chromium ya iniciado mediante Chrome DevTools Protocol:
@@ -129,6 +131,15 @@ VIDEO_BROWSER_CDP_URL=http://127.0.0.1:9222
 Si configuras `VIDEO_BROWSER_EXECUTABLE_PATH` o `VIDEO_BROWSER_CDP_URL`, `!video` abre `VIDEO_SOURCE_URL`, espera el tiempo indicado y busca las etiquetas `video`/`source` o metadatos `og:video`. El navegador conserva cookies y envía `Referer`, `Accept-Language` y `User-Agent`, que son cabeceras habituales detrás de OpenResty/Nginx. OpenResty no requiere una integración especial: la compatibilidad depende de que el servidor entregue un recurso de video accesible a la sesión autorizada. No intenta saltar CAPTCHA, DRM, controles de acceso ni verificaciones humanas. Si el reproductor usa una URL `blob:` o segmentos protegidos, no podrá convertirlos en un archivo descargable.
 
 En Android/Termux, Node identifica la plataforma como `android` y Playwright no puede iniciarse directamente allí. En ese entorno el módulo se carga de forma diferida para que el bot siga arrancando; el modo navegador requiere ejecutar el bot dentro de un Linux compatible (por ejemplo Kali mediante `proot-distro`) o usar una API/fuente directa.
+
+Para URLs públicas de videos de Pornhub puedes activar opcionalmente el adaptador de SaveHub:
+
+```env
+VIDEO_SAVEHUB_ENABLED=true
+VIDEO_SAVEHUB_URL=https://savehub.cc/d/
+```
+
+El adaptador usa únicamente el endpoint público que SaveHub muestra en su página (`GET /d/?url=...`), busca los enlaces de descarga MP4 que devuelve y luego los procesa con el límite normal de 25 MB. Está desactivado por defecto y solo se aplica a URLs públicas estándar de Pornhub; no funciona para videos privados, premium, DRM o CAPTCHA. Guarda únicamente contenido que tengas derecho a descargar y respeta los términos del servicio.
 
 También puedes configurar `VIDEO_API_URL` si tienes una API que devuelve JSON con una URL en `url`, `video`, `message`, `result.url` o `data.url`:
 

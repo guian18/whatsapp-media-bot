@@ -54,6 +54,20 @@ function configuredVideoUrls() {
     .filter(Boolean);
 }
 
+function saveHubEnabled() {
+  return process.env.VIDEO_SAVEHUB_ENABLED === "true";
+}
+
+function isPublicPornhubVideoPage(value) {
+  try {
+    const url = new URL(value);
+    return /(?:^|\.)pornhub\.com$/i.test(url.hostname)
+      && (/view_video\.php/i.test(url.pathname) || url.searchParams.has("viewkey"));
+  } catch {
+    return false;
+  }
+}
+
 function decodeHtmlAttribute(value) {
   return String(value || "")
     .replace(/&amp;/gi, "&")
@@ -86,6 +100,40 @@ export function extractVideoUrlsFromHtml(html, pageUrl) {
     }
   }
   return [...found];
+}
+
+function extractSaveHubDownloadUrls(html, pageUrl) {
+  const baseUrl = validVideoUrl(pageUrl);
+  if (!baseUrl) return [];
+  const found = new Set();
+  const anchorPattern = /<a\b([^>]*?)href\s*=\s*["']([^"']+)["']([^>]*)>/gi;
+  for (const match of String(html || "").matchAll(anchorPattern)) {
+    const attributes = `${match[1]} ${match[3]}`;
+    if (!/(?:download|mp4|video|quality|resolution)/i.test(attributes)) continue;
+    const raw = decodeHtmlAttribute(match[2]);
+    try {
+      const candidate = validVideoUrl(new URL(raw, baseUrl).toString());
+      if (candidate) found.add(candidate);
+    } catch {
+      // Ignore non-HTTP download links.
+    }
+  }
+  return [...found];
+}
+
+async function saveHubVideoUrls(pageUrl) {
+  if (!saveHubEnabled() || !isPublicPornhubVideoPage(pageUrl)) return [];
+  const endpoint = validVideoUrl(process.env.VIDEO_SAVEHUB_URL || "https://savehub.cc/d/");
+  if (!endpoint) return [];
+  const { data: html } = await axios.get(endpoint, {
+    params: { url: pageUrl },
+    responseType: "text",
+    headers: videoRequestHeaders("text/html,application/xhtml+xml"),
+    timeout: 20_000,
+    maxContentLength: MAX_SOURCE_PAGE_BYTES,
+    maxBodyLength: MAX_SOURCE_PAGE_BYTES,
+  });
+  return extractSaveHubDownloadUrls(html, endpoint);
 }
 
 function urlFromApiResponse(data) {
@@ -283,6 +331,8 @@ export async function sendVideoFromUrl(urlValue, context = {}) {
   try {
     const url = validVideoUrl(urlValue);
     if (!url) return "Uso: `!video <URL>` con un video o una página HTML pública.";
+    const saveHubUrls = await saveHubVideoUrls(url);
+    if (saveHubUrls.length) return await sendVideoUrl(saveHubUrls[0], context);
     return await sendVideoUrl(url, context);
   } catch (error) {
     return `No pude descargar el video: ${error?.message || "error de red"}`;
