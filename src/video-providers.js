@@ -29,6 +29,13 @@ function extractVideoUrl(item) {
   return null;
 }
 
+function apifyError(error, fallback) {
+  const status = error?.response?.status;
+  const detail = error?.response?.data?.error?.message || error?.response?.data?.message;
+  if (status) return `${fallback} (HTTP ${status}${detail ? `: ${detail}` : ""})`;
+  return error?.message || fallback;
+}
+
 export async function apifyVideoUrl(pageUrl) {
   const token = String(process.env.APIFY_API_TOKEN || '').trim();
   if (!token) throw new Error('falta APIFY_API_TOKEN en .env');
@@ -42,12 +49,16 @@ export async function apifyVideoUrl(pageUrl) {
     params: { token, waitForFinish: 120 },
     headers: { accept: 'application/json', 'content-type': 'application/json' },
     timeout: 150_000,
+  }).catch((error) => {
+    throw new Error(apifyError(error, 'Apify rechazó el inicio del actor'));
   });
   const datasetId = run.data?.data?.defaultDatasetId;
   if (!datasetId) throw new Error('Apify no devolvió un dataset');
   const { data: items } = await axios.get(`https://api.apify.com/v2/datasets/${encodeURIComponent(datasetId)}/items`, {
     params: { token, clean: true, format: 'json' },
     timeout: 30_000,
+  }).catch((error) => {
+    throw new Error(apifyError(error, 'Apify no pudo leer el dataset'));
   });
   const item = Array.isArray(items) ? items[0] : items;
   const url = extractVideoUrl(item);
