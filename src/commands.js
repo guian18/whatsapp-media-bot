@@ -4,7 +4,7 @@ import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage } from "./nsfw.js";
-import { sendVideoFromUrl } from "./video.js";
+import { sendRandomVideo, sendVideoFromUrl } from "./video.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
@@ -276,7 +276,7 @@ export async function handleCommand(text, context = {}) {
     case "anime":
       return sendSfwAnimeImage(context);
     case "video":
-      return sendVideoFromUrl(args, context);
+      return args ? sendVideoFromUrl(args, context) : sendRandomVideo(context);
     case "nsfw":
       return nsfwHelp();
     case "vigilar":

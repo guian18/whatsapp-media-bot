@@ -26,36 +26,80 @@ function isVideoContent(data, contentType = "") {
   return header.includes("ftyp") || header.startsWith("RIFF");
 }
 
-export async function sendVideoFromUrl(urlValue, context = {}) {
+function configuredVideoUrls() {
+  return String(process.env.VIDEO_URLS || "")
+    .split(",")
+    .map((value) => validVideoUrl(value.trim()))
+    .filter(Boolean);
+}
+
+function urlFromApiResponse(data) {
+  const candidate = data?.url || data?.video || data?.message || data?.result?.url || data?.data?.url;
+  return validVideoUrl(candidate);
+}
+
+export async function randomVideoUrl() {
+  const urls = configuredVideoUrls();
+  if (urls.length) return urls[Math.floor(Math.random() * urls.length)];
+
+  const apiUrl = validVideoUrl(process.env.VIDEO_API_URL);
+  if (!apiUrl) return null;
+  const { data } = await axios.get(apiUrl, {
+    headers: { accept: "application/json", "user-agent": "InfoPlayerLeft/1.0" },
+    timeout: 15_000,
+  });
+  return urlFromApiResponse(data);
+}
+
+async function sendVideoUrl(urlValue, context = {}) {
   const url = validVideoUrl(urlValue);
-  if (!url) return "Uso: `!video https://dominio.com/video.mp4` (solo URLs públicas HTTP/HTTPS).";
+  if (!url) return "Uso: `!video` para uno aleatorio o `!video https://dominio.com/video.mp4` para una URL directa.";
   if (!context.jid || typeof context.sendMessage !== "function") {
     return "Este comando solo está disponible desde WhatsApp.";
   }
 
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+    headers: { accept: "video/*", "user-agent": "InfoPlayerLeft/1.0" },
+    timeout: 30_000,
+    maxContentLength: MAX_VIDEO_BYTES,
+    maxBodyLength: MAX_VIDEO_BYTES,
+  });
+  const contentLength = Number(response.headers?.["content-length"] || 0);
+  const buffer = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || "");
+  if (contentLength > MAX_VIDEO_BYTES || buffer.length > MAX_VIDEO_BYTES) {
+    return "El video supera el límite de 25 MB.";
+  }
+  if (!isVideoContent(buffer, response.headers?.["content-type"] || "")) {
+    return "La URL no devolvió un video directo compatible. Usa un enlace .mp4 público.";
+  }
+  await context.sendMessage(context.jid, {
+    video: buffer,
+    mimetype: response.headers?.["content-type"]?.split(";")[0] || "video/mp4",
+    caption: "Video enviado desde URL",
+  });
+  return null;
+}
+
+export async function sendVideoFromUrl(urlValue, context = {}) {
   try {
-    const response = await axios.get(url, {
-      responseType: "arraybuffer",
-      headers: { accept: "video/*", "user-agent": "InfoPlayerLeft/1.0" },
-      timeout: 30_000,
-      maxContentLength: MAX_VIDEO_BYTES,
-      maxBodyLength: MAX_VIDEO_BYTES,
-    });
-    const contentLength = Number(response.headers?.["content-length"] || 0);
-    const buffer = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || "");
-    if (contentLength > MAX_VIDEO_BYTES || buffer.length > MAX_VIDEO_BYTES) {
-      return "El video supera el límite de 25 MB.";
-    }
-    if (!isVideoContent(buffer, response.headers?.["content-type"] || "")) {
-      return "La URL no devolvió un video directo compatible. Usa un enlace .mp4 público.";
-    }
-    await context.sendMessage(context.jid, {
-      video: buffer,
-      mimetype: response.headers?.["content-type"]?.split(";")[0] || "video/mp4",
-      caption: "Video enviado desde URL",
-    });
-    return null;
+    return await sendVideoUrl(urlValue, context);
   } catch (error) {
     return `No pude descargar el video: ${error?.message || "error de red"}`;
+  }
+}
+
+export async function sendRandomVideo(context = {}) {
+  if (!context.jid || typeof context.sendMessage !== "function") {
+    return "Este comando solo está disponible desde WhatsApp.";
+  }
+  try {
+    const url = await randomVideoUrl();
+    if (!url) {
+      return "No hay videos aleatorios configurados. Añade VIDEO_URLS o VIDEO_API_URL en tu .env.";
+    }
+    return await sendVideoUrl(url, context);
+  } catch (error) {
+    return `No pude obtener un video aleatorio: ${error?.message || "error de API"}`;
   }
 }

@@ -69,13 +69,26 @@ Usa `!nsfw` para ver las categorías disponibles o escribe directamente una cate
 
 ## Enviar videos por URL
 
-Usa `!video` seguido de una URL pública directa al archivo de video:
+Usa `!video` sin argumentos para enviar un video aleatorio, o seguido de una URL pública directa al archivo de video:
 
 ```text
+!video
 !video https://dominio.com/video.mp4
 ```
 
-El bot descarga el archivo mediante Axios y lo envía a WhatsApp. Acepta HTTP/HTTPS público, limita el tamaño a 25 MB y requiere un enlace directo que devuelva video; enlaces de páginas como YouTube, TikTok o Facebook no funcionan si no apuntan directamente al archivo multimedia.
+Configura el origen de los videos aleatorios en `.env` usando una lista de URLs directas separadas por comas:
+
+```env
+VIDEO_URLS=https://cdn.example.com/a.mp4,https://cdn.example.com/b.mp4
+```
+
+También puedes configurar `VIDEO_API_URL` si tienes una API que devuelve JSON con una URL en `url`, `video`, `message`, `result.url` o `data.url`:
+
+```env
+VIDEO_API_URL=https://tu-api.example/videos/random
+```
+
+Si defines ambas variables, se usa aleatoriamente una URL de `VIDEO_URLS`. El bot descarga el archivo mediante Axios y lo envía a WhatsApp. Acepta HTTP/HTTPS público, limita el tamaño a 25 MB y requiere un enlace directo que devuelva video; enlaces de páginas como YouTube, TikTok o Facebook no funcionan si no apuntan directamente al archivo multimedia.
 
 ## Instalación en Termux
 
