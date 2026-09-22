@@ -2,6 +2,108 @@
 
 Bot de WhatsApp para Steam, servidores de Left 4 Dead 2, vigilancia e IA.
 
+## Catálogo completo de comandos
+
+Todos los comandos se escriben con `!`. Los nombres pueden personalizarse mediante `COMMAND_ALIASES`; por ejemplo, `COMMAND_ALIASES=ayudame=ayuda,video2=video`. El bot muestra los nombres activos con `!ayuda`.
+
+### Ayuda y respuesta rápida
+
+| Comando | Uso | Función |
+|---|---|---|
+| `!ayuda` / `!help` | `!ayuda` | Muestra este catálogo y los nombres personalizados activos. |
+| `!ping` | `!ping` | Comprueba que el bot responde. Las respuestas de fallo simuladas se controlan con `PING_DEAD_CHANCE` y `PING_TRIP_CHANCE`. |
+
+### Steam y servidores de Left 4 Dead 2
+
+| Comando | Uso | Función |
+|---|---|---|
+| `!info` | `!info <SteamID64\|vanity\|URL>` | Consulta el perfil de Steam y, si está disponible, el servidor actual de Left 4 Dead 2. |
+| `!buscar` | `!buscar <nickname>` | Busca un jugador por nombre en servidores públicos consultados. |
+| `!servidor` | `!servidor <IP:puerto>` | Muestra información del servidor. |
+| `!jugadores` | `!jugadores <IP:puerto>` | Muestra información del servidor y la lista de jugadores. |
+
+Ejemplos:
+
+```text
+!info 76561198000000000
+!info nombre_de_steam
+!buscar guian
+!servidor 1.2.3.4:27015
+!jugadores 1.2.3.4:27015
+```
+
+### Vigilancia de jugadores
+
+| Comando | Uso | Función |
+|---|---|---|
+| `!vigilar` / `!vigilarnick` | `!vigilar <nickname\|SteamID64\|URL>` | Añade un jugador a la vigilancia de este chat. |
+| `!novigilar` | `!novigilar <nickname\|SteamID64\|URL>` | Elimina una vigilancia. |
+| `!lista` | `!lista` | Muestra los jugadores vigilados en el chat actual. |
+| `!escaneo` | `!escaneo` | Muestra las vigilancias numeradas para elegir una. |
+| `!escaneo` | `!escaneo <número>` | Ejecuta un escaneo manual de la vigilancia seleccionada. |
+| `!escaneo` | `!escaneo <nickname\|SteamID64\|URL>` | Ejecuta un escaneo manual de un objetivo concreto. |
+
+El escaneo automático usa `WATCH_INTERVAL_SECONDS`, limita servidores con `WATCH_MAX_SERVERS` y guarda el estado en `WATCH_STATE_FILE`.
+
+### Inteligencia artificial
+
+| Comando | Uso | Función |
+|---|---|---|
+| `!ai` / `!ia` | `!ai <pregunta>` | Responde usando el proveedor configurado. |
+| `!ai` / `!ia` | `!ai fuentes <pregunta>` | Responde incorporando resultados de búsqueda web. |
+| `!tono` | `!tono <estilo>` | Cambia el estilo persistente. Estilos: `tranquilo`, `agresivo`, `insultos`, `formal`, `divertido`, `sarcastico`, `breve`, `amable`. |
+| `!idioma` | `!idioma <país\|código>` | Cambia el idioma persistente, por ejemplo `es`, `es-MX`, `en`, `it` o `pt-BR`. |
+| `!proveedor` | `!proveedor <nombre>` | Cambia entre `local`, `ollama`, `llama_cpp`, `localai`, `gemini`, `groq`, `mistral` y `openrouter`. |
+
+Ejemplos:
+
+```text
+!ai ¿qué novedades hay en Left 4 Dead 2?
+!ai fuentes compara dos servidores públicos
+!tono formal
+!idioma es-MX
+!proveedor ollama
+```
+
+### Imágenes SFW y NSFW
+
+| Comando | Uso | Función |
+|---|---|---|
+| `!anime` | `!anime` | Envía una imagen SFW aleatoria de anime. |
+| `!nsfw` | `!nsfw` | Muestra las categorías NSFW disponibles. |
+| Categorías NSFW | `!4k`, `!anal`, `!ass`, `!blowjob`, `!boobs`, `!feet`, `!gonewild`, `!hass`, `!hboobs`, `!hentai`, `!hentaianal`, `!hkitsune`, `!hmidriff`, `!htigh`, `!hyuri`, `!kanna`, `!lewd`, `!lewdneko`, `!paizuri`, `!pgif`, `!pussy`, `!tentacle`, `!thigh`, `!yaoi` | Solicita una imagen de la categoría configurada. |
+
+Los comandos NSFW tienen un límite de una solicitud por chat cada 10 segundos. Se pueden desactivar con `NSFW_ENABLED=false`, bloquear chats privados con `NSFW_ALLOW_PRIVATE_CHATS=false` y restringir grupos con `NSFW_ALLOWED_GROUPS`.
+
+### Videos y proveedores
+
+| Comando | Uso | Función y requisitos |
+|---|---|---|
+| `!video` | `!video` | Envía un video aleatorio de `VIDEO_URLS`, `VIDEO_SOURCE_URL` o `VIDEO_API_URL`. |
+| `!video` | `!video <URL directa>` | Descarga un video HTTP(S) público. |
+| `!video` | `!video <URL de página>` | Extrae un reproductor o recurso de una página; requiere Playwright/Kali si la página depende de JavaScript. |
+| `!apify` | `!apify <URL pública>` | Consulta el actor configurado de Apify; requiere `APIFY_API_TOKEN`. |
+| `!phub` | `!phub <URL pública>` | Descarga mediante la biblioteca local PHUB; requiere `PHUB_ENABLED=true`, Python, PHUB y normalmente `ffmpeg`. |
+
+Ejemplos:
+
+```text
+!video https://cdn.example.com/video.mp4
+!video https://dominio.com/pagina-con-reproductor
+!apify https://www.pornhub.com/view_video.php?viewkey=...
+!phub https://www.pornhub.com/view_video.php?viewkey=...
+```
+
+El bot limita los videos enviados a 25 MB. SaveHub está configurado como adaptador opcional para URLs públicas estándar de Pornhub mediante `VIDEO_SAVEHUB_ENABLED=true`. Los proveedores no acceden a contenido privado, premium, DRM o CAPTCHA. Usa estas funciones únicamente con contenido que tengas derecho a guardar.
+
+### Configuración de nombres personalizados
+
+```env
+COMMAND_ALIASES=ayudame=ayuda,video2=video,ia2=ai
+```
+
+El alias se escribe a la izquierda y el comando real a la derecha. Solo se aceptan nombres alfanuméricos y guion bajo; no se puede reemplazar directamente un comando original.
+
 ## Deploy en Heroku
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)
