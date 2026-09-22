@@ -78,6 +78,7 @@ Usa `!video` sin argumentos para enviar un video aleatorio, o seguido de una URL
 ```text
 !video
 !video https://dominio.com/video.mp4
+!video https://dominio.com/pagina-con-reproductor
 ```
 
 Configura el origen de los videos aleatorios en `.env` usando una lista de URLs directas separadas por comas:
@@ -85,6 +86,8 @@ Configura el origen de los videos aleatorios en `.env` usando una lista de URLs 
 ```env
 VIDEO_URLS=https://cdn.example.com/a.mp4,https://cdn.example.com/b.mp4
 ```
+
+`!video <URL>` acepta tanto un archivo directo como una página HTML. Para una página, con Playwright activo en Kali el bot ejecuta JavaScript, conserva la cookie configurada, revisa `<video>`, `<source>`, metadatos `og:video` y recursos de red de video, y después envía el archivo detectado. Reconoce respuestas `video/*`, MP4/M4V/MOV, WebM/Matroska, AVI, OGG/OGV, 3GP, MPEG-TS y enlaces con esas extensiones. HLS/DASH segmentado, `blob:`, DRM, CAPTCHA y verificaciones humanas requieren un reproductor o conversor específico y no se pueden convertir siempre en un archivo de WhatsApp.
 
 También puedes configurar una página HTML pública que contenga enlaces directos a videos. El bot revisa los atributos `src`, `href`, `data-src` y `data-video`, resuelve enlaces relativos y escoge uno al azar:
 

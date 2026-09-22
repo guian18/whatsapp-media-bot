@@ -101,7 +101,7 @@ export function ayuda() {
     `\`${name("proveedor")} <nombre>\` — cambia la IA y el modelo`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
-    `\`${name("video")} <URL>\` — descarga y envía un video directo de hasta 25 MB`,
+    `\`${name("video")}\` <URL> — extrae y envía un video o página HTML de hasta 25 MB`,
     `\`${name("vigilar")} <nick|SteamID|URL>\` — avisa cuando un jugador se conecta a L4D2`,
     `\`${name("novigilar")} <nick|SteamID|URL>\` — cancela una vigilancia`,
     `\`${name("lista")}\` — muestra los jugadores vigilados en este chat`,

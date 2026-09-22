@@ -2,7 +2,7 @@ import axios from "axios";
 
 const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 const MAX_SOURCE_PAGE_BYTES = 2 * 1024 * 1024;
-const VIDEO_EXTENSIONS = /\.(?:mp4|m4v|webm|mov|mkv|avi)(?:$|[?#])/i;
+const VIDEO_EXTENSIONS = /\.(?:mp4|m4v|webm|mov|mkv|avi|ogv|ogg|3gp|ts|flv)(?:$|[?#])/i;
 
 function videoRequestHeaders(accept) {
   const headers = {
@@ -167,22 +167,31 @@ async function browserVideoBuffer(pageUrl) {
     const cookies = cookieEntries(pageUrl);
     if (cookies.length) await context.addCookies(cookies);
     const page = await context.newPage();
+    const networkVideoUrls = [];
+    page.on("response", async (response) => {
+      const contentType = response.headers()["content-type"] || "";
+      const responseUrl = validVideoUrl(response.url());
+      if (responseUrl && (/^video\//i.test(contentType) || /mpegurl|x-mpegurl/i.test(contentType) || VIDEO_EXTENSIONS.test(responseUrl))) {
+        networkVideoUrls.push(responseUrl);
+      }
+    });
     await page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
     await page.waitForTimeout(Number(process.env.VIDEO_BROWSER_WAIT_MS || 3_000));
     await page.waitForFunction(
       () => Boolean(document.querySelector("video, source, meta[property='og:video'], meta[property='og:video:url']")),
       { timeout: Math.max(1_000, Number(process.env.VIDEO_BROWSER_WAIT_MS || 3_000)) }
     ).catch(() => {});
-    const result = await page.evaluate(() => {
+    const result = await page.evaluate((networkUrls) => {
       const candidates = [
         ...Array.from(document.querySelectorAll("video"), (element) => element.currentSrc || element.src || element.dataset.src || element.dataset.video || element.dataset.mp4 || ""),
         ...Array.from(document.querySelectorAll("source"), (element) => element.src || element.dataset.src || element.dataset.video || element.dataset.mp4 || ""),
         ...Array.from(document.querySelectorAll("meta[property='og:video'], meta[property='og:video:url']"), (element) => element.content || ""),
+        ...networkUrls,
       ].filter(Boolean);
       const url = candidates[0];
       if (!url || url.startsWith("blob:") || url.startsWith("data:")) return { error: "no-direct-source" };
       return { url };
-    });
+    }, networkVideoUrls);
     if (result.error) throw new Error(`el navegador no encontró un video directo (${result.error})`);
     const response = await context.request.get(result.url, {
       headers: {
@@ -237,7 +246,7 @@ async function sendVideoUrl(urlValue, context = {}) {
 
   const response = await axios.get(url, {
     responseType: "arraybuffer",
-    headers: videoRequestHeaders("video/*"),
+    headers: videoRequestHeaders("video/*,text/html,application/xhtml+xml,application/vnd.apple.mpegurl,*/*;q=0.8"),
     timeout: 30_000,
     maxContentLength: MAX_VIDEO_BYTES,
     maxBodyLength: MAX_VIDEO_BYTES,
@@ -245,7 +254,10 @@ async function sendVideoUrl(urlValue, context = {}) {
   const contentLength = Number(response.headers?.["content-length"] || 0);
   const buffer = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || "");
   if (contentLength > MAX_VIDEO_BYTES || buffer.length > MAX_VIDEO_BYTES) return "El video supera el límite de 25 MB.";
-  if (!isVideoContent(buffer, response.headers?.["content-type"] || "", url)) return "La URL no devolvió un video directo compatible. Usa un enlace .mp4 público.";
+  if (!isVideoContent(buffer, response.headers?.["content-type"] || "", url)) {
+    if (browserConfigured()) return await sendVideoFromBrowser(url, context);
+    return "La URL no devolvió un video directo. Para extraer una página HTML activa Playwright en Kali con VIDEO_BROWSER_EXECUTABLE_PATH.";
+  }
   await context.sendMessage(context.jid, {
     video: buffer,
     mimetype: response.headers?.["content-type"]?.split(";")[0] || "video/mp4",
@@ -269,7 +281,9 @@ async function sendVideoFromBrowser(pageUrl, context) {
 
 export async function sendVideoFromUrl(urlValue, context = {}) {
   try {
-    return await sendVideoUrl(urlValue, context);
+    const url = validVideoUrl(urlValue);
+    if (!url) return "Uso: `!video <URL>` con un video o una página HTML pública.";
+    return await sendVideoUrl(url, context);
   } catch (error) {
     return `No pude descargar el video: ${error?.message || "error de red"}`;
   }
