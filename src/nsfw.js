@@ -84,7 +84,14 @@ function cleanup(now) {
 
 export function nsfwHelp() {
   const names = Object.keys(NSFW_COMMANDS).map((name) => `!${name}`).join(", ");
-  return `Imágenes para adultos (disponibles en grupos): ${names}\nConfigura NSFW_ENABLED=true. Usa NSFW_ALLOWED_GROUPS solo si quieres limitar el acceso a grupos concretos.`;
+  return [
+    "*Menú de imágenes NSFW*",
+    "",
+    `Comandos disponibles: ${names}`,
+    "",
+    "Ejemplo: escribe !hentai o !boobs para recibir una imagen aleatoria.",
+    "Cada chat puede solicitar una imagen cada 10 segundos.",
+  ].join("\n");
 }
 
 export async function sendNsfwImage(command, context = {}) {

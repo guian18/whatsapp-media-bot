@@ -55,6 +55,8 @@ test("private chats are allowed when explicitly enabled", async () => {
 test("adult-image commands are listed and dispatched without network access when blocked", async () => {
   assert.ok(Object.hasOwn(NSFW_COMMANDS, "hentai"));
   assert.match(nsfwHelp(), /!hentai/);
+  assert.match(await handleCommand("!nsfw", { jid: "group-id", isGroup: true }), /Menú de imágenes NSFW/);
+  assert.match(await handleCommand("!NSFW", { jid: "group-id", isGroup: true }), /!boobs/);
   const previous = process.env.NSFW_ENABLED;
   delete process.env.NSFW_ENABLED;
   assert.match(await handleCommand("!hentai", { jid: "group-id", isGroup: true, sendMessage() {} }), /desactivados/);
