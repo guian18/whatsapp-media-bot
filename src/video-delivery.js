@@ -1,6 +1,12 @@
 import axios from "axios";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
 
 const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+const execFileAsync = promisify(execFile);
 
 function privateHost(hostname) {
   const host = String(hostname || "").toLowerCase();
@@ -32,6 +38,33 @@ function looksLikeVideo(buffer, contentType, url) {
     || header.subarray(0, 4).toString("latin1") === "RIFF";
 }
 
+function isPlaylist(buffer, contentType, url) {
+  const mime = String(contentType || "").toLowerCase();
+  return /mpegurl|m3u8/i.test(mime)
+    || /\.m3u8(?:$|[?#])/i.test(url)
+    || Buffer.from(buffer || []).subarray(0, 32).toString("utf8").startsWith("#EXTM3U");
+}
+
+async function convertPlaylist(url) {
+  const ffmpeg = String(process.env.FFMPEG_PATH || "ffmpeg").trim();
+  const workDir = await mkdtemp(path.join(tmpdir(), "infoplayerleft-apify-"));
+  const output = path.join(workDir, "video.mp4");
+  try {
+    await execFileAsync(ffmpeg, ["-y", "-i", url, "-c", "copy", "-movflags", "+faststart", output], {
+      timeout: Number(process.env.FFMPEG_TIMEOUT_MS || 180_000),
+      maxBuffer: 2 * 1024 * 1024,
+    });
+    const buffer = await readFile(output);
+    if (!buffer.length || buffer.length > MAX_VIDEO_BYTES) throw new Error("ffmpeg produjo un archivo vacío o mayor de 25 MB");
+    return buffer;
+  } catch (error) {
+    if (error?.code === "ENOENT") throw new Error("Apify devolvió M3U8; instala ffmpeg o configura FFMPEG_PATH");
+    throw new Error(error?.stderr?.trim() || error?.message || "no se pudo convertir el M3U8 con ffmpeg");
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
 export async function sendVideoFromUrl(urlValue, context = {}) {
   const url = validPublicUrl(urlValue);
   if (!url) return "Apify no devolvió una URL HTTP(S) pública válida.";
@@ -45,10 +78,12 @@ export async function sendVideoFromUrl(urlValue, context = {}) {
   });
   const buffer = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || "");
   if (buffer.length > MAX_VIDEO_BYTES) return "El video supera el límite de 25 MB.";
-  if (!looksLikeVideo(buffer, response.headers?.["content-type"], url)) return "El proveedor no devolvió un archivo de video compatible (puede ser M3U8).";
+  const contentType = response.headers?.["content-type"] || "";
+  const output = isPlaylist(buffer, contentType, url) ? await convertPlaylist(url) : buffer;
+  if (!looksLikeVideo(output, "video/mp4", url)) return "El proveedor no devolvió un archivo de video compatible.";
   await context.sendMessage(context.jid, {
-    video: buffer,
-    mimetype: response.headers?.["content-type"]?.split(";", 1)[0] || "video/mp4",
+    video: output,
+    mimetype: "video/mp4",
     caption: "Video enviado por proveedor externo",
   });
   return null;

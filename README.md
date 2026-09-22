@@ -71,6 +71,8 @@ Ejemplos:
 |---|---|---|
 | `!anime` | `!anime` | Envía una imagen SFW aleatoria de anime. |
 | `!nsfw` | `!nsfw` | Muestra las categorías NSFW disponibles. |
+| `!apify` | `!apify <URL pública>` | Obtiene un video público con Apify y convierte M3U8 a MP4 con ffmpeg. Requiere `APIFY_API_TOKEN`. |
+| `!phub` | `!phub <URL pública>` | Descarga un video público con PHUB local. Requiere `PHUB_ENABLED=true`, Python, PHUB y ffmpeg. |
 | Categorías NSFW | `!4k`, `!anal`, `!ass`, `!blowjob`, `!boobs`, `!feet`, `!gonewild`, `!hass`, `!hboobs`, `!hentai`, `!hentaianal`, `!hkitsune`, `!hmidriff`, `!htigh`, `!hyuri`, `!kanna`, `!lewd`, `!lewdneko`, `!paizuri`, `!pgif`, `!pussy`, `!tentacle`, `!thigh`, `!yaoi` | Solicita una imagen de la categoría configurada. |
 
 Los comandos NSFW tienen un límite de una solicitud por chat cada 10 segundos. Se pueden desactivar con `NSFW_ENABLED=false`, bloquear chats privados con `NSFW_ALLOW_PRIVATE_CHATS=false` y restringir grupos con `NSFW_ALLOWED_GROUPS`.
@@ -131,6 +133,7 @@ Railway ofrece una prueba de $5 durante 30 días y después $1 mensual de crédi
 | OpenRouter | [Crear OpenRouter API Key](https://openrouter.ai/keys) | `OPENROUTER_API_KEY` |
 | Hugging Face | [Crear Hugging Face Token](https://huggingface.co/settings/tokens) | `AI_API_KEY` |
 | Ollama Cloud | [Crear Ollama API Key](https://ollama.com/settings/keys) | `OLLAMA_API_KEY` |
+| Apify | [Crear Apify API Token](https://console.apify.com/account/integrations) | `APIFY_API_TOKEN` |
 
 Backends locales sin clave: [Ollama](https://ollama.com/download), [llama.cpp](https://github.com/ggml-org/llama.cpp) y [LocalAI](https://github.com/mudler/LocalAI). Las claves reales deben guardarse en `.env` o en las variables del hosting, nunca en el código, el README ni GitHub.
 
@@ -145,6 +148,7 @@ GEMINI_API_KEY=tu_clave
 MISTRAL_API_KEY=tu_clave
 OPENROUTER_API_KEY=tu_clave
 OLLAMA_API_KEY=tu_clave
+APIFY_API_TOKEN=tu_token
 ```
 
 No pegues tokens en comandos de WhatsApp ni en capturas de pantalla. Si una clave se filtra, revócala desde el enlace del proveedor y genera otra.
@@ -181,6 +185,8 @@ El comando `!video` fue eliminado. Se conservan únicamente estos comandos indep
 ```env
 APIFY_API_TOKEN=tu_token_privado
 APIFY_ACTOR_ID=pintxuki/pornhub-video-downloader
+FFMPEG_PATH=ffmpeg
+FFMPEG_TIMEOUT_MS=180000
 ```
 
 `!phub` está desactivado por defecto. Para activarlo, instala Python, PHUB y normalmente `ffmpeg` en el mismo entorno del bot:
@@ -196,7 +202,7 @@ PHUB_SCRIPT=scripts/phub_download.py
 PHUB_TIMEOUT_MS=180000
 ```
 
-Ambos comandos aceptan únicamente URLs públicas HTTP(S) y conservan el límite de 25 MB. No acceden a contenido privado, premium, DRM o CAPTCHA. Usa estas funciones solo con contenido que tengas derecho a guardar.
+Apify puede devolver una lista M3U8; el bot intenta convertirla a MP4 con `ffmpeg`. En Termux instala `ffmpeg` con `pkg install ffmpeg`; en Kali/Debian usa `apt install ffmpeg`. Ambos comandos aceptan únicamente URLs públicas HTTP(S) y conservan el límite de 25 MB. No acceden a contenido privado, premium, DRM o CAPTCHA. Usa estas funciones solo con contenido que tengas derecho a guardar.
 
 ## Instalación en Termux
 
