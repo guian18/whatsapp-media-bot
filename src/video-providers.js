@@ -42,7 +42,23 @@ async function fitWhatsAppLimit(input, workDir) {
   throw new Error("el vídeo supera 25 MB incluso después de comprimirlo; usa PHUB_QUALITY=worst o un vídeo más corto");
 }
 
-export async function phubVideoFile(pageUrl) {
+async function assertMaxDuration(input, maxDurationSeconds) {
+  if (!maxDurationSeconds) return;
+  const ffprobe = String(process.env.PHUB_FFPROBE_PATH || "ffprobe").trim();
+  try {
+    const { stdout } = await execFileAsync(ffprobe, [
+      "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", input,
+    ], { timeout: 30_000, maxBuffer: 64 * 1024 });
+    const duration = Number.parseFloat(String(stdout).trim());
+    if (!Number.isFinite(duration)) throw new Error("no se pudo leer la duración");
+    if (duration > maxDurationSeconds) throw new Error(`el vídeo dura ${Math.ceil(duration)} segundos y supera el límite de ${maxDurationSeconds} segundos`);
+  } catch (error) {
+    if (error?.code === "ENOENT") throw new Error("el modo por duración requiere ffprobe; instala ffmpeg en Termux");
+    throw error;
+  }
+}
+
+export async function phubVideoFile(pageUrl, options = {}) {
   const python = String(process.env.PHUB_PYTHON || "python3").trim();
   const script = path.resolve(process.env.PHUB_SCRIPT || "scripts/phub_download.py");
   const workDir = await mkdtemp(path.join(tmpdir(), "infoplayerleft-phub-"));
@@ -52,6 +68,7 @@ export async function phubVideoFile(pageUrl) {
       timeout: Number(process.env.PHUB_TIMEOUT_MS || 180_000),
       maxBuffer: 2 * 1024 * 1024,
     });
+    await assertMaxDuration(output, options.maxDurationSeconds);
     const buffer = await fitWhatsAppLimit(output, workDir);
     if (!buffer.length) throw new Error("PHUB produjo un archivo vacío");
     return buffer;
@@ -68,7 +85,7 @@ export async function phubVideoFile(pageUrl) {
   }
 }
 
-export async function xvideosVideoFile(pageUrl) {
+export async function xvideosVideoFile(pageUrl, options = {}) {
   const python = String(process.env.XVIDEOS_PYTHON || "python3").trim();
   const script = path.resolve(process.env.XVIDEOS_SCRIPT || "scripts/xvideos_download.py");
   const workDir = await mkdtemp(path.join(tmpdir(), "infoplayerleft-xvideos-"));
@@ -78,6 +95,7 @@ export async function xvideosVideoFile(pageUrl) {
       timeout: Number(process.env.XVIDEOS_TIMEOUT_MS || 180_000),
       maxBuffer: 2 * 1024 * 1024,
     });
+    await assertMaxDuration(output, options.maxDurationSeconds);
     const buffer = await fitWhatsAppLimit(output, workDir);
     if (!buffer.length) throw new Error("xvideos-dl produjo un archivo vacío");
     return buffer;
