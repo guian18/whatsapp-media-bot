@@ -185,7 +185,7 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 |---|---|
 | `ENV_FILE` | Ruta a un archivo `.env` alternativo. En Railway normalmente déjala vacía; el bot usa `.env` por defecto y Railway entrega directamente sus variables al proceso. En Termux/Linux puedes usar, por ejemplo, `/home/usuario/whatsapp-media-bot/.env`. |
 | `NSFW_API_KEY` | Déjala vacía. El bot no utiliza esta variable ni necesita una clave para sus proveedores incluidos. |
-| `NSFW_API_URLS` | Orígenes NSFW separados por comas. El valor recomendado es `nekobot,waifuim`: el bot consulta Waifu.im automáticamente si Nekobot devuelve un error HTTP temporal. También admite URLs de una API propia compatible con el formato de Nekobot. |
+| `NSFW_API_URLS` | Orígenes NSFW separados por comas. El valor recomendado es `waifuim,nekobot`: el bot consulta primero Waifu.im y usa Nekobot como segundo respaldo si Waifu.im devuelve un error HTTP temporal. También admite URLs de una API propia compatible con el formato de Nekobot. |
 | `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si contiene la URL de Nekobot, Waifu.im se añadirá como respaldo automáticamente. |
 | `NSFW_API_RETRIES` y `NSFW_IMAGE_RETRIES` | Reintentos adicionales por origen y por descarga, respectivamente. El valor recomendado es `1`; se admiten de `0` a `3` para API y de `0` a `2` para imágenes. |
 | `NSFW_DIRECT_URL` | `false` (recomendado) descarga y valida la imagen antes de enviarla a WhatsApp, por lo que el bot puede informar y reintentar fallos HTTP del CDN. Usa `true` solo si prefieres que WhatsApp descargue la URL directamente. |
@@ -202,7 +202,7 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 
 Después de comparar alternativas de GitHub, el respaldo utilizado es **Waifu.im API**, cuyo código está publicado en [Waifu-im/waifu-api](https://github.com/Waifu-im/waifu-api). Se eligió porque ofrece una API REST operativa, documentación versionada, lectura NSFW sin clave y una respuesta JSON compatible con Node.js. Los repositorios de bots completos y wrappers revisados no se incorporaron porque requerían desplegar otro bot, dependían de scraping o estaban abandonados.
 
-El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra `Fuente: Waifu.im` en el pie de la imagen. Esto no reemplaza la verificación de edad, el consentimiento ni el cumplimiento de las políticas de WhatsApp, la legislación local y los términos del proveedor. Waifu.im no ofrece un SLA: Nekobot sigue siendo el primer origen y Waifu.im funciona como respaldo.
+El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra `Fuente: Waifu.im` en el pie de la imagen. Esto no reemplaza la verificación de edad, el consentimiento ni el cumplimiento de las políticas de WhatsApp, la legislación local y los términos del proveedor. Waifu.im no ofrece un SLA: Waifu.im es el primer origen y Nekobot funciona como respaldo secundario.
 
 #### Ejemplo recomendado para Railway
 
@@ -211,7 +211,7 @@ Si quieres usar el modo local y permitir todos los grupos, puedes dejar las vari
 ```env
 ENV_FILE=
 NSFW_API_KEY=
-NSFW_API_URLS=nekobot,waifuim
+NSFW_API_URLS=waifuim,nekobot
 NSFW_API_RETRIES=1
 NSFW_IMAGE_RETRIES=1
 NSFW_DIRECT_URL=false

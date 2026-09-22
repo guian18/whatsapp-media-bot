@@ -99,6 +99,46 @@ test("external image URLs require explicit opt-in and reject private hosts", () 
   else process.env.NSFW_ALLOW_EXTERNAL_URLS = previous;
 });
 
+test("uses Waifu.im as the default primary provider", async (t) => {
+  const originalGet = axios.get;
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URL", "NSFW_API_URLS", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
+  );
+  const calls = [];
+  process.env.NSFW_ENABLED = "true";
+  delete process.env.NSFW_API_URL;
+  delete process.env.NSFW_API_URLS;
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  axios.get = async (url) => {
+    calls.push(url);
+    return {
+      data: {
+        items: [{
+          url: "https://cdn.waifu.im/primary.png",
+          isNsfw: true,
+          tags: [{ slug: "hentai" }],
+        }],
+      },
+    };
+  };
+  t.after(() => {
+    axios.get = originalGet;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  const reply = await sendNsfwImage("hentai", {
+    jid: "primary-provider",
+    isGroup: true,
+    sendMessage() {},
+  });
+  assert.equal(reply, null);
+  assert.match(calls[0], /api\.waifu\.im/);
+});
+
 test("uses automatic Waifu.im fallback when legacy Nekobot returns a temporary HTTP error", async (t) => {
   const originalGet = axios.get;
   const previous = Object.fromEntries(
