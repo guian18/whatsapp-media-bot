@@ -112,8 +112,17 @@ export async function sendNsfwImage(command, context = {}) {
     });
     const imageUrl = validImageUrl(data?.message);
     if (!imageUrl) throw new Error("la API no devolvió una imagen segura");
+    const { data: imageData } = await axios.get(imageUrl, {
+      responseType: "arraybuffer",
+      headers: { accept: "image/*", "user-agent": "InfoPlayerLeft/1.0" },
+      timeout: 20_000,
+      maxContentLength: 15 * 1024 * 1024,
+      maxBodyLength: 15 * 1024 * 1024,
+    });
+    const imageBuffer = Buffer.isBuffer(imageData) ? imageData : Buffer.from(imageData);
+    if (!imageBuffer.length) throw new Error("la imagen descargada está vacía");
     await context.sendMessage(context.jid, {
-      image: { url: imageUrl },
+      image: imageBuffer,
       caption: `Contenido para adultos: ${command}`,
     });
     return null;
