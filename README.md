@@ -185,6 +185,7 @@ El comando `!video` fue eliminado. Se conservan únicamente estos comandos indep
 ```env
 APIFY_API_TOKEN=tu_token_privado
 APIFY_ACTOR_ID=pintxuki/pornhub-video-downloader
+APIFY_USE_PROXY=false
 FFMPEG_PATH=ffmpeg
 FFMPEG_TIMEOUT_MS=180000
 ```
@@ -202,7 +203,7 @@ PHUB_SCRIPT=scripts/phub_download.py
 PHUB_TIMEOUT_MS=180000
 ```
 
-Apify puede devolver una lista M3U8; el bot intenta convertirla a MP4 con `ffmpeg`. En Termux instala `ffmpeg` con `pkg install ffmpeg`; en Kali/Debian usa `apt install ffmpeg`. Ambos comandos aceptan únicamente URLs públicas HTTP(S) y conservan el límite de 25 MB. No acceden a contenido privado, premium, DRM o CAPTCHA. Usa estas funciones solo con contenido que tengas derecho a guardar.
+Apify puede devolver una lista M3U8; el bot intenta convertirla a MP4 con `ffmpeg`. `APIFY_USE_PROXY=false` es el modo predeterminado y evita errores de permisos de proxy; actívalo solo si tu cuenta y el actor necesitan el proxy (`APIFY_USE_PROXY=true`). En Termux instala `ffmpeg` con `pkg install ffmpeg`; en Kali/Debian usa `apt install ffmpeg`. Ambos comandos aceptan únicamente URLs públicas HTTP(S) y conservan el límite de 25 MB. No acceden a contenido privado, premium, DRM o CAPTCHA. Usa estas funciones solo con contenido que tengas derecho a guardar.
 
 ## Instalación en Termux
 

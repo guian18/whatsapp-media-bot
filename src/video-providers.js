@@ -41,11 +41,14 @@ export async function apifyVideoUrl(pageUrl) {
   if (!token) throw new Error('falta APIFY_API_TOKEN en .env');
   const actorId = String(process.env.APIFY_ACTOR_ID || 'pintxuki/pornhub-video-downloader').trim();
   const encodedActor = actorId.split('/').map(encodeURIComponent).join('~');
-  const run = await axios.post(`https://api.apify.com/v2/acts/${encodedActor}/runs`, {
+  const input = {
     startUrls: [{ url: pageUrl }],
     maxRequestsPerCrawl: 1,
-    proxyConfiguration: { useApifyProxy: true },
-  }, {
+  };
+  if (/^true$/i.test(String(process.env.APIFY_USE_PROXY || 'false'))) {
+    input.proxyConfiguration = { useApifyProxy: true };
+  }
+  const run = await axios.post(`https://api.apify.com/v2/acts/${encodedActor}/runs`, input, {
     params: { token, waitForFinish: 120 },
     headers: { accept: 'application/json', 'content-type': 'application/json' },
     timeout: 150_000,
