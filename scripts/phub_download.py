@@ -2,6 +2,8 @@
 """Download one public video with PHUB for the optional !phub command."""
 import asyncio
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -59,13 +61,39 @@ def main() -> int:
         else:
             download_options = {"downloader": downloader}
 
+        raw_output = f"{output}.ts"
         await video.download(
-            path=output,
+            path=raw_output,
             quality=quality,
             no_title=True,
-            remux=True,
+            # remux=True usa PyAV y PyAV no está soportado en Termux.
+            remux=False,
             **download_options,
         )
+
+        ffmpeg_mode = os.getenv("PHUB_FFMPEG", "auto").strip().lower()
+        ffmpeg = shutil.which("ffmpeg") if ffmpeg_mode != "false" else None
+        if ffmpeg:
+            temporary_mp4 = f"{output}.converted.mp4"
+            try:
+                subprocess.run(
+                    [ffmpeg, "-y", "-i", raw_output, "-c", "copy", "-movflags", "+faststart", temporary_mp4],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    timeout=180,
+                    text=True,
+                )
+                Path(temporary_mp4).replace(output)
+                Path(raw_output).unlink(missing_ok=True)
+            except (OSError, subprocess.SubprocessError) as exc:
+                Path(temporary_mp4).unlink(missing_ok=True)
+                print(f"ffmpeg no pudo convertir el vídeo; se conservará el archivo descargado: {exc}", file=sys.stderr)
+                Path(raw_output).replace(output)
+        else:
+            # El archivo HLS concatenado puede enviarse como vídeo; instalar
+            # ffmpeg mejora la compatibilidad con reproductores de WhatsApp.
+            Path(raw_output).replace(output)
 
     try:
         asyncio.run(download_video())
