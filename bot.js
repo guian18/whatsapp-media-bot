@@ -19,6 +19,7 @@ import "./src/env.js";
 import makeWASocket, {
   Browsers,
   DisconnectReason,
+  normalizeMessageContent,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
@@ -34,9 +35,10 @@ import { startWatcher } from "./src/watcher.js";
 import { startControlServer } from "./src/control-server.js";
 import { formatSafeSettingsChange, normalizePrivateJid, ownPrivateJid } from "./src/owner-notifications.js";
 
+const normalizeGroupId = (value) => String(value || "").trim().replace(/@g\.us$/i, "");
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
   .split(",")
-  .map((s) => s.trim())
+  .map(normalizeGroupId)
   .filter(Boolean);
 const GROUPS_ENABLED = process.env.GROUPS_ENABLED !== "false";
 // Se puede desactivar explícitamente con REPLY_IN_PRIVATE=false.
@@ -170,7 +172,7 @@ async function askPhoneNumber() {
 }
 
 function textFromMessage(msg) {
-  const m = msg.message;
+  const m = normalizeMessageContent(msg.message) || {};
   if (!m) return "";
   return (
     m.conversation ||
@@ -394,7 +396,7 @@ async function start() {
       const isPrivate = jid.endsWith("@s.whatsapp.net") || jid.endsWith("@lid");
       if (isGroup) {
         if (!GROUPS_ENABLED) continue;
-        if (ALLOWED_GROUPS.length && !ALLOWED_GROUPS.includes(jid)) continue;
+        if (ALLOWED_GROUPS.length && !ALLOWED_GROUPS.includes(normalizeGroupId(jid))) continue;
       } else if (!isPrivate || !REPLY_IN_PRIVATE) {
         continue;
       }
