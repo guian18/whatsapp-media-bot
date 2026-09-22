@@ -63,13 +63,19 @@ export function extractVideoUrlsFromHtml(html, pageUrl) {
   const baseUrl = validVideoUrl(pageUrl);
   if (!baseUrl) return [];
   const found = new Set();
-  const attributePattern = /(?:src|href|data-src|data-video|content)\s*=\s*["']([^"']+)["']/gi;
-  for (const match of String(html || "").matchAll(attributePattern)) {
-    const raw = decodeHtmlAttribute(match[1]);
+  const source = String(html || "");
+  const mediaAttributePattern = /<(?:video|source)\b[^>]*?(?:src|data-src|data-video)\s*=\s*["']([^"']+)["'][^>]*>/gi;
+  const linkAttributePattern = /(?:href|content|data-video)\s*=\s*["']([^"']+)["']/gi;
+  const candidates = [
+    ...[...source.matchAll(mediaAttributePattern)].map((match) => ({ value: match[1], requireExtension: false })),
+    ...[...source.matchAll(linkAttributePattern)].map((match) => ({ value: match[1], requireExtension: true })),
+  ];
+  for (const { value, requireExtension } of candidates) {
+    const raw = decodeHtmlAttribute(value);
     if (!raw || raw.startsWith("data:") || raw.startsWith("javascript:")) continue;
     try {
       const candidate = validVideoUrl(new URL(raw, baseUrl).toString());
-      if (candidate && VIDEO_EXTENSIONS.test(candidate)) found.add(candidate);
+      if (candidate && (!requireExtension || VIDEO_EXTENSIONS.test(candidate))) found.add(candidate);
     } catch {
       // Ignore malformed or non-HTTP links exposed by the page.
     }

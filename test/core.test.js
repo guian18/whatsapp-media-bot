@@ -107,12 +107,14 @@ test("random video source uses configured direct URLs", async () => {
 test("random video source extracts public videos from a configured HTML page", () => {
   const html = `
     <video src="/media/first.mp4"></video>
+    <video src="/stream?id=second"></video>
     <a href="https://cdn.example.test/second.webm">second</a>
     <div data-video="/media/first.mp4"></div>
     <a href="/not-a-video.html">ignored</a>
   `;
   assert.deepEqual(extractVideoUrlsFromHtml(html, "https://videos.example.com/library/"), [
     "https://videos.example.com/media/first.mp4",
+    "https://videos.example.com/stream?id=second",
     "https://cdn.example.test/second.webm",
   ]);
 });
