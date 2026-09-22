@@ -67,3 +67,26 @@ export async function phubVideoFile(pageUrl) {
     await rm(workDir, { recursive: true, force: true }).catch(() => {});
   }
 }
+
+export async function xvideosVideoFile(pageUrl) {
+  const python = String(process.env.XVIDEOS_PYTHON || "python3").trim();
+  const script = path.resolve(process.env.XVIDEOS_SCRIPT || "scripts/xvideos_download.py");
+  const workDir = await mkdtemp(path.join(tmpdir(), "infoplayerleft-xvideos-"));
+  const output = path.join(workDir, "video.mp4");
+  try {
+    await execFileAsync(python, [script, pageUrl, output], {
+      timeout: Number(process.env.XVIDEOS_TIMEOUT_MS || 180_000),
+      maxBuffer: 2 * 1024 * 1024,
+    });
+    const buffer = await fitWhatsAppLimit(output, workDir);
+    if (!buffer.length) throw new Error("xvideos-dl produjo un archivo vacío");
+    return buffer;
+  } catch (error) {
+    if (error?.code === "ENOENT") throw new Error(`no se encontró ${python}, xvideos-dl o el script adaptador`);
+    const raw = String(error?.stderr || error?.message || "xvideos-dl no pudo descargar el video").trim();
+    const detail = raw.replace(/\s+/g, " ").slice(0, MAX_ERROR_LENGTH);
+    throw new Error(detail || "xvideos-dl no pudo descargar el video");
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => {});
+  }
+}

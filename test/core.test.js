@@ -35,6 +35,9 @@ test("command dispatcher serves local commands without external services", async
   assert.doesNotMatch(help, new RegExp("api" + "fy", "i"));
   assert.match(help, /!phub/);
   assert.equal(await handleCommand("!video"), null);
+  assert.match(await handleCommand("!xvideos"), /Uso: `!xvideos/);
+  assert.match(await handleCommand("!xvideos https://www.pornhub.com/view_video.php?viewkey=test"), /solo acepta URLs de xvideos/);
+  assert.match(await handleCommand("!xvideos https://www.xvideos.com/video123/test"), /xvideos está desactivado/);
   assert.match(await handleCommand("!ai"), /Uso: `!ai/);
   assert.match(await handleCommand("!ai pregunta directa"), /AI_API_KEY/);
   assert.match(await handleCommand("!AI pregunta directa"), /AI_API_KEY/);

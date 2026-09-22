@@ -4,7 +4,7 @@ import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage } from "./nsfw.js";
-import { phubVideoFile } from "./video-providers.js";
+import { phubVideoFile, xvideosVideoFile } from "./video-providers.js";
 import { listWatched, refreshOfficialAddresses, scanAndNotify, unwatchPlayer, watchedTargets, watchPlayer } from "./watcher.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
@@ -72,6 +72,36 @@ async function sendPhubVideo(args, context) {
   }
 }
 
+async function sendXvideosVideo(args, context) {
+  let pageUrl;
+  try {
+    pageUrl = new URL(String(args || "").trim());
+  } catch {
+    return "Uso: `!xvideos <URL de xvideos.com>`";
+  }
+  const host = pageUrl.hostname.toLowerCase();
+  if (!["xvideos.com", "www.xvideos.com"].includes(host) && !host.endsWith(".xvideos.com")) {
+    return "!xvideos solo acepta URLs de xvideos.com.";
+  }
+  if (!["http:", "https:"].includes(pageUrl.protocol) || pageUrl.username || pageUrl.password) {
+    return "Uso: `!xvideos <URL HTTP(S) pública de xvideos.com>`";
+  }
+  if (process.env.XVIDEOS_ENABLED !== "true") return "xvideos está desactivado. Configura XVIDEOS_ENABLED=true.";
+  if (!context.jid || typeof context.sendMessage !== "function") return "Este comando solo está disponible desde WhatsApp.";
+  try {
+    await context.sendMessage(context.jid, { text: "⏳ xvideos-dl está preparando el video; espera unos minutos..." });
+    const buffer = await xvideosVideoFile(pageUrl.toString());
+    await context.sendMessage(context.jid, {
+      video: buffer,
+      mimetype: "video/mp4",
+      caption: "Video enviado mediante xvideos-dl",
+    });
+    return null;
+  } catch (error) {
+    return `No pude obtener el video con xvideos-dl: ${error?.message || "error del proveedor"}`;
+  }
+}
+
 function pingResponse() {
   const dead = Number(process.env.PING_DEAD_CHANCE ?? "0.10");
   const trip = Number(process.env.PING_TRIP_CHANCE ?? "0.30");
@@ -133,6 +163,7 @@ export function ayuda() {
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
     `\`${name("phub")}\` <URL> — obtiene un video público mediante PHUB local`,
+    `\`${name("xvideos")}\` <URL> — obtiene un video público de xvideos.com mediante xvideos-dl`,
     `\`${name("vigilar")} <nick|SteamID|URL>\` — avisa cuando un jugador se conecta a L4D2`,
     `\`${name("novigilar")} <nick|SteamID|URL>\` — cancela una vigilancia`,
     `\`${name("lista")}\` — muestra los jugadores vigilados en este chat`,
@@ -308,6 +339,8 @@ export async function handleCommand(text, context = {}) {
       return sendSfwAnimeImage(context);
     case "phub":
       return sendPhubVideo(args, context);
+    case "xvideos":
+      return sendXvideosVideo(args, context);
     case "nsfw":
       return nsfwHelp();
     case "vigilar":
