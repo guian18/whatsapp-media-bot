@@ -195,7 +195,7 @@ nano /data/data/com.termux/files/home/infoplayerleft/.env
 Añade o ajusta únicamente estas variables:
 
 ```env
-VIDEO_SOURCE_URL=https://tu-pagina-real.com/
+VIDEO_SOURCE_URL=https://it.pornhub.com/
 VIDEO_BROWSER_EXECUTABLE_PATH=/usr/lib/chromium/chromium
 VIDEO_BROWSER_WAIT_MS=5000
 ```
@@ -212,6 +212,47 @@ Inicia el bot dentro de Kali:
 cd /data/data/com.termux/files/home/infoplayerleft
 npm start
 ```
+
+### Inicio manual dentro de Kali, sin el script
+
+Si ya ves un prompt de Kali parecido a `root㉿localhost`, no uses `cd ~/infoplayerleft`: dentro de Kali `~` significa `/root`. El proyecto compartido está en `/data/data/com.termux/files/home/infoplayerleft`. Ejecuta esta secuencia exactamente:
+
+```bash
+# Dentro de Kali
+cd /data/data/com.termux/files/home/infoplayerleft || exit 1
+pwd
+git pull --ff-only origin main
+npm ci --ignore-scripts
+
+# Comprueba el entorno Linux y el navegador
+uname -s
+node -v
+npm -v
+/usr/lib/chromium/chromium --version
+
+# Configura el .env compartido sin borrar las claves existentes
+nano /data/data/com.termux/files/home/infoplayerleft/.env
+
+# Arranca el bot dentro de Kali
+export VIDEO_BROWSER_EXECUTABLE_PATH=/usr/lib/chromium/chromium
+export VIDEO_BROWSER_WAIT_MS=5000
+npm start
+```
+
+Para detener el bot, pulsa `Ctrl+C`. Para salir de Kali después de detenerlo, ejecuta `exit`. En una nueva sesión, entra otra vez desde Termux y repite el inicio manual:
+
+```bash
+# En Termux
+proot-distro login kali-rolling
+
+# Ya dentro de Kali
+cd /data/data/com.termux/files/home/infoplayerleft || exit 1
+export VIDEO_BROWSER_EXECUTABLE_PATH=/usr/lib/chromium/chromium
+export VIDEO_BROWSER_WAIT_MS=5000
+npm start
+```
+
+No ejecutes `git pull`, `npm ci` ni `npm start` desde `~` en Kali: primero debes entrar en la ruta compartida del proyecto. Si `/usr/lib/chromium/chromium` no existe, instala el navegador dentro de Kali con `apt update && apt install -y chromium`.
 
 Para salir de Kali sin detener procesos en primer plano, pulsa `Ctrl+D` solo cuando el bot no esté ejecutándose; para detener el bot usa `Ctrl+C`. En una nueva sesión de Termux puedes volver a iniciarlo con:
 
