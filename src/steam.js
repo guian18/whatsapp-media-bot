@@ -1,10 +1,17 @@
 // Steam Web API: resolver identificadores y obtener el perfil del jugador.
+import axios from "axios";
 import { getSteamApiKey } from "./steamkey.js";
 
 async function getJson(url, params) {
-  const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`${url}?${qs}`, { signal: AbortSignal.timeout(8000) });
-  return { status: res.status, body: res.ok ? await res.json() : null };
+  const response = await axios.get(url, {
+    params,
+    timeout: 8000,
+    validateStatus: () => true,
+  });
+  return {
+    status: response.status,
+    body: response.status >= 200 && response.status < 300 ? response.data : null,
+  };
 }
 
 export async function resolveVanity(vanity) {

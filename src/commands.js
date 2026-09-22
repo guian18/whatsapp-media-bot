@@ -1,4 +1,5 @@
 // Lógica de comandos, independiente de WhatsApp: cada uno devuelve texto plano.
+import axios from "axios";
 import { serverInfo, serverPlayers, masterServerList, parseAddress } from "./a2s.js";
 import { extractIdentifier, getPlayerInfo } from "./steam.js";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
@@ -19,15 +20,13 @@ async function sendSfwAnimeImage(context) {
     return "Este comando solo está disponible desde WhatsApp.";
   }
   try {
-    const response = await fetch(ANIME_API, {
+    const { data: body } = await axios.get(ANIME_API, {
       headers: {
         accept: "application/json",
         "user-agent": "InfoPlayerLeft/1.0 (https://github.com/guianpierrcastillolazo-rgb/infoplayerleft)",
       },
-      signal: AbortSignal.timeout(15_000),
+      timeout: 15_000,
     });
-    if (!response.ok) throw new Error(`API respondió HTTP ${response.status}`);
-    const body = await response.json();
     const image = body?.results?.[0];
     if (!image?.url || !/^https:\/\//i.test(image.url)) throw new Error("respuesta SFW sin imagen válida");
     await context.sendMessage(context.jid, {
