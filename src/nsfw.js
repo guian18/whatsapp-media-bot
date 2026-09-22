@@ -2,7 +2,7 @@ import axios from "axios";
 
 const NEKOBOT_API_URL = "https://nekobot.xyz/api/image";
 const WAIFU_IM_API_URL = "https://api.waifu.im/images";
-const DEFAULT_API_SOURCES = Object.freeze(["nekobot", "waifuim"]);
+const DEFAULT_API_SOURCES = Object.freeze(["waifuim", "nekobot"]);
 const WAIFU_IM_API_VERSION = "v7";
 const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
 const MIN_INTERVAL_MS = 10_000;
