@@ -15,8 +15,16 @@ function configuredPrivilegedNumbers() {
 }
 
 export function isPrivilegedUser(context = {}) {
-  const requester = normalizeNumber(context.requesterId || context.jid);
-  return Boolean(requester) && configuredPrivilegedNumbers().has(requester);
+  const requesters = [
+    ...(Array.isArray(context.requesterIds) ? context.requesterIds : []),
+    context.requesterId,
+    context.requesterPhone,
+    context.jid,
+  ]
+    .map(normalizeNumber)
+    .filter(Boolean);
+  const privilegedNumbers = configuredPrivilegedNumbers();
+  return requesters.some((requester) => privilegedNumbers.has(requester));
 }
 
 export function disableAllCommands() {

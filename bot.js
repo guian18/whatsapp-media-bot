@@ -380,6 +380,14 @@ async function start() {
         const reply = await handleCommand(text, {
           jid,
           requesterId: isGroup ? (msg.key.participant || msg.participant || jid) : jid,
+          requesterIds: [
+            msg.key.participant,
+            msg.key.participantAlt,
+            msg.key.senderPn,
+            msg.key.remoteJidAlt,
+            msg.participant,
+          ],
+          requesterPhone: msg.key.senderPn || msg.key.participantAlt,
           isGroup,
           sendMessage: (targetJid, payload) => sendTrackedMessage(targetJid, payload),
           deleteMessage: (messageKey) => sock.sendMessage(jid, { delete: messageKey }),

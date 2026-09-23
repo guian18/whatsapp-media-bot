@@ -90,6 +90,8 @@ La fuente SFW y NSFW está fijada permanentemente en `nekobot`. Usa `!anime` o u
 
 `OWNER_NUMBER` y `ADMIN_NUMBER` deben contener números completos con código de país, solo dígitos. Mientras el bot esté desactivado, todos los comandos quedan bloqueados para el resto de usuarios; `!activar` y `!desactivar` siguen disponibles exclusivamente para esos dos números.
 
+En grupos, WhatsApp puede entregar un identificador LID en lugar del número visible. El bot comprueba también las identidades telefónicas alternativas del remitente, por lo que el propietario o administrador no necesita tener permisos de administrador en el grupo para usar estos comandos.
+
 Los comandos NSFW son una adaptación para WhatsApp/Baileys del proyecto [Nekros-dsc/Nsfw-Bot](https://github.com/Nekros-dsc/Nsfw-Bot). Se conserva la atribución solicitada por su README; la implementación original usa Discord y aquí se han reemplazado sus embeds y botones por mensajes multimedia de WhatsApp.
 
 ## Deploy en Railway

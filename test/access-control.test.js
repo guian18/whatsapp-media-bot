@@ -62,3 +62,26 @@ test("!admin menu is visible only to the configured owner and admin", async (t) 
   assert.match(ownerMenu, /!clear all/);
   assert.match(await handleCommand("!admin menu", { requesterId: "51933333333", jid: "admin-chat" }), /No tienes permiso/);
 });
+
+
+test("owner authorization accepts an alternate WhatsApp phone identity in groups", async (t) => {
+  const previousOwner = process.env.OWNER_NUMBER;
+  const previousAdmin = process.env.ADMIN_NUMBER;
+  process.env.OWNER_NUMBER = "51944444444";
+  process.env.ADMIN_NUMBER = "";
+  enableAllCommands();
+  t.after(() => {
+    enableAllCommands();
+    if (previousOwner === undefined) delete process.env.OWNER_NUMBER;
+    else process.env.OWNER_NUMBER = previousOwner;
+    if (previousAdmin === undefined) delete process.env.ADMIN_NUMBER;
+    else process.env.ADMIN_NUMBER = previousAdmin;
+  });
+
+  assert.match(await handleCommand("!clear all", {
+    jid: "group@g.us",
+    requesterId: "1234567890@lid",
+    requesterIds: ["1234567890@lid", "51944444444@s.whatsapp.net"],
+    deleteMessage: async () => {},
+  }), /No hay mensajes del bot/);
+});
