@@ -186,3 +186,26 @@ test("disable and enable apply independently to each chat", async (t) => {
   assert.match(await handleCommand("!activar", ownerIn("group-a@g.us")), /nuevamente en este chat/);
   assert.equal(await handleCommand("!ping", userIn("group-a@g.us")), "Pong! 🏓 El bot está activo y listo.");
 });
+
+
+test("clear and clear all remain available in a disabled chat", async (t) => {
+  const previousOwner = process.env.OWNER_NUMBER;
+  const previousAdmin = process.env.ADMIN_NUMBER;
+  process.env.OWNER_NUMBER = "393803893208";
+  process.env.ADMIN_NUMBER = "";
+  enableAllCommands();
+  t.after(() => {
+    enableAllCommands();
+    if (previousOwner === undefined) delete process.env.OWNER_NUMBER;
+    else process.env.OWNER_NUMBER = previousOwner;
+    if (previousAdmin === undefined) delete process.env.ADMIN_NUMBER;
+    else process.env.ADMIN_NUMBER = previousAdmin;
+  });
+
+  const chat = "disabled-cleanup@g.us";
+  const owner = { jid: chat, requesterId: "393803893208@s.whatsapp.net" };
+  assert.match(await handleCommand("!desactivar", owner), /desactivados en este chat/);
+  assert.match(await handleCommand("!ping", { jid: chat, requesterId: "393999999999@s.whatsapp.net" }), /desactivado en este chat/);
+  assert.match(await handleCommand("!clear", { ...owner, deleteMessage: async () => {} }), /No tienes imágenes NSFW/);
+  assert.match(await handleCommand("!clear all", { ...owner, deleteMessage: async () => {} }), /No hay mensajes del bot/);
+});

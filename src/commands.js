@@ -104,7 +104,9 @@ export async function handleCommand(text, context = {}) {
     return "Todos los comandos han sido activados nuevamente en este chat.";
   }
 
-  if (!areAllCommandsEnabled(context.jid)) return "El bot está temporalmente desactivado en este chat por el propietario o el administrador.";
+  if (!areAllCommandsEnabled(context.jid) && cmd !== "clear") {
+    return "El bot está temporalmente desactivado en este chat por el propietario o el administrador.";
+  }
 
   switch (cmd) {
     case "ping":
