@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import axios from "axios";
 import { handleCommand } from "../src/commands.js";
 import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage, validImageUrl } from "../src/nsfw.js";
@@ -366,6 +369,40 @@ test("rejects Waifu.im responses without explicit NSFW marking or excluded tags"
     assert.match(second, /etiqueta excluida|No pude obtener esa imagen/);
   } finally {
     axios.get = originalGet;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test("local provider sends only an authorized image from its category directory", async () => {
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_PROVIDER", "NSFW_LOCAL_MEDIA_DIR", "NSFW_ALLOW_PRIVATE_CHATS"].map((key) => [key, process.env[key]]),
+  );
+  const root = await mkdtemp(path.join(os.tmpdir(), "whatsapp-media-local-"));
+  const sent = [];
+  try {
+    await mkdir(path.join(root, "boobs"));
+    await writeFile(path.join(root, "boobs", "creator-authorized.jpg"), Buffer.from([
+      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00,
+    ]));
+    process.env.NSFW_ENABLED = "true";
+    process.env.NSFW_API_URLS = "local";
+    process.env.NSFW_PROVIDER = "local";
+    process.env.NSFW_LOCAL_MEDIA_DIR = root;
+    process.env.NSFW_ALLOW_PRIVATE_CHATS = "true";
+    const reply = await sendNsfwImage("boobs", {
+      jid: "local-provider-test",
+      isGroup: false,
+      sendMessage: async (_jid, payload) => sent.push(payload),
+    });
+    assert.equal(reply, null);
+    assert.equal(sent.length, 1);
+    assert.ok(Buffer.isBuffer(sent[0].image));
+    assert.match(sent[0].caption, /Contenido autorizado local/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
     for (const [key, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
