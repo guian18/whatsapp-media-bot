@@ -36,9 +36,13 @@ const AI_PRESETS = {
     url: "https://openrouter.ai/api/v1/chat/completions",
     model: "openrouter/auto",
   },
+  hermes: {
+    url: "http://127.0.0.1:8642/v1/chat/completions",
+    model: "hermes",
+  },
 };
-const PROVIDER_ALIASES = { local: "local", llamacpp: "llama_cpp", "llama.cpp": "llama_cpp", llama: "llama_cpp", ollama: "ollama", localai: "localai", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter" };
-const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", ollama: "OLLAMA_API_KEY", llama_cpp: "LLAMA_CPP_API_KEY", localai: "LOCALAI_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY" };
+const PROVIDER_ALIASES = { local: "local", llamacpp: "llama_cpp", "llama.cpp": "llama_cpp", llama: "llama_cpp", ollama: "ollama", localai: "localai", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter", hermes: "hermes", "hermes-agent": "hermes" };
+const PROVIDER_KEY_ENV = { local: "AI_LOCAL_API_KEY", ollama: "OLLAMA_API_KEY", llama_cpp: "LLAMA_CPP_API_KEY", localai: "LOCALAI_API_KEY", gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", mistral: "MISTRAL_API_KEY", openrouter: "OPENROUTER_API_KEY", hermes: "HERMES_API_KEY" };
 const MAX_QUESTION_LENGTH = 600;
 const MAX_SEARCH_RESULTS = 5;
 const MAX_CONTEXT_LENGTH = 7000;
@@ -207,6 +211,8 @@ function aiConfig() {
       ? (process.env.LLAMA_CPP_URL || process.env.AI_API_URL)
       : provider === "localai"
         ? (process.env.LOCALAI_URL || process.env.AI_API_URL)
+        : provider === "hermes"
+        ? (process.env.HERMES_URL || process.env.AI_API_URL)
         : process.env.AI_API_URL;
   const url = (configuredUrl || preset?.url || DEFAULT_AI_URL).trim();
   const model = (process.env.AI_MODEL || preset?.model || DEFAULT_AI_MODEL).trim();
@@ -252,6 +258,9 @@ async function askModel(question, style, sources, includeSources, history = []) 
   const requestBody = { model, temperature: 0.2, max_tokens: maxTokens, messages };
   const headers = { "content-type": "application/json" };
   if (key) headers.authorization = `Bearer ${key}`;
+  if (provider === "hermes" && process.env.HERMES_SESSION_ID?.trim()) {
+    headers["x-hermes-session-id"] = process.env.HERMES_SESSION_ID.trim();
+  }
   const response = await fetch(url, {
     method: "POST",
     headers,
@@ -346,7 +355,7 @@ export function cmdIdioma(value) {
 
 export function cmdProveedor(value) {
   const input = String(value || "").trim().toLowerCase();
-  const available = ["local", "ollama", "llama_cpp", "localai", "gemini", "groq", "mistral", "openrouter"];
+  const available = ["local", "ollama", "llama_cpp", "localai", "gemini", "groq", "mistral", "openrouter", "hermes"];
   if (!input || input === "lista" || input === "list") return `Proveedores: ${available.join(", ")}\nUso: !proveedor <nombre>`;
   const provider = PROVIDER_ALIASES[input];
   if (!provider || !AI_PRESETS[provider]) return `Proveedor no válido. Usa: ${available.join(", ")}`;
