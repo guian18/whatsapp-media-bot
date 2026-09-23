@@ -1,6 +1,6 @@
 # WhatsApp Media Bot
 
-Bot de WhatsApp para imágenes de anime **SFW** mediante Nekobot.
+Bot de WhatsApp para imágenes de anime **SFW** y comandos de imágenes **NSFW** mediante Nekobot.
 
 ## Requisitos
 
@@ -76,8 +76,12 @@ Para usar QR, deja `WHATSAPP_NUMBER` vacío y `PAIRING_CODE=false`.
 - `!ayuda` — muestra la ayuda.
 - `!ping` — comprueba si el bot responde.
 - `!anime` o `!gatus` — envía una imagen SFW de anime.
+- `!nsfw` — muestra los comandos de imágenes NSFW.
+- `!4k`, `!anal`, `!ass`, `!blowjob`, `!boobs`, `!feet`, `!gonewild`, `!hass`, `!hboobs`, `!hentai`, `!hentaianal`, `!hkitsune`, `!hmidriff`, `!htigh`, `!hyuri`, `!kanna`, `!lewd`, `!lewdneko`, `!paizuri`, `!pgif`, `!pussy`, `!tentacle`, `!thigh` y `!yaoi` — solicitan imágenes NSFW.
 
-La fuente SFW está fijada permanentemente en `nekobot`. Usa `!anime` para solicitar una imagen SFW de anime; no existe un comando para cambiarla.
+La fuente SFW y NSFW está fijada permanentemente en `nekobot`. Usa `!anime` o uno de los comandos NSFW para solicitar una imagen; no existe un comando para cambiarla. Cada chat tiene un intervalo de 10 segundos entre solicitudes NSFW.
+
+Los comandos NSFW son una adaptación para WhatsApp/Baileys del proyecto [Nekros-dsc/Nsfw-Bot](https://github.com/Nekros-dsc/Nsfw-Bot). Se conserva la atribución solicitada por su README; la implementación original usa Discord y aquí se han reemplazado sus embeds y botones por mensajes multimedia de WhatsApp.
 
 ## Deploy en Railway
 
