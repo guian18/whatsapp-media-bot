@@ -2,6 +2,12 @@
 import axios from "axios";
 import { NSFW_COMMANDS, clearNsfwMessages, nsfwHelp, sendNsfwImage } from "./nsfw.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
+import {
+  areAllCommandsEnabled,
+  disableAllCommands,
+  enableAllCommands,
+  isPrivilegedUser,
+} from "./access-control.js";
 
 const NEKOBOT_SFW_API = "https://nekobot.xyz/api/image";
 
@@ -44,6 +50,8 @@ export function ayuda() {
     `\`${name("anime")}\` — solicita una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra el menú de imágenes NSFW`,
     `\`${name("clear")}\` — elimina tus imágenes NSFW enviadas por el bot`,
+    `\`${name("desactivar")}\` — desactiva todos los comandos (solo propietario/admin)`,
+    `\`${name("activar")}\` — activa todos los comandos (solo propietario/admin)`,
     "",
     `Escribe \`${name("ayuda")}\` cuando necesites volver a ver este menú.`,
   ].join("\n");
@@ -61,6 +69,18 @@ export async function handleCommand(text, context = {}) {
     // Una configuración inválida no debe detener el bot ni ejecutar un comando inesperado.
   }
   if (!cmd) return null;
+
+  if (cmd === "desactivar" || cmd === "activar") {
+    if (!isPrivilegedUser(context)) return "No tienes permiso para cambiar el estado global del bot.";
+    if (cmd === "desactivar") {
+      disableAllCommands();
+      return "Todos los comandos han sido desactivados. Solo el propietario o el administrador pueden usar !activar.";
+    }
+    enableAllCommands();
+    return "Todos los comandos han sido activados nuevamente.";
+  }
+
+  if (!areAllCommandsEnabled()) return "El bot está temporalmente desactivado por el propietario o el administrador.";
 
   switch (cmd) {
     case "ping":

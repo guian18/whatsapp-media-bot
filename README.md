@@ -53,6 +53,8 @@ Copia `.env.example` como `.env`. No publiques este archivo ni compartas las cre
 
 ```env
 WHATSAPP_NUMBER=
+OWNER_NUMBER=
+ADMIN_NUMBER=
 PAIRING_CODE=false
 GROUPS_ENABLED=true
 ALLOWED_GROUPS=
@@ -78,9 +80,13 @@ Para usar QR, deja `WHATSAPP_NUMBER` vacío y `PAIRING_CODE=false`.
 - `!anime` o `!gatus` — envía una imagen SFW de anime.
 - `!nsfw` — muestra los comandos de imágenes NSFW.
 - `!clear` — elimina las imágenes NSFW que el bot envió por solicitud del usuario actual en ese chat.
+- `!desactivar` — desactiva todos los comandos del bot; solo el propietario o el administrador configurados pueden ejecutarlo.
+- `!activar` — vuelve a activar todos los comandos; solo el propietario o el administrador configurados pueden ejecutarlo.
 - `!4k`, `!anal`, `!ass`, `!blowjob`, `!boobs`, `!feet`, `!gonewild`, `!hass`, `!hboobs`, `!hentai`, `!hentaianal`, `!hkitsune`, `!hmidriff`, `!htigh`, `!hyuri`, `!kanna`, `!lewd`, `!lewdneko`, `!paizuri`, `!pgif`, `!pussy`, `!tentacle`, `!thigh` y `!yaoi` — solicitan imágenes NSFW.
 
 La fuente SFW y NSFW está fijada permanentemente en `nekobot`. Usa `!anime` o uno de los comandos NSFW para solicitar una imagen; no existe un comando para cambiarla. Cada usuario tiene un intervalo de 10 segundos entre solicitudes NSFW por chat. `!clear` solo elimina los mensajes NSFW registrados para el usuario que lo ejecuta; no elimina los mensajes solicitados por otros usuarios.
+
+`OWNER_NUMBER` y `ADMIN_NUMBER` deben contener números completos con código de país, solo dígitos. Mientras el bot esté desactivado, todos los comandos quedan bloqueados para el resto de usuarios; `!activar` y `!desactivar` siguen disponibles exclusivamente para esos dos números.
 
 Los comandos NSFW son una adaptación para WhatsApp/Baileys del proyecto [Nekros-dsc/Nsfw-Bot](https://github.com/Nekros-dsc/Nsfw-Bot). Se conserva la atribución solicitada por su README; la implementación original usa Discord y aquí se han reemplazado sus embeds y botones por mensajes multimedia de WhatsApp.
 
@@ -102,6 +108,8 @@ Variables recomendadas:
 
 ```env
 WHATSAPP_NUMBER=TU_NUMERO_INTERNACIONAL
+OWNER_NUMBER=NUMERO_DEL_PROPIETARIO
+ADMIN_NUMBER=NUMERO_DEL_ADMIN
 PAIRING_CODE=false
 GROUPS_ENABLED=true
 ALLOWED_GROUPS=
