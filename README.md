@@ -98,7 +98,7 @@ Para consultar o cambiar el proveedor de imágenes SFW de anime:
 !anime
 ```
 
-`nekobot` usa el endpoint SFW documentado en [NekoBot Docs](https://docs.nekobot.xyz/), mientras que `nekosbest` usa la API de [Nekos.best](https://nekos.best/). Ambos son proveedores SFW separados de los proveedores NSFW.
+`nekobot` usa el endpoint SFW documentado en [NekoBot Docs](https://docs.nekobot.xyz/), `nekosbest` usa la API de [Nekos.best](https://nekos.best/), y también están disponibles `safebooru` y `konachan` con filtros de rating seguro. Todos se seleccionan mediante `!sfwproveedor`.
 
 - `!ayuda` — muestra la ayuda.
 - `!ping` — comprueba si el bot responde.
@@ -106,6 +106,8 @@ Para consultar o cambiar el proveedor de imágenes SFW de anime:
 - `!nsfw` — muestra las categorías NSFW disponibles.
 - `!nsfwproveedor list` — muestra proveedores multimedia NSFW.
 - `!nsfwproveedor <nombre>` — selecciona un proveedor NSFW.
+- `!sfwproveedor list` — muestra proveedores multimedia SFW.
+- `!sfwproveedor <nombre>` — selecciona un proveedor SFW.
 - `!ass`, `!feet` y otras categorías permitidas — solicitan contenido si NSFW está habilitado.
 
 ## Proveedores NSFW
@@ -123,9 +125,17 @@ El comando `!hentai` está disponible con `nswfparse` y usa únicamente la lista
 También se pueden configurar proveedores alternativos si tienes sus credenciales:
 
 ```env
-NSFW_API_URLS=nswfparse,reddit,rule34,waifuim,safebooru,konachan,hypnohub
+NSFW_API_URLS=nswfparse,reddit,rule34,waifuim,hypnohub
 NSFW_PROVIDER=reddit
 ```
+
+Proveedores SFW:
+
+```env
+SFW_PROVIDER=nekobot
+```
+
+Disponibles: `nekobot`, `nekosbest`, `safebooru` y `konachan`. Usa `!anime` después de seleccionar uno.
 
 Los proveedores nuevos con API documentada son `safebooru`, `konachan` e `hypnohub`. Se consultan mediante GET, usan límites internos, validan el rating y descartan etiquetas de riesgo. Ejemplos:
 

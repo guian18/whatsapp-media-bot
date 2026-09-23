@@ -140,12 +140,6 @@ test("uses documented booru APIs with rating and tag validation", async (t) => {
   const calls = [];
   axios.get = async (url, options) => {
     calls.push({ url, options });
-    if (url.includes("safebooru.org")) {
-      return { data: [{ rating: "safe", tags: "ass rating:safe", file_url: "https://safebooru.org/images/safe.jpg" }] };
-    }
-    if (url.includes("konachan.com")) {
-      return { data: [{ rating: "safe", tags: "ass rating:safe", file_url: "https://konachan.com/image/safe.jpg" }] };
-    }
     return { data: [{ rating: "explicit", tags: "ass rating:explicit", file_url: "https://hypnohub.net/images/adult.jpg" }] };
   };
   t.after(() => {
@@ -156,15 +150,11 @@ test("uses documented booru APIs with rating and tag validation", async (t) => {
     }
   });
 
-  for (const provider of ["safebooru", "konachan", "hypnohub"]) {
-    process.env.NSFW_API_URLS = provider;
-    process.env.NSFW_PROVIDER = provider;
-    assert.equal(await sendNsfwImage("ass", { jid: `${provider}-test`, isGroup: true, sendMessage() {} }), null);
-  }
-  assert.equal(calls.length, 3);
-  assert.match(String(calls[0].options.params.tags), /rating:safe/);
-  assert.match(String(calls[1].options.params.tags), /rating:safe/);
-  assert.match(String(calls[2].options.params.tags), /rating:explicit/);
+  process.env.NSFW_API_URLS = "hypnohub";
+  process.env.NSFW_PROVIDER = "hypnohub";
+  assert.equal(await sendNsfwImage("ass", { jid: "hypnohub-test", isGroup: true, sendMessage() {} }), null);
+  assert.equal(calls.length, 1);
+  assert.match(String(calls[0].options.params.tags), /rating:explicit/);
 });
 
 test("uses only the first configured provider when credentials are absent", async (t) => {

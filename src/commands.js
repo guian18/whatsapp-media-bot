@@ -5,7 +5,11 @@ import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
 const ANIME_API = "https://nekos.best/api/v2/neko?amount=1";
 const NEKOBOT_SFW_API = "https://nekobot.xyz/api/image";
-const SFW_PROVIDERS = Object.freeze(["nekobot", "nekosbest"]);
+const SFW_PROVIDERS = Object.freeze(["nekobot", "nekosbest", "safebooru", "konachan"]);
+const SFW_PROVIDER_URLS = Object.freeze({
+  safebooru: "https://safebooru.org/index.php?page=dapi&s=post&q=index",
+  konachan: "https://konachan.com/post.json",
+});
 
 export function sfwProviderCommand(args = "") {
   const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -27,17 +31,39 @@ async function sendSfwAnimeImage(context) {
   }
   const provider = String(process.env.SFW_PROVIDER || "nekosbest").trim().toLowerCase();
   try {
-    const apiUrl = provider === "nekobot" ? NEKOBOT_SFW_API : provider === "nekosbest" ? ANIME_API : null;
+    const apiUrl = provider === "nekobot"
+      ? NEKOBOT_SFW_API
+      : provider === "nekosbest"
+        ? ANIME_API
+        : SFW_PROVIDER_URLS[provider] || null;
     if (!apiUrl) return `Proveedor SFW no válido: ${provider}`;
     const { data: body } = await axios.get(apiUrl, {
-      params: provider === "nekobot" ? { type: "neko" } : undefined,
+      params: provider === "nekobot"
+        ? { type: "neko" }
+        : provider === "safebooru"
+          ? { limit: 100, json: 1, tags: "rating:safe" }
+          : provider === "konachan"
+            ? { limit: 100, tags: "rating:safe" }
+            : undefined,
       headers: {
         accept: "application/json",
         "user-agent": "WhatsAppMediaBot/1.0",
       },
       timeout: 15_000,
     });
-    const imageUrl = provider === "nekobot" ? body?.message : body?.results?.[0]?.url;
+    const posts = Array.isArray(body) ? body : Array.isArray(body?.post) ? body.post : [];
+    const safePost = posts.find((post) => {
+      const rating = String(post?.rating || "").toLowerCase();
+      const tags = String(post?.tags || "").toLowerCase();
+      return (!rating || rating === "safe" || rating === "general")
+        && !/(?:^|\s)(?:loli|shota|child|underage|young)(?:\s|$)/.test(tags)
+        && (post?.file_url || post?.image || post?.jpeg_url || post?.sample_url);
+    });
+    const imageUrl = provider === "nekobot"
+      ? body?.message
+      : provider === "nekosbest"
+        ? body?.results?.[0]?.url
+        : safePost?.file_url || safePost?.image || safePost?.jpeg_url || safePost?.sample_url;
     if (!imageUrl || !/^https:\/\//i.test(imageUrl)) throw new Error("respuesta SFW sin imagen válida");
     await context.sendMessage(context.jid, {
       image: { url: imageUrl },

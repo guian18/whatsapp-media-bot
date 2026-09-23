@@ -6,8 +6,6 @@ const WAIFU_IM_API_URL = "https://api.waifu.im/images";
 const RULE34_API_URL = "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index";
 const REDDIT_OAUTH_URL = "https://www.reddit.com/api/v1/access_token";
 const BOORU_APIS = Object.freeze({
-  safebooru: "https://safebooru.org/index.php?page=dapi&s=post&q=index",
-  konachan: "https://konachan.com/post.json",
   hypnohub: "https://hypnohub.net/index.php?page=dapi&s=post&q=index",
 });
 const DEFAULT_API_SOURCES = Object.freeze(["nswfparse"]);
