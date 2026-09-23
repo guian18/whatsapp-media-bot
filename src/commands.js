@@ -4,11 +4,28 @@ import { NSFW_COMMANDS, nsfwHelp, nsfwProviderCommand, sendNsfwImage } from "./n
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
 const ANIME_API = "https://nekos.best/api/v2/neko?amount=1";
+const SFW_PROVIDERS = Object.freeze(["nekosbest"]);
+
+export function sfwProviderCommand(args = "") {
+  const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const active = String(process.env.SFW_PROVIDER || "nekosbest").trim().toLowerCase();
+  if (!parts.length || parts[0] === "list") {
+    return `Proveedor SFW activo: ${active}\nDisponibles: ${SFW_PROVIDERS.join(", ")}\nUsa: !sfwproveedor <nombre>`;
+  }
+  const requested = parts[0];
+  if (!SFW_PROVIDERS.includes(requested)) {
+    return `Proveedor SFW no válido. Disponibles: ${SFW_PROVIDERS.join(", ")}.`;
+  }
+  process.env.SFW_PROVIDER = requested;
+  return `Proveedor SFW fijado manualmente en: ${requested}.`;
+}
 
 async function sendSfwAnimeImage(context) {
   if (!context.jid || typeof context.sendMessage !== "function") {
     return "Este comando solo está disponible desde WhatsApp.";
   }
+  const provider = String(process.env.SFW_PROVIDER || "nekosbest").trim().toLowerCase();
+  if (provider !== "nekosbest") return `Proveedor SFW no válido: ${provider}`;
   try {
     const { data: body } = await axios.get(ANIME_API, {
       headers: {
@@ -49,6 +66,7 @@ export function ayuda() {
     `\`${name("ping")}\` — comprueba que el bot responde`,
     `\`!nsfwproveedor <nombre>\` — cambia únicamente el proveedor de imágenes NSFW`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
+    "`!sfwproveedor <nombre>` — cambia el proveedor de imágenes SFW",
     `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
     `\`${name("ayuda")}\` — este mensaje`,
   ].join("\n");
@@ -74,6 +92,8 @@ export async function handleCommand(text, context = {}) {
       return pingResponse();
     case "nsfwproveedor":
       return nsfwProviderCommand(args);
+    case "sfwproveedor":
+      return sfwProviderCommand(args);
     case "anime":
       return sendSfwAnimeImage(context);
     case "nsfw":

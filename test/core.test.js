@@ -31,6 +31,17 @@ test("help exposes only retained bot commands", () => {
   assert.match(text, /!nsfwproveedor/);
 });
 
+test("SFW provider selection is separate from NSFW providers", async () => {
+  const previous = process.env.SFW_PROVIDER;
+  delete process.env.SFW_PROVIDER;
+  assert.match(await handleCommand("!sfwproveedor list"), /nekosbest/);
+  assert.match(await handleCommand("!sfwproveedor nekosbest"), /fijado manualmente/);
+  assert.equal(process.env.SFW_PROVIDER, "nekosbest");
+  assert.match(await handleCommand("!sfwproveedor rule34"), /no válido/);
+  if (previous === undefined) delete process.env.SFW_PROVIDER;
+  else process.env.SFW_PROVIDER = previous;
+});
+
 test("environment loader applies values from the configured .env file", (t) => {
   const dir = mkdtempSync(path.join(os.tmpdir(), "whatsapp-media-bot-env-"));
   const envFile = path.join(dir, ".env");

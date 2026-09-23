@@ -60,6 +60,7 @@ ALLOWED_GROUPS=
 REPLY_IN_PRIVATE=true
 ALLOW_SELF=true
 AUTO_RESET=true
+SFW_PROVIDER=nekosbest
 
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
@@ -88,6 +89,16 @@ PAIRING_CODE=false
 Para usar QR, deja `WHATSAPP_NUMBER` vacío y `PAIRING_CODE=false`.
 
 ## Comandos
+
+Para consultar o cambiar el proveedor de imágenes SFW de anime:
+
+```text
+!sfwproveedor list
+!sfwproveedor nekosbest
+!anime
+```
+
+`nekosbest` usa la API de [Nekos.best](https://nekos.best/). Es un proveedor SFW separado de Nekobot y de los proveedores NSFW.
 
 - `!ayuda` — muestra la ayuda.
 - `!ping` — comprueba si el bot responde.
