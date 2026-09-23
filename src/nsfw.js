@@ -123,13 +123,29 @@ function configuredApiSources() {
     .map(sourceFromValue)
     .filter((source) => source.url);
 
-  // Instalaciones previas solo tenían Nekobot configurado. Conservamos ese valor
-  // y añadimos el respaldo seguro automáticamente sin exigir editar el .env.
-  if (!explicitSources && sources.length === 1 && sources[0].id === "nekobot") {
-    sources.push(sourceFromValue("waifuim"));
-  }
+  const uniqueSources = [...new Map(sources.map((source) => [`${source.id}:${source.url}`, source])).values()];
+  const selected = String(process.env.NSFW_PROVIDER || "").trim().toLowerCase();
+  if (!selected) return uniqueSources.slice(0, 1);
+  const source = uniqueSources.find((item) => item.id === selected || item.url.toLowerCase() === selected);
+  return source ? [source] : [sourceFromValue(selected)];
+}
 
-  return [...new Map(sources.map((source) => [`${source.id}:${source.url}`, source])).values()];
+export function nsfwProviderCommand(args = "") {
+  const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const providers = ["reddit", "rule34", "nekobot", "waifuim"];
+  if (!parts.length || parts[0] === "list") {
+    const active = String(process.env.NSFW_PROVIDER || "") || "primero configurado";
+    return `Proveedor NSFW activo: ${active}\nDisponibles: ${providers.join(", ")}\nUsa: !proveedor nsfw <nombre> o !proveedor nsfw automático`;
+  }
+  const requested = parts[0] === "nsfw" ? parts[1] : parts[0];
+  if (!requested || requested === "list") return nsfwProviderCommand("list");
+  if (requested === "automático" || requested === "automatico" || requested === "auto") {
+    delete process.env.NSFW_PROVIDER;
+    return "Proveedor NSFW manual desactivado; se usará el primero configurado, sin fallback automático.";
+  }
+  if (!providers.includes(requested)) return `Proveedor NSFW no válido. Disponibles: ${providers.join(", ")}.`;
+  process.env.NSFW_PROVIDER = requested;
+  return `Proveedor NSFW fijado manualmente en: ${requested}. No se usará otro proveedor automáticamente.`;
 }
 
 function configuredGroups() {

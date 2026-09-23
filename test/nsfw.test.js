@@ -128,7 +128,7 @@ test("uses Rule34 only with its closed explicit tag mapping", async (t) => {
   assert.equal(await sendNsfwImage("boobs", { jid: "rule34-test", isGroup: true, sendMessage() {} }), null);
 });
 
-test("falls through Reddit and Rule34 when credentials are absent", async (t) => {
+test("uses only the first configured provider when credentials are absent", async (t) => {
   const originalGet = axios.get;
   const originalPost = axios.post;
   const previous = Object.fromEntries(
@@ -153,9 +153,44 @@ test("falls through Reddit and Rule34 when credentials are absent", async (t) =>
       else process.env[key] = value;
     }
   });
-  assert.equal(await sendNsfwImage("ass", { jid: "fallback-test", isGroup: true, sendMessage() {} }), null);
-  assert.equal(calls.length, 1);
-  assert.match(calls[0], /nekobot\.xyz/);
+  const reply = await sendNsfwImage("ass", { jid: "fallback-test", isGroup: true, sendMessage() {} });
+  assert.match(reply, /Reddit/);
+  assert.equal(calls.length, 0);
+});
+
+test("manual provider selection makes one request and never falls back", async (t) => {
+  const originalGet = axios.get;
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_PROVIDER", "NSFW_API_RETRIES"].map((key) => [key, process.env[key]]),
+  );
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "nekobot,waifuim";
+  process.env.NSFW_PROVIDER = "nekobot";
+  process.env.NSFW_API_RETRIES = "0";
+  const calls = [];
+  axios.get = async (url) => {
+    calls.push(url);
+    throw new Error("provider unavailable");
+  };
+  t.after(() => {
+    axios.get = originalGet;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const reply = await sendNsfwImage("ass", { jid: "manual-provider", isGroup: true, sendMessage() {} });
+  assert.match(reply, /Nekobot/);
+  assert.deepEqual(calls, ["https://nekobot.xyz/api/image"]);
+});
+
+test("!proveedor nsfw changes the active provider manually", async () => {
+  const previous = process.env.NSFW_PROVIDER;
+  assert.match(await handleCommand("!proveedor nsfw rule34"), /fijado manualmente en: rule34/);
+  assert.equal(process.env.NSFW_PROVIDER, "rule34");
+  assert.match(await handleCommand("!proveedor nsfw list"), /rule34/);
+  if (previous === undefined) delete process.env.NSFW_PROVIDER;
+  else process.env.NSFW_PROVIDER = previous;
 });
 
 test("uses Waifu.im when explicitly configured", async (t) => {
@@ -198,7 +233,7 @@ test("uses Waifu.im when explicitly configured", async (t) => {
   assert.match(calls[0], /api\.waifu\.im/);
 });
 
-test("uses an exact Waifu.im tag and falls back for unsupported categories", async (t) => {
+test("uses an exact Waifu.im tag and does not fallback for unsupported categories", async (t) => {
   const originalGet = axios.get;
   const previous = Object.fromEntries(
     ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
@@ -246,11 +281,11 @@ test("uses an exact Waifu.im tag and falls back for unsupported categories", asy
     isGroup: true,
     sendMessage() {},
   });
-  assert.equal(unsupported, null);
-  assert.match(calls[0].url, /nekobot\.xyz\/api\/image/);
+  assert.match(unsupported, /Waifu\.im/);
+  assert.equal(calls.length, 0);
 });
 
-test("uses automatic Waifu.im fallback when legacy Nekobot returns a temporary HTTP error", async (t) => {
+test("does not fallback when legacy Nekobot returns a temporary HTTP error", async (t) => {
   const originalGet = axios.get;
   const previous = Object.fromEntries(
     ["NSFW_ENABLED", "NSFW_API_URL", "NSFW_API_URLS", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
@@ -292,12 +327,10 @@ test("uses automatic Waifu.im fallback when legacy Nekobot returns a temporary H
     isGroup: true,
     sendMessage: async (_jid, payload) => sent.push(payload),
   });
-  assert.equal(reply, null);
-  assert.equal(calls.length, 2);
+  assert.match(reply, /Nekobot/);
+  assert.equal(calls.length, 1);
   assert.match(calls[0], /nekobot\.xyz/);
-  assert.match(calls[1], /api\.waifu\.im/);
-  assert.equal(sent[0]?.image?.url, "https://cdn.waifu.im/test-image.png");
-  assert.match(sent[0]?.caption, /Fuente: Waifu\.im/);
+  assert.equal(sent.length, 0);
 });
 
 test("rejects Waifu.im responses without explicit NSFW marking or excluded tags", async () => {
