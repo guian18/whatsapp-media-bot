@@ -358,6 +358,9 @@ function redditImageFromResponse(data, type) {
 }
 
 async function nswfparseRealImage(type) {
+  if (process.env.NSWFPARSE_ENABLED === "false") {
+    throw providerError(403, "NSWFparse está desactivado; configura NSWFPARSE_ENABLED=true para activarlo");
+  }
   const methodName = NSFWPARSE_REAL_METHODS[type];
   const method = methodName ? nswfparse?.reddit?.real?.[methodName] : null;
   if (typeof method !== "function") {
@@ -415,6 +418,7 @@ function retryDelay(attempt, error) {
 function friendlyApiError(error, source) {
   const status = errorStatus(error);
   const provider = source?.name || "el servidor de imágenes";
+  if (status === 403 && error?.message) return String(error.message);
   if (status === 401 || status === 403) return `${provider} rechazó la solicitud (HTTP ${status})`;
   if (status === 404) return `${provider} no tiene una imagen disponible para esa categoría (HTTP 404)`;
   if (status === 408 || status === 522 || status === 523 || status === 524) return `${provider} no respondió a tiempo (HTTP ${status})`;

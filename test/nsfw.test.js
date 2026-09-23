@@ -407,3 +407,23 @@ test("uses only the real-content nswfparse adapter", async (t) => {
   assert.match(sent[0].image.url, /authorized\.example\.test/);
   assert.match(sent[0].caption, /NSWFparse/);
 });
+
+test("NSWFPARSE_ENABLED disables the provider without calling it", async () => {
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_PROVIDER", "NSWFPARSE_ENABLED", "NSFW_API_RETRIES"].map((key) => [key, process.env[key]]),
+  );
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "nswfparse";
+  process.env.NSFW_PROVIDER = "nswfparse";
+  process.env.NSWFPARSE_ENABLED = "false";
+  process.env.NSFW_API_RETRIES = "0";
+  try {
+    const reply = await sendNsfwImage("ass", { jid: "nswfparse-disabled", isGroup: true, sendMessage() {} });
+    assert.match(reply, /NSWFparse está desactivado/);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
