@@ -250,6 +250,14 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | `AUTH_DIR` | Debe ser `/app/data/auth_info` cuando uses el volumen recomendado. No lo dejes en `auth_info` en producción si quieres conservar la sesión. |
 | `AI_MEMORY_FILE` | Debe ser `/app/data/ai-memory.json` cuando uses memoria de IA persistente. |
 
+#### Enlaces directos para obtener las credenciales
+
+Para Reddit, crea la aplicación desde [Reddit App Preferences](https://www.reddit.com/prefs/apps). En la aplicación creada, el texto corto que aparece bajo el nombre es `REDDIT_CLIENT_ID` y el campo **secret** es `REDDIT_CLIENT_SECRET`. Usa el flujo OAuth documentado en la [guía oficial de Reddit OAuth2](https://github.com/reddit-archive/reddit/wiki/OAuth2) y la [documentación oficial de la API OAuth](https://www.reddit.com/dev/api/oauth/) para autorizar la cuenta y guardar el `refresh_token` como `REDDIT_REFRESH_TOKEN`. No pegues aquí el `access_token`: el bot lo renueva automáticamente usando el refresh token.
+
+`REDDIT_USER_AGENT` no es una clave ni un token: es un texto identificativo que envía el bot a Reddit. Puedes usar exactamente `whatsapp-media-bot/1.0` o una variante que incluya tu nombre de usuario y versión, por ejemplo `whatsapp-media-bot/1.0 by u/tu_usuario`. No uses un User-Agent genérico como `curl`.
+
+Para Rule34, inicia sesión y abre directamente [Account → API Access Credentials](https://rule34.xxx/index.php?page=account&s=options). Allí obtienes `RULE34_USER_ID` y generas `RULE34_API_KEY`. La referencia de parámetros y autenticación está en la [documentación oficial de Rule34 API](https://api.rule34.xxx/). Mantén ambas credenciales privadas y no solicites más de una API key.
+
 ### Proveedor NSFW manual
 
 El orden configurado es **Reddit (adaptación del flujo de `pvnotpv/wabot`) → Rule34 API → Nekobot (la fuente usada por `Nekros-dsc/Nsfw-Bot`) → Waifu.im**. Reddit consulta únicamente subreddits cerrados para `ass`, `boobs`, `gonewild` y `pussy`; Rule34 usa una lista cerrada de tags y credenciales oficiales; Nekobot conserva sus tipos originales; Waifu.im solo se usa cuando confirma una etiqueta exacta. Los repositorios de bots no se ejecutan como sub-bots: se reutiliza únicamente su patrón de proveedor.
