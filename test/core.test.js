@@ -164,6 +164,35 @@ test("Ollama provider uses its OpenAI-compatible local endpoint", async () => {
   }
 });
 
+test("Hermes provider uses its API endpoint and session header", async () => {
+  const previous = Object.fromEntries(["AI_PROVIDER", "HERMES_URL", "HERMES_API_KEY", "HERMES_SESSION_ID", "AI_MIN_INTERVAL_MS"].map((key) => [key, process.env[key]]));
+  const previousFetch = globalThis.fetch;
+  let requestUrl = "";
+  let requestOptions;
+  process.env.AI_PROVIDER = "hermes";
+  process.env.HERMES_URL = "http://hermes.test/v1/chat/completions";
+  process.env.HERMES_API_KEY = "hermes-test-key";
+  process.env.HERMES_SESSION_ID = "whatsapp-media-bot-test";
+  process.env.AI_MIN_INTERVAL_MS = "0";
+  globalThis.fetch = async (url, options) => {
+    requestUrl = String(url);
+    requestOptions = options;
+    return new Response(JSON.stringify({ choices: [{ message: { content: "Respuesta de Hermes" } }] }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    assert.match(await cmdIA("prueba Hermes"), /Respuesta de Hermes/);
+    assert.equal(requestUrl, "http://hermes.test/v1/chat/completions");
+    assert.equal(requestOptions.headers.authorization, "Bearer hermes-test-key");
+    assert.equal(requestOptions.headers["x-hermes-session-id"], "whatsapp-media-bot-test");
+  } finally {
+    globalThis.fetch = previousFetch;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
 test("AI replaces a violent model response with safe advice", async () => {
   const previousProvider = process.env.AI_PROVIDER;
   const previousUrl = process.env.AI_LOCAL_URL;

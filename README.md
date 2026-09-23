@@ -200,8 +200,10 @@ AUTO_RESET=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
-NSFW_API_URLS=reddit,rule34,nekobot,waifuim
-NSFW_PROVIDER=reddit
+NSFW_API_URLS=nswfparse
+NSFW_PROVIDER=nswfparse
+NSWFPARSE_ENABLED=true
+NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
 NSFW_API_TIMEOUT_MS=10000
 NSFW_IMAGE_TIMEOUT_MS=30000
 NSFW_API_RETRIES=1
@@ -212,6 +214,12 @@ NSFW_ALLOW_EXTERNAL_URLS=true
 AUTH_DIR=/app/data/auth_info
 AI_MEMORY_FILE=/app/data/ai-memory.json
 
+# Solo si Hermes está desplegado y es accesible desde este servicio
+# AI_PROVIDER=hermes
+# HERMES_URL=https://tu-hermes.example.com:8642/v1/chat/completions
+# HERMES_API_KEY=TU_CLAVE_HERMES
+# HERMES_SESSION_ID=whatsapp-media-bot
+
 REDDIT_CLIENT_ID=TU_CLIENT_ID
 REDDIT_CLIENT_SECRET=TU_CLIENT_SECRET
 REDDIT_REFRESH_TOKEN=TU_REFRESH_TOKEN
@@ -221,7 +229,7 @@ RULE34_USER_ID=TU_USER_ID
 RULE34_API_KEY=TU_API_KEY
 ```
 
-`!proveedor` está reservado exclusivamente para la IA. Para NSFW usa `!nsfwproveedor list` o `!nsfwproveedor reddit`, `!nsfwproveedor rule34`, `!nsfwproveedor nekobot` y `!nsfwproveedor waifuim`. No configures `NSFW_API_URL` en instalaciones nuevas: es una variable heredada.
+`!proveedor` está reservado exclusivamente para la IA. Para NSFW usa `!nsfwproveedor list` o `!nsfwproveedor nswfparse`, `!nsfwproveedor reddit`, `!nsfwproveedor rule34`, `!nsfwproveedor nekobot` y `!nsfwproveedor waifuim`. No configures `NSFW_API_URL` en instalaciones nuevas: es una variable heredada.
 
 ### Qué colocar en las variables
 
@@ -230,8 +238,10 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | Variable | Qué debes colocar |
 |---|---|
 | `ENV_FILE` | Ruta a un archivo `.env` alternativo. En Railway normalmente déjala vacía; el bot usa `.env` por defecto y Railway entrega directamente sus variables al proceso. En Termux/Linux puedes usar, por ejemplo, `/home/usuario/whatsapp-media-bot/.env`. |
-| `NSFW_API_URLS` | Lista de proveedores disponibles, separada por comas. Usa `reddit,rule34,nekobot,waifuim` y selecciona uno con `NSFW_PROVIDER` o `!nsfwproveedor <nombre>`. Solo se hace una solicitud al proveedor elegido; no existe fallback automático. |
-| `NSFW_PROVIDER` | Proveedor NSFW único y manual: `reddit`, `rule34`, `nekobot` o `waifuim`. Si lo defines, el bot no usa ningún fallback. También puedes cambiarlo durante la ejecución con `!nsfwproveedor <nombre>`. |
+| `NSFW_API_URLS` | Lista de proveedores disponibles, separada por comas. La configuración actual usa `nswfparse`; también puedes usar `reddit`, `rule34`, `nekobot` o `waifuim` si tienes sus credenciales. Solo se hace una solicitud al proveedor elegido; no existe fallback automático. |
+| `NSFW_PROVIDER` | Proveedor NSFW único y manual: `nswfparse`, `reddit`, `rule34`, `nekobot` o `waifuim`. Si lo defines, el bot no usa ningún fallback. También puedes cambiarlo durante la ejecución con `!nsfwproveedor <nombre>`. |
+| `NSWFPARSE_ENABLED` | `true` activa el adaptador de NSWFparse y `false` lo apaga. Está activo por defecto en la plantilla. |
+| `NSWFPARSE_CATEGORIES` | Lista separada por comas de categorías permitidas para NSWFparse. La plantilla usa `ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm`. |
 | `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si la usas, ese será el único origen disponible. |
 | `NSFW_API_RETRIES` y `NSFW_IMAGE_RETRIES` | Reintentos adicionales por origen y por descarga, respectivamente. El valor recomendado es `1`; se admiten de `0` a `3` para API y de `0` a `2` para imágenes. |
 | `NSFW_DIRECT_URL` | `false` (recomendado) descarga y valida la imagen antes de enviarla a WhatsApp, por lo que el bot puede informar y reintentar fallos HTTP del CDN. Usa `true` solo si prefieres que WhatsApp descargue la URL directamente. |
@@ -245,7 +255,10 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_REFRESH_TOKEN` | Credenciales OAuth de una aplicación de Reddit. Son obligatorias para el proveedor `reddit`; nunca las pongas en el código ni las compartas. `REDDIT_USER_AGENT` debe identificar tu aplicación. |
 | `RULE34_USER_ID`, `RULE34_API_KEY` | Credenciales de la API oficial de Rule34. Son obligatorias para el proveedor `rule34`; el bot usa únicamente etiquetas cerradas y `rating:explicit -status:deleted`. |
 | `AI_API_KEY` | Clave genérica del proveedor de IA elegido. Úsala como alternativa si no configuras la variable específica del proveedor; por ejemplo, una clave compatible con Gemini, OpenRouter u otro proveedor remoto. Para `local`, `ollama`, `llama_cpp` o `localai` sin autenticación, déjala vacía. |
-| `AI_PROVIDER` | En Railway no uses `local`, `ollama`, `llama_cpp` ni `localai` salvo que también hayas desplegado ese servidor dentro de una red accesible. Para usar `!ai`, elige un proveedor remoto como `groq`, `gemini`, `mistral` u `openrouter` y configura únicamente su clave. |
+| `AI_PROVIDER` | En Railway no uses `local`, `ollama`, `llama_cpp` ni `localai` salvo que también hayas desplegado ese servidor dentro de una red accesible. Para usar `!ai`, elige un proveedor remoto como `groq`, `gemini`, `mistral`, `openrouter` o `hermes` y configura únicamente la clave y URL que correspondan. |
+| `HERMES_URL` | URL completa de `POST /v1/chat/completions` del API server de Hermes, solo si Hermes está desplegado aparte y accesible desde Railway. |
+| `HERMES_API_KEY` | Clave del API server de Hermes. Déjala vacía si ese servidor no requiere autenticación; nunca la publiques. |
+| `HERMES_SESSION_ID` | Identificador estable de sesión que Hermes usará para las conversaciones del bot. |
 | `AUTH_DIR` | Debe ser `/app/data/auth_info` cuando uses el volumen recomendado. No lo dejes en `auth_info` en producción si quieres conservar la sesión. |
 | `AI_MEMORY_FILE` | Debe ser `/app/data/ai-memory.json` cuando uses memoria de IA persistente. |
 
@@ -296,8 +309,10 @@ REPLY_IN_PRIVATE=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
-NSFW_API_URLS=reddit,rule34,nekobot,waifuim
-NSFW_PROVIDER=reddit
+NSFW_API_URLS=nswfparse
+NSFW_PROVIDER=nswfparse
+NSWFPARSE_ENABLED=true
+NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
 NSFW_API_RETRIES=1
 NSFW_IMAGE_RETRIES=1
 NSFW_DIRECT_URL=false
