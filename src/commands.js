@@ -46,8 +46,8 @@ function adminMenu() {
     "*Menú de propietario y administrador*",
     "",
     "Comandos disponibles:",
-    "`!desactivar` — bloquea todos los comandos del bot.",
-    "`!activar` — vuelve a activar todos los comandos.",
+    "`!desactivar` — bloquea todos los comandos del bot en este chat.",
+    "`!activar` — vuelve a activar todos los comandos en este chat.",
     "`!clear all` — elimina todos los mensajes registrados del bot en este chat.",
     "`!admin menu` — muestra este menú.",
     "",
@@ -95,16 +95,16 @@ export async function handleCommand(text, context = {}) {
   }
 
   if (cmd === "desactivar" || cmd === "activar") {
-    if (!isPrivilegedUser(context)) return "No tienes permiso para cambiar el estado global del bot.";
+    if (!isPrivilegedUser(context)) return "No tienes permiso para cambiar el estado de los comandos en este chat.";
     if (cmd === "desactivar") {
-      disableAllCommands();
-      return "Todos los comandos han sido desactivados. Solo el propietario o el administrador pueden usar !activar.";
+      disableAllCommands(context.jid);
+      return "Todos los comandos han sido desactivados en este chat. Solo el propietario o el administrador pueden usar !activar aquí.";
     }
-    enableAllCommands();
-    return "Todos los comandos han sido activados nuevamente.";
+    enableAllCommands(context.jid);
+    return "Todos los comandos han sido activados nuevamente en este chat.";
   }
 
-  if (!areAllCommandsEnabled()) return "El bot está temporalmente desactivado por el propietario o el administrador.";
+  if (!areAllCommandsEnabled(context.jid)) return "El bot está temporalmente desactivado en este chat por el propietario o el administrador.";
 
   switch (cmd) {
     case "ping":

@@ -1,4 +1,4 @@
-let allCommandsEnabled = true;
+const disabledChats = new Set();
 
 function normalizeNumber(value) {
   const jidUser = String(value || "").trim().split("@", 1)[0].split(":", 1)[0];
@@ -29,14 +29,15 @@ export function isPrivilegedUser(context = {}) {
   return requesters.some((requester) => privilegedNumbers.has(requester));
 }
 
-export function disableAllCommands() {
-  allCommandsEnabled = false;
+export function disableAllCommands(jid) {
+  if (jid) disabledChats.add(String(jid));
 }
 
-export function enableAllCommands() {
-  allCommandsEnabled = true;
+export function enableAllCommands(jid) {
+  if (jid) disabledChats.delete(String(jid));
+  else disabledChats.clear();
 }
 
-export function areAllCommandsEnabled() {
-  return allCommandsEnabled;
+export function areAllCommandsEnabled(jid) {
+  return !disabledChats.has(String(jid || ""));
 }

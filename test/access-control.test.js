@@ -162,3 +162,27 @@ test("configured owner is authorized when Baileys marks the message as fromMe", 
     deleteMessage: async () => {},
   }), /No hay mensajes del bot/);
 });
+
+
+test("disable and enable apply independently to each chat", async (t) => {
+  const previousOwner = process.env.OWNER_NUMBER;
+  const previousAdmin = process.env.ADMIN_NUMBER;
+  process.env.OWNER_NUMBER = "393803893208";
+  process.env.ADMIN_NUMBER = "";
+  enableAllCommands();
+  t.after(() => {
+    enableAllCommands();
+    if (previousOwner === undefined) delete process.env.OWNER_NUMBER;
+    else process.env.OWNER_NUMBER = previousOwner;
+    if (previousAdmin === undefined) delete process.env.ADMIN_NUMBER;
+    else process.env.ADMIN_NUMBER = previousAdmin;
+  });
+
+  const ownerIn = (jid) => ({ jid, requesterId: "393803893208@s.whatsapp.net" });
+  const userIn = (jid) => ({ jid, requesterId: "393999999999@s.whatsapp.net" });
+  assert.match(await handleCommand("!desactivar", ownerIn("group-a@g.us")), /en este chat/);
+  assert.match(await handleCommand("!ping", userIn("group-a@g.us")), /desactivado en este chat/);
+  assert.equal(await handleCommand("!ping", userIn("group-b@g.us")), "Pong! 🏓 El bot está activo y listo.");
+  assert.match(await handleCommand("!activar", ownerIn("group-a@g.us")), /nuevamente en este chat/);
+  assert.equal(await handleCommand("!ping", userIn("group-a@g.us")), "Pong! 🏓 El bot está activo y listo.");
+});
