@@ -1,6 +1,5 @@
 // Lógica de comandos, independiente de WhatsApp: cada uno devuelve texto plano.
 import axios from "axios";
-import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
 import { NSFW_COMMANDS, nsfwHelp, nsfwProviderCommand, sendNsfwImage } from "./nsfw.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
@@ -48,10 +47,6 @@ export function ayuda() {
     "*WhatsApp Media Bot — comandos*",
     "",
     `\`${name("ping")}\` — comprueba que el bot responde`,
-    `\`${name("ai")} / \`${name("ia")}\` <pregunta> — responde con IA; añade \`fuentes\` si necesitas buscar en Internet`,
-    `\`${name("tono")} <estilo>\` — cambia y guarda el tono de la IA`,
-    `\`${name("idioma")} <país|código>\` — cambia y guarda el idioma de la IA`,
-    `\`${name("proveedor")} <nombre>\` — cambia únicamente el proveedor de IA`,
     `\`!nsfwproveedor <nombre>\` — cambia únicamente el proveedor de imágenes NSFW`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
@@ -77,15 +72,6 @@ export async function handleCommand(text, context = {}) {
   switch (cmd) {
     case "ping":
       return pingResponse();
-    case "ai":
-    case "ia":
-      return cmdIA(args, context.jid || null);
-    case "tono":
-      return cmdTono(args);
-    case "idioma":
-      return cmdIdioma(args);
-    case "proveedor":
-      return cmdProveedor(args);
     case "nsfwproveedor":
       return nsfwProviderCommand(args);
     case "anime":

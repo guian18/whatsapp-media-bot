@@ -8,9 +8,6 @@
   "scripts": {
     "start": "node bot.js",
     "start:termux": "termux-wake-lock 2>/dev/null; node bot.js",
-    "install:termux": "bash scripts/install-termux.sh",
-    "configure:termux": "bash scripts/configure-termux.sh",
-    "start:termux:all": "bash scripts/start-termux.sh",
     "reset": "node scripts/reset.js",
     "relink": "node scripts/reset.js && node bot.js",
     "test": "node --test test/*.test.js"
