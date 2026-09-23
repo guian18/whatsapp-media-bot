@@ -1,0 +1,8 @@
+node_modules
+.git
+.env
+.env.*
+auth_info
+ai-memory.json
+*.log
+coverage

@@ -37,6 +37,34 @@ Para salir de `tmux` sin detener el bot, pulsa `Ctrl+B` y después `D`. Para vol
 tmux attach -t whatsapp-media-bot
 ```
 
+### Instalar Hermes y el bot automáticamente en Termux
+
+El repositorio incluye scripts para instalar el bot Node.js y Hermes Agent en Android. Hermes en Termux es una instalación de nivel de soporte secundario: Android puede suspender procesos en segundo plano y algunas funciones opcionales, como Docker, voz local y el arranque automático del navegador, no están disponibles.
+
+```bash
+cd ~/whatsapp-media-bot
+bash scripts/install-termux.sh
+bash scripts/configure-termux.sh
+hermes model
+bash scripts/start-termux.sh
+```
+
+También puedes usar los alias de npm:
+
+```bash
+npm run install:termux
+npm run configure:termux
+npm run start:termux:all
+```
+
+El script guarda la clave del API server de Hermes en `~/.hermes/.env` y la misma clave en `.env` del bot. No la publiques ni la envíes por WhatsApp. Para ver los procesos:
+
+```bash
+tmux ls
+tmux attach -t hermes-agent
+tmux attach -t whatsapp-media-bot
+```
+
 Para actualizar una instalación existente:
 
 ```bash
@@ -169,6 +197,40 @@ Enlaces directos para crear claves:
 También puedes crear el proyecto desde [Railway](https://railway.app/) seleccionando **Deploy from GitHub repo** y el repositorio `guian18/whatsapp-media-bot`.
 
 El repositorio incluye `railway.json` con la instalación y el arranque configurados. Las variables se editan en **Service → Variables**.
+
+### Railway con Hermes y el bot en dos servicios
+
+La forma recomendada en Railway es crear **dos servicios dentro del mismo proyecto**:
+
+1. **Servicio `whatsapp-media-bot`**: usa el `railway.json` del repositorio y ejecuta `npm start`.
+2. **Servicio `hermes-agent`**: usa el archivo `Dockerfile.hermes` del repositorio. En la configuración del servicio selecciona ese Dockerfile como ruta de construcción.
+
+En el servicio `hermes-agent`, configura como mínimo:
+
+```env
+API_SERVER_ENABLED=true
+API_SERVER_HOST=0.0.0.0
+API_SERVER_KEY=GENERA_UNA_CLAVE_LARGA
+API_SERVER_MODEL_NAME=hermes-agent
+```
+
+Añade también en ese servicio la clave del proveedor de modelos que hayas elegido en Hermes y completa su configuración con `hermes model` o el panel/configuración de Hermes. Conecta un volumen persistente, por ejemplo montado en `/data`, para conservar `HERMES_HOME=/data/.hermes`.
+
+En el servicio `whatsapp-media-bot`, configura:
+
+```env
+AI_PROVIDER=hermes
+AI_MODEL=hermes-agent
+HERMES_API_KEY=LA_MISMA_API_SERVER_KEY
+HERMES_SESSION_ID=whatsapp-media-bot
+HERMES_URL=https://DOMINIO_DE_HERMES/v1/chat/completions
+AUTH_DIR=/app/data/auth_info
+AI_MEMORY_FILE=/app/data/ai-memory.json
+```
+
+Usa el dominio HTTPS generado para el servicio Hermes o una conexión privada entre servicios si tu proyecto la tiene habilitada. No pongas `127.0.0.1` en `HERMES_URL` del servicio del bot: en Railway eso apunta al contenedor del bot, no al contenedor de Hermes. El API server de Hermes debe exigir `API_SERVER_KEY`; expone herramientas del agente, por lo que no debes dejarlo público sin autenticación y HTTPS.
+
+Después de desplegar Hermes, comprueba `https://DOMINIO_DE_HERMES/health` y `https://DOMINIO_DE_HERMES/v1/models` con el encabezado `Authorization: Bearer ...`. Luego despliega el bot, crea el volumen `/app/data` para su sesión y vincula WhatsApp una sola vez.
 
 ### Estado de compatibilidad
 
