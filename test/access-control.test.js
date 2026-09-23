@@ -85,3 +85,25 @@ test("owner authorization accepts an alternate WhatsApp phone identity in groups
     deleteMessage: async () => {},
   }), /No hay mensajes del bot/);
 });
+
+
+test("admin authorization accepts an alternate WhatsApp phone identity in groups", async (t) => {
+  const previousOwner = process.env.OWNER_NUMBER;
+  const previousAdmin = process.env.ADMIN_NUMBER;
+  process.env.OWNER_NUMBER = "";
+  process.env.ADMIN_NUMBER = "51955555555";
+  enableAllCommands();
+  t.after(() => {
+    enableAllCommands();
+    if (previousOwner === undefined) delete process.env.OWNER_NUMBER;
+    else process.env.OWNER_NUMBER = previousOwner;
+    if (previousAdmin === undefined) delete process.env.ADMIN_NUMBER;
+    else process.env.ADMIN_NUMBER = previousAdmin;
+  });
+
+  assert.match(await handleCommand("!admin menu", {
+    jid: "group@g.us",
+    requesterId: "9876543210@lid",
+    requesterIds: ["9876543210@lid", "51955555555@s.whatsapp.net"],
+  }), /Menú de propietario y administrador/);
+});
