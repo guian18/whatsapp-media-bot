@@ -27,6 +27,7 @@ import { rmSync, existsSync } from "node:fs";
 import { Boom } from "@hapi/boom";
 import { handleCommand } from "./src/commands.js";
 import { getAuthDir } from "./src/config.js";
+import { recordBotMessage } from "./src/message-tracker.js";
 
 const normalizeGroupId = (value) => String(value || "").trim().replace(/@g\.us$/i, "");
 const ALLOWED_GROUPS = (process.env.ALLOWED_GROUPS || "")
@@ -246,6 +247,12 @@ async function start() {
   connectionState = "connecting";
   pairingReconnecting = false;
 
+  const sendTrackedMessage = async (targetJid, payload, options) => {
+    const sent = await sock.sendMessage(targetJid, payload, options);
+    recordBotMessage(targetJid, sent);
+    return sent;
+  };
+
   sock.ev.on("creds.update", () => {
     guardarCredsPendiente = guardarCredsPendiente
       .then(() => saveCreds())
@@ -374,16 +381,16 @@ async function start() {
           jid,
           requesterId: isGroup ? (msg.key.participant || msg.participant || jid) : jid,
           isGroup,
-          sendMessage: (targetJid, payload) => sock.sendMessage(targetJid, payload),
+          sendMessage: (targetJid, payload) => sendTrackedMessage(targetJid, payload),
           deleteMessage: (messageKey) => sock.sendMessage(jid, { delete: messageKey }),
         });
         if (reply) {
-          await sock.sendMessage(jid, { text: reply }, { quoted: msg });
+          await sendTrackedMessage(jid, { text: reply }, { quoted: msg });
         }
       } catch (err) {
         console.error("Error procesando comando:", err?.stack || err);
         try {
-          await sock.sendMessage(jid, { text: "No pude completar ese comando ahora. Inténtalo de nuevo más tarde." }, { quoted: msg });
+          await sendTrackedMessage(jid, { text: "No pude completar ese comando ahora. Inténtalo de nuevo más tarde." }, { quoted: msg });
         } catch (sendErr) {
           console.error("No se pudo enviar el error al chat:", sendErr?.message || sendErr);
         }

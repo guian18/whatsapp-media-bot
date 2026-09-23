@@ -2,6 +2,7 @@
 import axios from "axios";
 import { NSFW_COMMANDS, clearNsfwMessages, nsfwHelp, sendNsfwImage } from "./nsfw.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
+import { clearAllBotMessages } from "./message-tracker.js";
 import {
   areAllCommandsEnabled,
   disableAllCommands,
@@ -50,6 +51,7 @@ export function ayuda() {
     `\`${name("anime")}\` — solicita una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra el menú de imágenes NSFW`,
     `\`${name("clear")}\` — elimina tus imágenes NSFW enviadas por el bot`,
+    `\`${name("clear")} all\` — elimina todos los mensajes del bot (solo propietario/admin)`,
     `\`${name("desactivar")}\` — desactiva todos los comandos (solo propietario/admin)`,
     `\`${name("activar")}\` — activa todos los comandos (solo propietario/admin)`,
     "",
@@ -69,6 +71,7 @@ export async function handleCommand(text, context = {}) {
     // Una configuración inválida no debe detener el bot ni ejecutar un comando inesperado.
   }
   if (!cmd) return null;
+  const args = match[2].trim();
 
   if (cmd === "desactivar" || cmd === "activar") {
     if (!isPrivilegedUser(context)) return "No tienes permiso para cambiar el estado global del bot.";
@@ -90,6 +93,10 @@ export async function handleCommand(text, context = {}) {
     case "nsfw":
       return nsfwHelp();
     case "clear":
+      if (args.toLowerCase() === "all") {
+        if (!isPrivilegedUser(context)) return "No tienes permiso para borrar todos los mensajes del bot.";
+        return clearAllBotMessages(context);
+      }
       return clearNsfwMessages(context);
     case "ayuda":
     case "help":

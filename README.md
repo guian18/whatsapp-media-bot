@@ -80,11 +80,12 @@ Para usar QR, deja `WHATSAPP_NUMBER` vacío y `PAIRING_CODE=false`.
 - `!anime` o `!gatus` — envía una imagen SFW de anime.
 - `!nsfw` — muestra los comandos de imágenes NSFW.
 - `!clear` — elimina las imágenes NSFW que el bot envió por solicitud del usuario actual en ese chat.
+- `!clear all` — elimina todos los mensajes registrados enviados por el bot en ese chat, incluidos SFW, NSFW, ayuda y respuestas generales; solo puede usarlo el propietario o el administrador.
 - `!desactivar` — desactiva todos los comandos del bot; solo el propietario o el administrador configurados pueden ejecutarlo.
 - `!activar` — vuelve a activar todos los comandos; solo el propietario o el administrador configurados pueden ejecutarlo.
 - `!4k`, `!anal`, `!ass`, `!blowjob`, `!boobs`, `!feet`, `!gonewild`, `!hass`, `!hboobs`, `!hentai`, `!hentaianal`, `!hkitsune`, `!hmidriff`, `!htigh`, `!hyuri`, `!kanna`, `!lewd`, `!lewdneko`, `!paizuri`, `!pgif`, `!pussy`, `!tentacle`, `!thigh` y `!yaoi` — solicitan imágenes NSFW.
 
-La fuente SFW y NSFW está fijada permanentemente en `nekobot`. Usa `!anime` o uno de los comandos NSFW para solicitar una imagen; no existe un comando para cambiarla. Cada usuario tiene un intervalo de 10 segundos entre solicitudes NSFW por chat. `!clear` solo elimina los mensajes NSFW registrados para el usuario que lo ejecuta; no elimina los mensajes solicitados por otros usuarios.
+La fuente SFW y NSFW está fijada permanentemente en `nekobot`. Usa `!anime` o uno de los comandos NSFW para solicitar una imagen; no existe un comando para cambiarla. Cada usuario tiene un intervalo de 10 segundos entre solicitudes NSFW por chat. `!clear` solo elimina los mensajes NSFW registrados para el usuario que lo ejecuta; no elimina los mensajes solicitados por otros usuarios. `!clear all` requiere privilegios y elimina todos los mensajes del bot que se hayan registrado en ese chat.
 
 `OWNER_NUMBER` y `ADMIN_NUMBER` deben contener números completos con código de país, solo dígitos. Mientras el bot esté desactivado, todos los comandos quedan bloqueados para el resto de usuarios; `!activar` y `!desactivar` siguen disponibles exclusivamente para esos dos números.
 
