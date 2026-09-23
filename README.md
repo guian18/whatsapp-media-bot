@@ -191,7 +191,7 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 |---|---|
 | `ENV_FILE` | Ruta a un archivo `.env` alternativo. En Railway normalmente déjala vacía; el bot usa `.env` por defecto y Railway entrega directamente sus variables al proceso. En Termux/Linux puedes usar, por ejemplo, `/home/usuario/whatsapp-media-bot/.env`. |
 | `NSFW_API_KEY` | Déjala vacía. El bot no utiliza esta variable ni necesita una clave para sus proveedores incluidos. |
-| `NSFW_API_URLS` | Orígenes NSFW separados por comas. El valor recomendado es `waifuim,nekobot`: el bot consulta primero Waifu.im y usa Nekobot como segundo respaldo si Waifu.im devuelve un error HTTP temporal. También admite URLs de una API propia compatible con el formato de Nekobot. |
+| `NSFW_API_URLS` | Orígenes separados por comas. Para activar lo solicitado usa `reddit,rule34,nekobot,waifuim`: Reddit basado en `pvnotpv/wabot` primero, Rule34 segundo, Nekobot tercero y Waifu.im como último respaldo. Reddit y Rule34 requieren credenciales; si faltan, el bot salta esos proveedores. |
 | `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si contiene la URL de Nekobot, Waifu.im se añadirá como respaldo automáticamente. |
 | `NSFW_API_RETRIES` y `NSFW_IMAGE_RETRIES` | Reintentos adicionales por origen y por descarga, respectivamente. El valor recomendado es `1`; se admiten de `0` a `3` para API y de `0` a `2` para imágenes. |
 | `NSFW_DIRECT_URL` | `false` (recomendado) descarga y valida la imagen antes de enviarla a WhatsApp, por lo que el bot puede informar y reintentar fallos HTTP del CDN. Usa `true` solo si prefieres que WhatsApp descargue la URL directamente. |
@@ -202,6 +202,8 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | `OPENROUTER_API_KEY` | Una clave de [OpenRouter](https://openrouter.ai/keys). Solo es necesaria si usas `AI_PROVIDER=openrouter`; en otro caso, déjala vacía. |
 | `LLAMA_CPP_API_KEY` | La clave configurada en tu servidor `llama.cpp` si exige autenticación. Para un servidor local sin autenticación, déjala vacía. |
 | `NSFW_ALLOWED_GROUPS` | IDs de grupos donde se permiten específicamente los comandos NSFW, separados por comas. Déjala vacía para no limitar por grupo cuando `NSFW_ENABLED=true`. |
+| `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_REFRESH_TOKEN` | Credenciales OAuth de una aplicación de Reddit. Son obligatorias para el proveedor `reddit`; nunca las pongas en el código ni las compartas. `REDDIT_USER_AGENT` debe identificar tu aplicación. |
+| `RULE34_USER_ID`, `RULE34_API_KEY` | Credenciales de la API oficial de Rule34. Son obligatorias para el proveedor `rule34`; el bot usa únicamente etiquetas cerradas y `rating:explicit -status:deleted`. |
 | `AI_API_KEY` | Clave genérica del proveedor de IA elegido. Úsala como alternativa si no configuras la variable específica del proveedor; por ejemplo, una clave compatible con Gemini, OpenRouter u otro proveedor remoto. Para `local`, `ollama`, `llama_cpp` o `localai` sin autenticación, déjala vacía. |
 | `AI_PROVIDER` | En Railway no uses `local`, `ollama`, `llama_cpp` ni `localai` salvo que también hayas desplegado ese servidor dentro de una red accesible. Para usar `!ai`, elige un proveedor remoto como `groq`, `gemini`, `mistral` u `openrouter` y configura únicamente su clave. |
 | `AUTH_DIR` | Debe ser `/app/data/auth_info` cuando uses el volumen recomendado. No lo dejes en `auth_info` en producción si quieres conservar la sesión. |
@@ -209,11 +211,11 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 
 ### Proveedor NSFW principal y de respaldo
 
-Después de comparar alternativas de GitHub, el respaldo utilizado es **Waifu.im API**, cuyo código está publicado en [Waifu-im/waifu-api](https://github.com/Waifu-im/waifu-api). Se eligió porque ofrece una API REST operativa, documentación versionada, lectura NSFW sin clave y una respuesta JSON compatible con Node.js. Los repositorios de bots completos y wrappers revisados no se incorporaron porque requerían desplegar otro bot, dependían de scraping o estaban abandonados.
+El orden configurado es **Reddit (adaptación del flujo de `pvnotpv/wabot`) → Rule34 API → Nekobot (la fuente usada por `Nekros-dsc/Nsfw-Bot`) → Waifu.im**. Reddit consulta únicamente subreddits cerrados para `ass`, `boobs`, `gonewild` y `pussy`; Rule34 usa una lista cerrada de tags y credenciales oficiales; Nekobot conserva sus tipos originales; Waifu.im solo se usa cuando confirma una etiqueta exacta. Los repositorios de bots no se ejecutan como sub-bots: se reutiliza únicamente su patrón de proveedor.
 
-El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra `Fuente: Waifu.im` en el pie de la imagen. Waifu.im solo se usa para comandos con una etiqueta equivalente (`!ass`, `!blowjob`, `!boobs`, `!hboobs`, `!hentai`, `!paizuri` y `!yaoi`); para comandos sin etiqueta exacta, como `!feet`, `!gonewild` o `!pussy`, se salta Waifu.im y se consulta Nekobot con el tipo original. Además, se comprueba que la respuesta incluya la etiqueta solicitada: ya no se entrega una imagen NSFW genérica bajo un comando incorrecto.
+El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra la fuente en el pie de la imagen. Los proveedores sin credenciales se omiten automáticamente. Rule34 exige `rating:explicit`, excluye `loli`, `shota`, `young`, `underage` y `child`, y no permite búsquedas libres. Reddit solo acepta URLs de imagen directa de los subreddits configurados; esto no verifica edad, consentimiento, licencia ni legalidad del contenido y debe usarse únicamente donde sea legal y permitido.
 
-Se investigaron bots y APIs con contenido adulto realista. No se incorporó ninguno: los candidatos encontrados dependen de Reddit, catálogos de terceros o NekoBot sin garantías verificables de mayoría de edad, consentimiento, derechos, moderación o legalidad; tampoco hay un bot de GitHub que aporte una fuente realista adulta licenciada y segura para distribución automática. Esto no reemplaza la verificación de edad, el consentimiento ni el cumplimiento de las políticas de WhatsApp, la legislación local y los términos del proveedor. Waifu.im no ofrece un SLA: Waifu.im es el primer origen cuando tiene una categoría exacta y Nekobot funciona como respaldo secundario.
+Se investigaron bots y APIs con contenido adulto realista y se incorporó el flujo de `pvnotpv/wabot` como adaptador de Reddit, no el bot completo. Los candidatos no ofrecen garantías verificables de mayoría de edad, consentimiento, derechos, moderación o legalidad; por eso el código usa subreddits y etiquetas cerrados, no búsquedas libres. Esto no reemplaza la verificación de edad, el consentimiento ni el cumplimiento de las políticas de WhatsApp, la legislación local y los términos de cada proveedor.
 
 #### Variables recomendadas para Railway
 
@@ -227,12 +229,18 @@ REPLY_IN_PRIVATE=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
-NSFW_API_URLS=waifuim,nekobot
+NSFW_API_URLS=reddit,rule34,nekobot,waifuim
 NSFW_API_RETRIES=1
 NSFW_IMAGE_RETRIES=1
 NSFW_DIRECT_URL=false
 ALLOWED_GROUPS=
 NSFW_ALLOW_EXTERNAL_URLS=true
+REDDIT_CLIENT_ID=tu_client_id
+REDDIT_CLIENT_SECRET=tu_client_secret
+REDDIT_REFRESH_TOKEN=tu_refresh_token
+REDDIT_USER_AGENT=whatsapp-media-bot/1.0
+RULE34_USER_ID=tu_user_id
+RULE34_API_KEY=tu_api_key
 ALLOW_SELF=true
 AUTO_RESET=true
 AUTH_DIR=/app/data/auth_info

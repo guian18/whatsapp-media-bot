@@ -101,7 +101,64 @@ test("external image URLs allow HTTPS by default and reject private hosts", () =
   else process.env.NSFW_ALLOW_EXTERNAL_URLS = previous;
 });
 
-test("uses Waifu.im as the default primary provider", async (t) => {
+test("uses Rule34 only with its closed explicit tag mapping", async (t) => {
+  const originalGet = axios.get;
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "RULE34_USER_ID", "RULE34_API_KEY", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
+  );
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "rule34";
+  process.env.RULE34_USER_ID = "123";
+  process.env.RULE34_API_KEY = "secret";
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  axios.get = async (url, options) => {
+    assert.match(url, /api\.rule34\.xxx/);
+    assert.match(options.params.tags, /rating:explicit/);
+    assert.match(options.params.tags, /-loli/);
+    return { data: [{ rating: "explicit", tags: "big_breasts rating:explicit", file_url: "https://cdn.example.test/boobs.jpg" }] };
+  };
+  t.after(() => {
+    axios.get = originalGet;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  assert.equal(await sendNsfwImage("boobs", { jid: "rule34-test", isGroup: true, sendMessage() {} }), null);
+});
+
+test("falls through Reddit and Rule34 when credentials are absent", async (t) => {
+  const originalGet = axios.get;
+  const originalPost = axios.post;
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "REDDIT_ACCESS_TOKEN", "REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "REDDIT_REFRESH_TOKEN", "RULE34_USER_ID", "RULE34_API_KEY", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
+  );
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "reddit,rule34,nekobot";
+  for (const key of ["REDDIT_ACCESS_TOKEN", "REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "REDDIT_REFRESH_TOKEN", "RULE34_USER_ID", "RULE34_API_KEY"]) delete process.env[key];
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  axios.post = async () => { throw new Error("no Reddit credentials"); };
+  const calls = [];
+  axios.get = async (url) => {
+    calls.push(url);
+    return { data: { message: "https://cdn.nekobot.xyz/ass.jpg" } };
+  };
+  t.after(() => {
+    axios.get = originalGet;
+    axios.post = originalPost;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  assert.equal(await sendNsfwImage("ass", { jid: "fallback-test", isGroup: true, sendMessage() {} }), null);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0], /nekobot\.xyz/);
+});
+
+test("uses Waifu.im when explicitly configured", async (t) => {
   const originalGet = axios.get;
   const previous = Object.fromEntries(
     ["NSFW_ENABLED", "NSFW_API_URL", "NSFW_API_URLS", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
@@ -109,7 +166,7 @@ test("uses Waifu.im as the default primary provider", async (t) => {
   const calls = [];
   process.env.NSFW_ENABLED = "true";
   delete process.env.NSFW_API_URL;
-  delete process.env.NSFW_API_URLS;
+  process.env.NSFW_API_URLS = "waifuim";
   process.env.NSFW_API_RETRIES = "0";
   process.env.NSFW_DIRECT_URL = "true";
   axios.get = async (url) => {
