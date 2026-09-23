@@ -60,13 +60,13 @@ ALLOWED_GROUPS=
 REPLY_IN_PRIVATE=true
 ALLOW_SELF=true
 AUTO_RESET=true
-SFW_PROVIDER=nekosbest
+SFW_PROVIDER=nekobot
 
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
-NSFW_API_URLS=nekobot
-NSFW_PROVIDER=nekobot
+NSFW_API_URLS=nswfparse
+NSFW_PROVIDER=nswfparse
 NSWFPARSE_ENABLED=true
 NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
 NSFW_API_TIMEOUT_MS=10000
@@ -98,7 +98,7 @@ Para consultar o cambiar el proveedor de imágenes SFW de anime:
 !anime
 ```
 
-`nekosbest` usa la API de [Nekos.best](https://nekos.best/). Es un proveedor SFW separado de Nekobot y de los proveedores NSFW.
+`nekobot` usa el endpoint SFW documentado en [NekoBot Docs](https://docs.nekobot.xyz/), mientras que `nekosbest` usa la API de [Nekos.best](https://nekos.best/). Ambos son proveedores SFW separados de los proveedores NSFW.
 
 - `!ayuda` — muestra la ayuda.
 - `!ping` — comprueba si el bot responde.
@@ -110,7 +110,7 @@ Para consultar o cambiar el proveedor de imágenes SFW de anime:
 
 ## Proveedores NSFW
 
-La configuración predeterminada utiliza `nekobot` como proveedor NSFW principal. Su API no requiere token para la mayoría de endpoints; consulta la [documentación oficial de Nekobot](https://docs.nekobot.xyz/) y respeta sus límites y disponibilidad. `nswfparse` queda disponible como proveedor alternativo para categorías configuradas.
+La configuración predeterminada utiliza `nekobot` como proveedor SFW principal. Su API no requiere token para la mayoría de endpoints; consulta la [documentación oficial de Nekobot](https://docs.nekobot.xyz/) y respeta sus límites y disponibilidad. `nswfparse` queda como proveedor NSFW predeterminado.
 
 ```env
 NSWFPARSE_ENABLED=true
@@ -123,7 +123,7 @@ El comando `!hentai` está disponible con `nswfparse` y usa únicamente la lista
 También se pueden configurar proveedores alternativos si tienes sus credenciales:
 
 ```env
-NSFW_API_URLS=nekobot,nswfparse,reddit,rule34,waifuim,safebooru,konachan,hypnohub
+NSFW_API_URLS=nswfparse,reddit,rule34,waifuim,safebooru,konachan,hypnohub
 NSFW_PROVIDER=reddit
 ```
 
@@ -236,12 +236,12 @@ ALLOWED_GROUPS=
 REPLY_IN_PRIVATE=true
 ALLOW_SELF=true
 AUTO_RESET=true
-SFW_PROVIDER=nekosbest
+SFW_PROVIDER=nekobot
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
-NSFW_API_URLS=nekobot
-NSFW_PROVIDER=nekobot
+NSFW_API_URLS=nswfparse
+NSFW_PROVIDER=nswfparse
 NSWFPARSE_ENABLED=true
 NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm,hentai
 NSWFPARSE_HENTAI_SUBREDDITS=hentai,MonsterGirl,HentaiPetgirls,saohentai,thick_hentai,JerkOffToAnime

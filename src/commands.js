@@ -4,7 +4,8 @@ import { NSFW_COMMANDS, nsfwHelp, nsfwProviderCommand, sendNsfwImage } from "./n
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
 const ANIME_API = "https://nekos.best/api/v2/neko?amount=1";
-const SFW_PROVIDERS = Object.freeze(["nekosbest"]);
+const NEKOBOT_SFW_API = "https://nekobot.xyz/api/image";
+const SFW_PROVIDERS = Object.freeze(["nekobot", "nekosbest"]);
 
 export function sfwProviderCommand(args = "") {
   const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -25,20 +26,22 @@ async function sendSfwAnimeImage(context) {
     return "Este comando solo está disponible desde WhatsApp.";
   }
   const provider = String(process.env.SFW_PROVIDER || "nekosbest").trim().toLowerCase();
-  if (provider !== "nekosbest") return `Proveedor SFW no válido: ${provider}`;
   try {
-    const { data: body } = await axios.get(ANIME_API, {
+    const apiUrl = provider === "nekobot" ? NEKOBOT_SFW_API : provider === "nekosbest" ? ANIME_API : null;
+    if (!apiUrl) return `Proveedor SFW no válido: ${provider}`;
+    const { data: body } = await axios.get(apiUrl, {
+      params: provider === "nekobot" ? { type: "neko" } : undefined,
       headers: {
         accept: "application/json",
         "user-agent": "WhatsAppMediaBot/1.0",
       },
       timeout: 15_000,
     });
-    const image = body?.results?.[0];
-    if (!image?.url || !/^https:\/\//i.test(image.url)) throw new Error("respuesta SFW sin imagen válida");
+    const imageUrl = provider === "nekobot" ? body?.message : body?.results?.[0]?.url;
+    if (!imageUrl || !/^https:\/\//i.test(imageUrl)) throw new Error("respuesta SFW sin imagen válida");
     await context.sendMessage(context.jid, {
-      image: { url: image.url },
-      caption: `Anime SFW${image.anime_name ? ` — ${image.anime_name}` : ""}`,
+      image: { url: imageUrl },
+      caption: `Anime SFW · Fuente: ${provider}`,
     });
     return null;
   } catch (error) {

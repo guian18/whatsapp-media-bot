@@ -10,7 +10,7 @@ const BOORU_APIS = Object.freeze({
   konachan: "https://konachan.com/post.json",
   hypnohub: "https://hypnohub.net/index.php?page=dapi&s=post&q=index",
 });
-const DEFAULT_API_SOURCES = Object.freeze(["nekobot"]);
+const DEFAULT_API_SOURCES = Object.freeze(["nswfparse"]);
 const NSFWPARSE_REAL_METHODS = Object.freeze({
   ass: "girlAss",
   feet: "girlThighs",
@@ -185,7 +185,7 @@ function configuredApiSources() {
 
 export function nsfwProviderCommand(args = "") {
   const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const providers = ["nswfparse", "reddit", "rule34", "nekobot", "waifuim", "safebooru", "konachan", "hypnohub"];
+  const providers = ["nswfparse", "reddit", "rule34", "waifuim", "safebooru", "konachan", "hypnohub"];
   if (!parts.length || parts[0] === "list") {
     const active = String(process.env.NSFW_PROVIDER || "") || "primero configurado";
     return `Proveedor NSFW activo: ${active}\nDisponibles: ${providers.join(", ")}\nUsa: !nsfwproveedor <nombre> o !nsfwproveedor automático`;

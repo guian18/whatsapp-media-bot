@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
+import axios from "axios";
 
 import { ayuda, handleCommand } from "../src/commands.js";
 
@@ -40,6 +41,29 @@ test("SFW provider selection is separate from NSFW providers", async () => {
   assert.match(await handleCommand("!sfwproveedor rule34"), /no válido/);
   if (previous === undefined) delete process.env.SFW_PROVIDER;
   else process.env.SFW_PROVIDER = previous;
+});
+
+test("SFW anime requests can use Nekobot", async (t) => {
+  const originalGet = axios.get;
+  const previous = process.env.SFW_PROVIDER;
+  process.env.SFW_PROVIDER = "nekobot";
+  const sent = [];
+  axios.get = async (url, options) => {
+    assert.match(url, /nekobot\.xyz\/api\/image/);
+    assert.equal(options.params.type, "neko");
+    return { data: { success: true, message: "https://nekobot.xyz/api/sfw/neko.jpg" } };
+  };
+  t.after(() => {
+    axios.get = originalGet;
+    if (previous === undefined) delete process.env.SFW_PROVIDER;
+    else process.env.SFW_PROVIDER = previous;
+  });
+  assert.equal(await handleCommand("!anime", {
+    jid: "sfw-nekobot",
+    sendMessage: async (_jid, payload) => sent.push(payload),
+  }), null);
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].caption, /Fuente: nekobot/);
 });
 
 test("environment loader applies values from the configured .env file", (t) => {
