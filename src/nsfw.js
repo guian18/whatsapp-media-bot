@@ -2,9 +2,27 @@ import axios from "axios";
 
 const NEKOBOT_API_URL = "https://nekobot.xyz/api/image";
 const WAIFU_IM_API_URL = "https://api.waifu.im/images";
-const DEFAULT_API_SOURCES = Object.freeze(["waifuim", "nekobot"]);
+const RULE34_API_URL = "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index";
+const REDDIT_OAUTH_URL = "https://www.reddit.com/api/v1/access_token";
+const DEFAULT_API_SOURCES = Object.freeze(["reddit", "rule34", "nekobot", "waifuim"]);
 const WAIFU_IM_API_VERSION = "v7";
 const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
+const RULE34_EXCLUDED_TAGS = Object.freeze(["loli", "shota", "young", "underage", "child"]);
+const REDDIT_SUBREDDITS = Object.freeze({
+  ass: "ass",
+  boobs: "boobs",
+  gonewild: "gonewild",
+  pussy: "pussy",
+});
+const RULE34_TAGS = Object.freeze({
+  anal: "anal",
+  ass: "ass",
+  boobs: "big_breasts",
+  hentai: "hentai",
+  hentaianal: "hentai anal",
+  yaoi: "yaoi",
+});
+let redditToken = null;
 const MIN_INTERVAL_MS = 10_000;
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const lastRequestByChat = new Map();
@@ -66,6 +84,12 @@ function sourceFromValue(value) {
   }
   if (normalized === "waifuim" || normalized === "waifu.im" || normalized === WAIFU_IM_API_URL) {
     return { id: "waifuim", name: "Waifu.im", url: WAIFU_IM_API_URL };
+  }
+  if (normalized === "rule34" || normalized === "rule34.xxx" || normalized === RULE34_API_URL) {
+    return { id: "rule34", name: "Rule34 API", url: RULE34_API_URL };
+  }
+  if (normalized === "reddit" || normalized === "pvnotpv/wabot") {
+    return { id: "reddit", name: "Reddit (pvnotpv/wabot)", url: REDDIT_OAUTH_URL };
   }
   return { id: "custom", name: "API configurada", url: raw };
 }
@@ -229,6 +253,62 @@ function providerError(status, message) {
   return error;
 }
 
+function imageUrlFromRedditPost(post) {
+  const url = String(post?.url_overridden_by_dest || post?.url || "").trim();
+  if (!/\.(?:jpe?g|png|gif|webp)(?:\?.*)?$/i.test(url)) return null;
+  return validImageUrl(url);
+}
+
+async function redditAccessToken(timeout) {
+  if (process.env.REDDIT_ACCESS_TOKEN) return process.env.REDDIT_ACCESS_TOKEN;
+  const clientId = String(process.env.REDDIT_CLIENT_ID || "").trim();
+  const clientSecret = String(process.env.REDDIT_CLIENT_SECRET || "").trim();
+  const refreshToken = String(process.env.REDDIT_REFRESH_TOKEN || "").trim();
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw providerError(401, "faltan REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET o REDDIT_REFRESH_TOKEN");
+  }
+  if (redditToken) return redditToken;
+  const userAgent = process.env.REDDIT_USER_AGENT || "whatsapp-media-bot/1.0";
+  const response = await axios.post(REDDIT_OAUTH_URL, new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+  }), {
+    auth: { username: clientId, password: clientSecret },
+    headers: { "user-agent": userAgent, accept: "application/json" },
+    timeout,
+  });
+  if (!response.data?.access_token) throw providerError(502, "Reddit no devolvió un token válido");
+  redditToken = response.data.access_token;
+  return redditToken;
+}
+
+function rule34UrlForPost(post) {
+  const candidate = post?.file_url || post?.sample_url || post?.preview_url;
+  return validImageUrl(candidate);
+}
+
+function rule34ImageFromResponse(data, type) {
+  const posts = Array.isArray(data) ? data : [];
+  const eligible = posts.filter((post) => {
+    if (String(post?.rating || "").toLowerCase() !== "explicit") return false;
+    const tags = new Set(String(post?.tags || "").toLowerCase().split(/\s+/).filter(Boolean));
+    return !RULE34_EXCLUDED_TAGS.some((tag) => tags.has(tag)) && rule34UrlForPost(post);
+  });
+  const post = eligible[0];
+  if (!post) throw providerError(502, `Rule34 no devolvió una imagen adulta válida para ${type}`);
+  return { url: rule34UrlForPost(post), source: "Rule34 API" };
+}
+
+function redditImageFromResponse(data, type) {
+  const posts = Array.isArray(data?.data?.children) ? data.data.children : [];
+  const post = posts
+    .map((item) => item?.data)
+    .find((item) => imageUrlFromRedditPost(item));
+  const url = imageUrlFromRedditPost(post);
+  if (!url) throw providerError(502, `Reddit no devolvió una imagen válida para ${type}`);
+  return { url, source: "Reddit (pvnotpv/wabot)" };
+}
+
 function cleanup(now) {
   for (const [jid, timestamp] of lastRequestByChat) {
     if (now - timestamp > MIN_INTERVAL_MS * 6) lastRequestByChat.delete(jid);
@@ -311,8 +391,41 @@ async function requestImageUrl(source, type) {
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const waifuTag = source.id === "waifuim" ? waifuTagForCommand(type) : null;
+      const rule34Tag = source.id === "rule34" ? RULE34_TAGS[type] : null;
+      const subreddit = source.id === "reddit" ? REDDIT_SUBREDDITS[type] : null;
       if (source.id === "waifuim" && !waifuTag) {
         throw providerError(422, `Waifu.im no tiene una categoría exacta para ${type}`);
+      }
+      if (source.id === "rule34" && !rule34Tag) {
+        throw providerError(422, `Rule34 no tiene una etiqueta permitida para ${type}`);
+      }
+      if (source.id === "reddit" && !subreddit) {
+        throw providerError(422, `Reddit no tiene un subreddit permitido para ${type}`);
+      }
+      if (source.id === "reddit") {
+        const token = await redditAccessToken(timeout);
+        const { data } = await axios.get(`https://oauth.reddit.com/r/${encodeURIComponent(subreddit)}/hot`, {
+          params: { limit: 100, raw_json: 1 },
+          headers: {
+            accept: "application/json",
+            authorization: `Bearer ${token}`,
+            "user-agent": process.env.REDDIT_USER_AGENT || "whatsapp-media-bot/1.0",
+          },
+          timeout,
+        });
+        return redditImageFromResponse(data, type);
+      }
+      if (source.id === "rule34") {
+        const userId = String(process.env.RULE34_USER_ID || "").trim();
+        const apiKey = String(process.env.RULE34_API_KEY || "").trim();
+        if (!userId || !apiKey) throw providerError(401, "faltan RULE34_USER_ID o RULE34_API_KEY");
+        const tags = `${rule34Tag} rating:explicit -status:deleted ${RULE34_EXCLUDED_TAGS.map((tag) => `-${tag}`).join(" ")}`;
+        const { data } = await axios.get(source.url, {
+          params: { user_id: userId, api_key: apiKey, json: 1, limit: 100, tags },
+          headers: { accept: "application/json", "user-agent": "WhatsAppMediaBot/1.0" },
+          timeout,
+        });
+        return rule34ImageFromResponse(data, type);
       }
       const request = source.id === "waifuim"
         ? {
