@@ -9,20 +9,12 @@ import axios from "axios";
 import { ayuda, handleCommand } from "../src/commands.js";
 
 test("command dispatcher serves retained commands without external services", async () => {
-  const previousPingDeadChance = process.env.PING_DEAD_CHANCE;
-  const previousPingTripChance = process.env.PING_TRIP_CHANCE;
-  process.env.PING_DEAD_CHANCE = "0";
-  process.env.PING_TRIP_CHANCE = "0";
   assert.equal(await handleCommand("!ping"), "Pong! 🏓");
   assert.equal(await handleCommand("!PING"), "Pong! 🏓");
   assert.equal(await handleCommand("!desconocido"), null);
   assert.equal(await handleCommand("texto normal"), null);
   const help = await handleCommand("!ayuda");
   assert.match(help, /!ping.*!anime/s);
-  if (previousPingDeadChance === undefined) delete process.env.PING_DEAD_CHANCE;
-  else process.env.PING_DEAD_CHANCE = previousPingDeadChance;
-  if (previousPingTripChance === undefined) delete process.env.PING_TRIP_CHANCE;
-  else process.env.PING_TRIP_CHANCE = previousPingTripChance;
 });
 
 test("help exposes only retained bot commands", () => {

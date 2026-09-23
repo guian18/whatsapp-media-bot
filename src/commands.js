@@ -30,13 +30,6 @@ async function sendSfwAnimeImage(context) {
 }
 
 function pingResponse() {
-  const dead = Number(process.env.PING_DEAD_CHANCE ?? "0.10");
-  const trip = Number(process.env.PING_TRIP_CHANCE ?? "0.30");
-  const deadChance = Number.isFinite(dead) ? Math.min(1, Math.max(0, dead)) : 0.10;
-  const tripChance = Number.isFinite(trip) ? Math.min(1, Math.max(0, trip)) : 0.30;
-  const roll = Math.random();
-  if (roll < deadChance) return "Pong fallido: el bot falleció 💀";
-  if (roll < deadChance + tripChance) return "El bot se tropezó y falló el Pong 🤕";
   return "Pong! 🏓";
 }
 

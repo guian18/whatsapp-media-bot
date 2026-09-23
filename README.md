@@ -60,8 +60,6 @@ REPLY_IN_PRIVATE=true
 ALLOW_SELF=true
 AUTO_RESET=true
 AUTH_DIR=auth_info
-PING_DEAD_CHANCE=0.10
-PING_TRIP_CHANCE=0.30
 ```
 
 Para vincular por código, usa el número internacional solo con dígitos:
