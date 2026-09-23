@@ -9,10 +9,27 @@ const WAIFU_IM_API_VERSION = "v7";
 const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
 const RULE34_EXCLUDED_TAGS = Object.freeze(["loli", "shota", "young", "underage", "child"]);
 const REDDIT_SUBREDDITS = Object.freeze({
-  ass: "ass",
-  boobs: "boobs",
+  anal: "ass+assholegonewild",
+  ass: "ass+assholegonewild",
+  boobs: "boobs+hugeboobs+ratemyboobs",
+  blowjob: "blowjob",
+  feet: "feet",
   gonewild: "gonewild",
-  pussy: "pussy",
+  hass: "boobs+hugeboobs+ratemyboobs",
+  hboobs: "boobs+hugeboobs+ratemyboobs",
+  hentai: "hentai+hentaifemdom+hentaibondage",
+  hentaianal: "hentai+hentaifemdom+hentaibondage",
+  hkitsune: "hentai",
+  hmidriff: "boobs+hugeboobs+ratemyboobs",
+  htigh: "thighs",
+  hyuri: "LesbiansX",
+  lewd: "gonewild",
+  paizuri: "boobs+hugeboobs+ratemyboobs",
+  pgif: "nsfw_gif",
+  pussy: "pussy+vagina+asshole+shavedpussiese",
+  tentacle: "hentai+hentaifemdom+hentaibondage",
+  thigh: "thighs",
+  yaoi: "gayporn",
 });
 const RULE34_TAGS = Object.freeze({
   anal: "anal",
@@ -391,13 +408,10 @@ async function requestImageUrl(source, type) {
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const waifuTag = source.id === "waifuim" ? waifuTagForCommand(type) : null;
-      const rule34Tag = source.id === "rule34" ? RULE34_TAGS[type] : null;
+      const rule34Tag = source.id === "rule34" ? (RULE34_TAGS[type] || type.replace(/[^a-z0-9_]+/gi, "_")) : null;
       const subreddit = source.id === "reddit" ? REDDIT_SUBREDDITS[type] : null;
       if (source.id === "waifuim" && !waifuTag) {
         throw providerError(422, `Waifu.im no tiene una categoría exacta para ${type}`);
-      }
-      if (source.id === "rule34" && !rule34Tag) {
-        throw providerError(422, `Rule34 no tiene una etiqueta permitida para ${type}`);
       }
       if (source.id === "reddit" && !subreddit) {
         throw providerError(422, `Reddit no tiene un subreddit permitido para ${type}`);
