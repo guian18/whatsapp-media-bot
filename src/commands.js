@@ -41,6 +41,20 @@ function pingResponse() {
   return "Pong! 🏓 El bot está activo y listo.";
 }
 
+function adminMenu() {
+  return [
+    "*Menú de propietario y administrador*",
+    "",
+    "Comandos disponibles:",
+    "`!desactivar` — bloquea todos los comandos del bot.",
+    "`!activar` — vuelve a activar todos los comandos.",
+    "`!clear all` — elimina todos los mensajes registrados del bot en este chat.",
+    "`!admin menu` — muestra este menú.",
+    "",
+    "Solo funcionan para los números configurados en OWNER_NUMBER y ADMIN_NUMBER.",
+  ].join("\n");
+}
+
 export function ayuda() {
   const name = (command) => `!${commandDisplayName(command)}`;
   return [
@@ -54,6 +68,7 @@ export function ayuda() {
     `\`${name("clear")} all\` — elimina todos los mensajes del bot (solo propietario/admin)`,
     `\`${name("desactivar")}\` — desactiva todos los comandos (solo propietario/admin)`,
     `\`${name("activar")}\` — activa todos los comandos (solo propietario/admin)`,
+    "`!admin menu` — muestra el menú de propietario y administrador",
     "",
     `Escribe \`${name("ayuda")}\` cuando necesites volver a ver este menú.`,
   ].join("\n");
@@ -72,6 +87,12 @@ export async function handleCommand(text, context = {}) {
   }
   if (!cmd) return null;
   const args = match[2].trim();
+
+  if (cmd === "admin" && args.toLowerCase() === "menu") {
+    return isPrivilegedUser(context)
+      ? adminMenu()
+      : "No tienes permiso para ver el menú de propietario y administrador.";
+  }
 
   if (cmd === "desactivar" || cmd === "activar") {
     if (!isPrivilegedUser(context)) return "No tienes permiso para cambiar el estado global del bot.";

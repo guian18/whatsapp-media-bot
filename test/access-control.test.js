@@ -41,3 +41,24 @@ test("control commands are denied when owner and admin numbers are not configure
   assert.match(await handleCommand("!desactivar", { requesterId: "51911111111", jid: "private" }), /No tienes permiso/);
   assert.equal(await handleCommand("!ping", { requesterId: "51911111111", jid: "private" }), "Pong! 🏓 El bot está activo y listo.");
 });
+
+
+test("!admin menu is visible only to the configured owner and admin", async (t) => {
+  const previousOwner = process.env.OWNER_NUMBER;
+  const previousAdmin = process.env.ADMIN_NUMBER;
+  process.env.OWNER_NUMBER = "51911111111";
+  process.env.ADMIN_NUMBER = "51922222222";
+  enableAllCommands();
+  t.after(() => {
+    enableAllCommands();
+    if (previousOwner === undefined) delete process.env.OWNER_NUMBER;
+    else process.env.OWNER_NUMBER = previousOwner;
+    if (previousAdmin === undefined) delete process.env.ADMIN_NUMBER;
+    else process.env.ADMIN_NUMBER = previousAdmin;
+  });
+
+  const ownerMenu = await handleCommand("!admin menu", { requesterId: "51911111111", jid: "admin-chat" });
+  assert.match(ownerMenu, /Menú de propietario y administrador/);
+  assert.match(ownerMenu, /!clear all/);
+  assert.match(await handleCommand("!admin menu", { requesterId: "51933333333", jid: "admin-chat" }), /No tienes permiso/);
+});

@@ -9,6 +9,7 @@ const COMMAND_NAMES = new Set([
   "clear",
   "desactivar",
   "activar",
+  "admin",
   "4k",
   "anal",
   "ass",
