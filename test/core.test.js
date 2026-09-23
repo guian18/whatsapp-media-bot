@@ -31,28 +31,28 @@ test("help exposes only retained bot commands", () => {
   assert.match(text, /!sfwproveedor/);
 });
 
-test("SFW provider selection lists only supported sources", async () => {
+test("SFW provider selection exposes only Nekobot", async () => {
   const previous = process.env.SFW_PROVIDER;
   delete process.env.SFW_PROVIDER;
   assert.equal(
     await handleCommand("!sfwproveedor list"),
-    "Proveedor SFW activo: nekobot\nDisponibles: nekobot, safebooru, konachan\nUsa: !sfwproveedor <nombre>",
+    "Proveedor SFW activo: nekobot\nDisponibles: nekobot\nUsa: !sfwproveedor <nombre>",
   );
-  assert.match(await handleCommand("!sfwproveedor safebooru"), /fijado manualmente/);
-  assert.equal(process.env.SFW_PROVIDER, "safebooru");
+  assert.match(await handleCommand("!sfwproveedor nekobot"), /fijado manualmente/);
+  assert.equal(process.env.SFW_PROVIDER, "nekobot");
   assert.match(await handleCommand("!sfwproveedor invalido"), /no válido/);
   if (previous === undefined) delete process.env.SFW_PROVIDER;
   else process.env.SFW_PROVIDER = previous;
 });
 
-test("SFW anime requests can use Nekobot", async (t) => {
+test("SFW anime requests use Nekobot", async (t) => {
   const originalGet = axios.get;
   const previous = process.env.SFW_PROVIDER;
   process.env.SFW_PROVIDER = "nekobot";
   const sent = [];
   axios.get = async (url, options) => {
     assert.match(url, /nekobot\.xyz\/api\/image/);
-    assert.equal(options.params.type, "neko");
+    assert.deepEqual(options.params, { type: "neko" });
     return { data: { success: true, message: "https://nekobot.xyz/api/sfw/neko.jpg" } };
   };
   t.after(() => {
@@ -66,32 +66,6 @@ test("SFW anime requests can use Nekobot", async (t) => {
   }), null);
   assert.equal(sent.length, 1);
   assert.match(sent[0].caption, /Fuente: nekobot/);
-});
-
-test("SFW anime requests can use safe booru providers", async (t) => {
-  const originalGet = axios.get;
-  const previous = process.env.SFW_PROVIDER;
-  const sent = [];
-  axios.get = async (url, options) => {
-    assert.match(url, /safebooru|konachan/);
-    assert.match(String(options.params.tags), /rating:safe/);
-    return {
-      data: [{ rating: "safe", tags: "rating:safe", file_url: `https://${url.includes("safebooru") ? "safebooru.org" : "konachan.com"}/safe.jpg` }],
-    };
-  };
-  t.after(() => {
-    axios.get = originalGet;
-    if (previous === undefined) delete process.env.SFW_PROVIDER;
-    else process.env.SFW_PROVIDER = previous;
-  });
-  for (const provider of ["safebooru", "konachan"]) {
-    process.env.SFW_PROVIDER = provider;
-    assert.equal(await handleCommand("!anime", {
-      jid: `sfw-${provider}`,
-      sendMessage: async (_jid, payload) => sent.push(payload),
-    }), null);
-  }
-  assert.equal(sent.length, 2);
 });
 
 test("environment loader applies values from the configured .env file", (t) => {

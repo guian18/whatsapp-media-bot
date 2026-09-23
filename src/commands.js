@@ -3,11 +3,7 @@ import axios from "axios";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
 const NEKOBOT_SFW_API = "https://nekobot.xyz/api/image";
-const SFW_PROVIDERS = Object.freeze(["nekobot", "safebooru", "konachan"]);
-const SFW_PROVIDER_URLS = Object.freeze({
-  safebooru: "https://safebooru.org/index.php?page=dapi&s=post&q=index",
-  konachan: "https://konachan.com/post.json",
-});
+const SFW_PROVIDERS = Object.freeze(["nekobot"]);
 
 export function sfwProviderCommand(args = "") {
   const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -28,38 +24,21 @@ async function sendSfwAnimeImage(context) {
     return "Este comando solo está disponible desde WhatsApp.";
   }
   const provider = String(process.env.SFW_PROVIDER || "nekobot").trim().toLowerCase();
+  if (provider !== "nekobot") return `Proveedor SFW no válido: ${provider}`;
   try {
-    const apiUrl = provider === "nekobot"
-      ? NEKOBOT_SFW_API
-      : SFW_PROVIDER_URLS[provider] || null;
-    if (!apiUrl) return `Proveedor SFW no válido: ${provider}`;
-    const { data: body } = await axios.get(apiUrl, {
-      params: provider === "nekobot"
-        ? { type: "neko" }
-        : provider === "safebooru"
-          ? { limit: 100, json: 1, tags: "rating:safe" }
-          : { limit: 100, tags: "rating:safe" },
+    const { data: body } = await axios.get(NEKOBOT_SFW_API, {
+      params: { type: "neko" },
       headers: {
         accept: "application/json",
         "user-agent": "WhatsAppMediaBot/1.0",
       },
       timeout: 15_000,
     });
-    const posts = Array.isArray(body) ? body : Array.isArray(body?.post) ? body.post : [];
-    const safePost = posts.find((post) => {
-      const rating = String(post?.rating || "").toLowerCase();
-      const tags = String(post?.tags || "").toLowerCase();
-      return (!rating || rating === "safe" || rating === "general")
-        && !/(?:^|\s)(?:loli|shota|child|underage|young)(?:\s|$)/.test(tags)
-        && (post?.file_url || post?.image || post?.jpeg_url || post?.sample_url);
-    });
-    const imageUrl = provider === "nekobot"
-      ? body?.message
-      : safePost?.file_url || safePost?.image || safePost?.jpeg_url || safePost?.sample_url;
+    const imageUrl = body?.message;
     if (!imageUrl || !/^https:\/\//i.test(imageUrl)) throw new Error("respuesta SFW sin imagen válida");
     await context.sendMessage(context.jid, {
       image: { url: imageUrl },
-      caption: `Anime SFW · Fuente: ${provider}`,
+      caption: "Anime SFW · Fuente: nekobot",
     });
     return null;
   } catch (error) {
@@ -85,7 +64,7 @@ export function ayuda() {
     "",
     `\`${name("ping")}\` — comprueba que el bot responde`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
-    "`!sfwproveedor <nombre>` — cambia el proveedor de imágenes SFW",
+    "`!sfwproveedor <nombre>` — consulta o selecciona el proveedor SFW",
     `\`${name("ayuda")}\` — este mensaje`,
   ].join("\n");
 }

@@ -79,10 +79,10 @@ Para usar QR, deja `WHATSAPP_NUMBER` vacío y `PAIRING_CODE=false`.
 - `!ayuda` — muestra la ayuda.
 - `!ping` — comprueba si el bot responde.
 - `!anime` o `!gatus` — envía una imagen SFW de anime.
-- `!sfwproveedor list` — muestra los proveedores SFW disponibles.
-- `!sfwproveedor <nombre>` — selecciona un proveedor SFW.
+- `!sfwproveedor list` — muestra el proveedor SFW disponible.
+- `!sfwproveedor nekobot` — selecciona Nekobot como proveedor SFW.
 
-Los proveedores disponibles son `nekobot`, `safebooru` y `konachan`. El proveedor inicial es `nekobot`; usa `!sfwproveedor <nombre>` y después `!anime` para cambiarlo.
+El único proveedor SFW disponible es `nekobot`, que también es el proveedor inicial. Usa `!anime` para solicitar una imagen SFW de anime.
 
 ## Deploy en Railway
 
