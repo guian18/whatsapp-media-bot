@@ -230,7 +230,6 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | Variable | Qué debes colocar |
 |---|---|
 | `ENV_FILE` | Ruta a un archivo `.env` alternativo. En Railway normalmente déjala vacía; el bot usa `.env` por defecto y Railway entrega directamente sus variables al proceso. En Termux/Linux puedes usar, por ejemplo, `/home/usuario/whatsapp-media-bot/.env`. |
-| `NSFW_API_KEY` | Déjala vacía. El bot no utiliza esta variable ni necesita una clave para sus proveedores incluidos. |
 | `NSFW_API_URLS` | Lista de proveedores disponibles, separada por comas. Usa `reddit,rule34,nekobot,waifuim` y selecciona uno con `NSFW_PROVIDER` o `!nsfwproveedor <nombre>`. Solo se hace una solicitud al proveedor elegido; no existe fallback automático. |
 | `NSFW_PROVIDER` | Proveedor NSFW único y manual: `reddit`, `rule34`, `nekobot` o `waifuim`. Si lo defines, el bot no usa ningún fallback. También puedes cambiarlo durante la ejecución con `!nsfwproveedor <nombre>`. |
 | `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si la usas, ese será el único origen disponible. |
