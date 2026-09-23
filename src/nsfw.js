@@ -135,7 +135,7 @@ export function nsfwProviderCommand(args = "") {
   const providers = ["reddit", "rule34", "nekobot", "waifuim"];
   if (!parts.length || parts[0] === "list") {
     const active = String(process.env.NSFW_PROVIDER || "") || "primero configurado";
-    return `Proveedor NSFW activo: ${active}\nDisponibles: ${providers.join(", ")}\nUsa: !proveedor nsfw <nombre> o !proveedor nsfw automático`;
+    return `Proveedor NSFW activo: ${active}\nDisponibles: ${providers.join(", ")}\nUsa: !nsfwproveedor <nombre> o !nsfwproveedor automático`;
   }
   const requested = parts[0] === "nsfw" ? parts[1] : parts[0];
   if (!requested || requested === "list") return nsfwProviderCommand("list");
