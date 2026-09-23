@@ -12,7 +12,6 @@ auth_info/
 *.key
 
 # Runtime state
-ai-memory.json
 *.tmp
 
 # OS/editor files

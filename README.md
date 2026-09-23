@@ -131,6 +131,53 @@ RULE34_API_KEY=
 
 El proveedor seleccionado se usa de forma exclusiva. Las respuestas multimedia se envían como imágenes, GIFs o vídeos cuando el formato y el tamaño son compatibles.
 
+## Enlaces directos para APIs, claves y tokens
+
+No pongas tokens reales en el repositorio ni en el README. Guárdalos únicamente en `.env` o en las variables privadas de Railway. Estas son las páginas oficiales o de referencia directa para obtener las credenciales que el bot puede utilizar:
+
+| Servicio | Variables | Enlace directo | ¿Necesita token? |
+| --- | --- | --- | --- |
+| Reddit | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_REFRESH_TOKEN` | [Crear aplicación en Reddit](https://www.reddit.com/prefs/apps) · [Documentación API/OAuth](https://www.reddit.com/dev/api/oauth) · [Reglas de acceso](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki) | Sí |
+| Rule34 | `RULE34_USER_ID`, `RULE34_API_KEY` | [Documentación de la API](https://api.rule34.xxx/docs) · [Sitio de Rule34](https://rule34.xxx/) | Sí, según el endpoint |
+| NSWFparse | Ninguna | [Paquete npm](https://www.npmjs.com/package/nswfparse) · [Código fuente](https://github.com/zachey01/NSWFparse) | No; consulta fuentes públicas y debes cumplir sus reglas |
+| Waifu.im | Ninguna | [Documentación](https://docs.waifu.im/) · [Referencia de la API](https://docs.waifu.im/docs/api/) | No |
+| Nekobot | Ninguna | [API](https://nekobot.xyz/api) | No |
+| Nekos.best | Ninguna | [Sitio y documentación](https://nekos.best/) | No |
+| WhatsApp/Baileys | Ninguna | [Baileys en GitHub](https://github.com/WhiskeySockets/Baileys) | No; se vincula mediante QR o código |
+| Railway | Variables privadas del servicio | [Documentación de variables](https://docs.railway.com/variables) · [Volúmenes](https://docs.railway.com/volumes) | No es una API del bot; es el hosting |
+
+### Cómo obtener las credenciales de Reddit
+
+1. Inicia sesión en [Reddit Apps](https://www.reddit.com/prefs/apps).
+2. Pulsa **Create App** o **Create Another App**.
+3. Selecciona el tipo **script** para el uso personal del bot.
+4. Usa un nombre descriptivo y un `redirect uri`, por ejemplo `http://localhost:8080` si Reddit lo exige.
+5. El texto corto que aparece bajo el nombre de la aplicación es `REDDIT_CLIENT_ID`.
+6. El campo **secret** es `REDDIT_CLIENT_SECRET`.
+7. El `REDDIT_REFRESH_TOKEN` se obtiene mediante el flujo OAuth de Reddit; consulta la [documentación OAuth](https://www.reddit.com/dev/api/oauth) y no lo confundas con un access token temporal.
+
+Configuración mínima:
+
+```env
+REDDIT_CLIENT_ID=...
+REDDIT_CLIENT_SECRET=...
+REDDIT_REFRESH_TOKEN=...
+REDDIT_USER_AGENT=whatsapp-media-bot/1.0 por/u/TU_USUARIO
+```
+
+Si Reddit no aprueba o limita el acceso de tu aplicación, no intentes evadir esos límites. Revisa las [políticas actuales de acceso](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) y utiliza únicamente contenido que tengas derecho a consultar y redistribuir.
+
+### Credenciales de Rule34
+
+Consulta primero la [documentación de la API de Rule34](https://api.rule34.xxx/docs). Si tu cuenta o el endpoint requiere autenticación, copia el `user id` y la `api key` en las variables privadas:
+
+```env
+RULE34_USER_ID=...
+RULE34_API_KEY=...
+```
+
+NSWFparse, Waifu.im, Nekobot y Nekos.best no requieren una clave en esta configuración. Eso no elimina sus límites, términos de uso ni la obligación de respetar derechos de autor, privacidad y consentimiento.
+
 ## Deploy en Railway
 
 El repositorio incluye `railway.json` para ejecutar el bot como un servicio persistente:
