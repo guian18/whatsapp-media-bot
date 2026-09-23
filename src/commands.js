@@ -7,7 +7,7 @@ const NEKOBOT_SFW_API = "https://nekobot.xyz/api/image";
 
 async function sendSfwAnimeImage(context) {
   if (!context.jid || typeof context.sendMessage !== "function") {
-    return "Este comando solo está disponible desde WhatsApp.";
+    return "Este comando solo puede usarse desde un chat de WhatsApp.";
   }
   try {
     const { data: body } = await axios.get(NEKOBOT_SFW_API, {
@@ -26,24 +26,26 @@ async function sendSfwAnimeImage(context) {
     });
     return null;
   } catch (error) {
-    return `No pude obtener una imagen SFW de anime ahora: ${error.message}`;
+    return `No pude conseguir una imagen SFW de anime en este momento. Inténtalo de nuevo más tarde. (${error.message})`;
   }
 }
 
 function pingResponse() {
-  return "Pong! 🏓";
+  return "Pong! 🏓 El bot está activo y listo.";
 }
 
 export function ayuda() {
   const name = (command) => `!${commandDisplayName(command)}`;
   return [
-    "*WhatsApp Media Bot — comandos*",
+    "*WhatsApp Media Bot — menú principal*",
     "",
-    `\`${name("ping")}\` — comprueba que el bot responde`,
-    `\`${name("anime")}\` — envía una imagen SFW de anime`,
-    `\`${name("nsfw")}\` — muestra los comandos de imágenes NSFW`,
+    "*Comandos principales:*",
+    `\`${name("ping")}\` — comprueba que el bot está disponible`,
+    `\`${name("anime")}\` — solicita una imagen SFW de anime`,
+    `\`${name("nsfw")}\` — muestra el menú de imágenes NSFW`,
     `\`${name("clear")}\` — elimina tus imágenes NSFW enviadas por el bot`,
-    `\`${name("ayuda")}\` — este mensaje`,
+    "",
+    `Escribe \`${name("ayuda")}\` cuando necesites volver a ver este menú.`,
   ].join("\n");
 }
 

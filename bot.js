@@ -383,7 +383,7 @@ async function start() {
       } catch (err) {
         console.error("Error procesando comando:", err?.stack || err);
         try {
-          await sock.sendMessage(jid, { text: "❌ No pude completar ese comando. Inténtalo de nuevo más tarde." }, { quoted: msg });
+          await sock.sendMessage(jid, { text: "No pude completar ese comando ahora. Inténtalo de nuevo más tarde." }, { quoted: msg });
         } catch (sendErr) {
           console.error("No se pudo enviar el error al chat:", sendErr?.message || sendErr);
         }

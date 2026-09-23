@@ -9,12 +9,12 @@ import axios from "axios";
 import { ayuda, handleCommand } from "../src/commands.js";
 
 test("command dispatcher serves retained commands without external services", async () => {
-  assert.equal(await handleCommand("!ping"), "Pong! 🏓");
-  assert.equal(await handleCommand("!PING"), "Pong! 🏓");
+  assert.equal(await handleCommand("!ping"), "Pong! 🏓 El bot está activo y listo.");
+  assert.equal(await handleCommand("!PING"), "Pong! 🏓 El bot está activo y listo.");
   assert.equal(await handleCommand("!desconocido"), null);
   assert.equal(await handleCommand("texto normal"), null);
   const help = await handleCommand("!ayuda");
-  assert.match(help, /!ping.*!anime/s);
+  assert.match(help, /menú principal.*!ping.*!anime/s);
 });
 
 test("help exposes only retained bot commands", () => {
