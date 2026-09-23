@@ -5,6 +5,7 @@ import { handleCommand } from "../src/commands.js";
 
 test("parses safe command aliases", () => {
   assert.deepEqual(parseCommandAliases("saludo=ping, asistente=ai"), { saludo: "ping", asistente: "ai" });
+  assert.deepEqual(parseCommandAliases("gatus=anime"), { gatus: "anime" });
   assert.throws(() => parseCommandAliases("saludo=desconocido"), /alias inválido/);
   assert.throws(() => parseCommandAliases("ping=ai"), /nombre diferente/);
   assert.throws(() => parseCommandAliases("gatus=ping"), /nombre diferente/);

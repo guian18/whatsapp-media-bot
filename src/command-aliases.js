@@ -51,7 +51,8 @@ export function parseCommandAliases(value = "") {
     if (extra.length || !validName(alias) || !COMMAND_NAMES.has(target)) {
       throw new Error(`alias inválido: ${item}`);
     }
-    if (COMMAND_NAMES.has(alias) || Object.hasOwn(BUILTIN_ALIASES, alias) || alias === target) {
+    const conflictsWithBuiltin = Object.hasOwn(BUILTIN_ALIASES, alias) && BUILTIN_ALIASES[alias] !== target;
+    if (COMMAND_NAMES.has(alias) || conflictsWithBuiltin || alias === target) {
       throw new Error(`el alias debe tener un nombre diferente: ${alias}`);
     }
     aliases[alias] = target;
