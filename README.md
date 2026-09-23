@@ -267,11 +267,14 @@ NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_API_URLS=nswfparse
 NSFW_PROVIDER=nswfparse
 NSWFPARSE_ENABLED=true
+NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
 ```
 
 El proveedor ofrece categorías compatibles como `!ass`, `!feet`, `!gonewild`, `!blowjob`, `!pussy` y `!thigh`. Si la categoría no tiene un método real exacto, el bot la rechaza en lugar de cambiar a otra fuente.
 
 Para apagar o encender este proveedor sin cambiar el código usa `NSWFPARSE_ENABLED=false` o `NSWFPARSE_ENABLED=true`. Esta variable controla el proveedor completo; no elimina los filtros permanentes que excluyen categorías inseguras.
+
+`NSWFPARSE_CATEGORIES` es una lista explícita separada por comas. Solo se aceptan categorías adultas predefinidas por el adaptador; cualquier otro valor se ignora y la categoría queda bloqueada.
 
 El orden configurado es **Reddit (adaptación del flujo de `pvnotpv/wabot`) → Rule34 API → Nekobot (la fuente usada por `Nekros-dsc/Nsfw-Bot`) → Waifu.im**. Reddit consulta únicamente subreddits cerrados para `ass`, `boobs`, `gonewild` y `pussy`; Rule34 usa una lista cerrada de tags y credenciales oficiales; Nekobot conserva sus tipos originales; Waifu.im solo se usa cuando confirma una etiqueta exacta. Los repositorios de bots no se ejecutan como sub-bots: se reutiliza únicamente su patrón de proveedor.
 

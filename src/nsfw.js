@@ -16,7 +16,13 @@ const NSFWPARSE_REAL_METHODS = Object.freeze({
   htigh: "girlThighs",
   hboobs: "girlAss",
   boobs: "girlAss",
+  hyuri: "lesbian",
+  lesbian: "lesbian",
+  bdsm: "bdsm",
 });
+const NSFWPARSE_SAFE_CATEGORIES = Object.freeze([
+  "ass", "feet", "gonewild", "blowjob", "pussy", "thigh", "htigh", "hboobs", "boobs", "hyuri", "lesbian", "bdsm",
+]);
 const WAIFU_IM_API_VERSION = "v7";
 const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
 const RULE34_EXCLUDED_TAGS = Object.freeze(["loli", "shota", "young", "underage", "child"]);
@@ -84,6 +90,8 @@ export const NSFW_COMMANDS = Object.freeze({
   hmidriff: "hmidriff",
   htigh: "htigh",
   hyuri: "hyuri",
+  lesbian: "lesbian",
+  bdsm: "bdsm",
   kanna: "kanna",
   lewd: "lewd",
   lewdneko: "lewdneko",
@@ -360,6 +368,13 @@ function redditImageFromResponse(data, type) {
 async function nswfparseRealImage(type) {
   if (process.env.NSWFPARSE_ENABLED === "false") {
     throw providerError(403, "NSWFparse está desactivado; configura NSWFPARSE_ENABLED=true para activarlo");
+  }
+  const configured = String(process.env.NSWFPARSE_CATEGORIES || NSFWPARSE_SAFE_CATEGORIES.join(","))
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => NSFWPARSE_SAFE_CATEGORIES.includes(value));
+  if (!configured.includes(type)) {
+    throw providerError(422, `NSWFparse bloqueó la categoría ${type}; revisa NSWFPARSE_CATEGORIES`);
   }
   const methodName = NSFWPARSE_REAL_METHODS[type];
   const method = methodName ? nswfparse?.reddit?.real?.[methodName] : null;
