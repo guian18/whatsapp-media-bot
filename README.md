@@ -191,8 +191,9 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 |---|---|
 | `ENV_FILE` | Ruta a un archivo `.env` alternativo. En Railway normalmente déjala vacía; el bot usa `.env` por defecto y Railway entrega directamente sus variables al proceso. En Termux/Linux puedes usar, por ejemplo, `/home/usuario/whatsapp-media-bot/.env`. |
 | `NSFW_API_KEY` | Déjala vacía. El bot no utiliza esta variable ni necesita una clave para sus proveedores incluidos. |
-| `NSFW_API_URLS` | Orígenes separados por comas. Para activar lo solicitado usa `reddit,rule34,nekobot,waifuim`: Reddit basado en `pvnotpv/wabot` primero, Rule34 segundo, Nekobot tercero y Waifu.im como último respaldo. Reddit y Rule34 requieren credenciales; si faltan, el bot salta esos proveedores. |
-| `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si contiene la URL de Nekobot, Waifu.im se añadirá como respaldo automáticamente. |
+| `NSFW_API_URLS` | Lista de proveedores disponibles, separada por comas. Usa `reddit,rule34,nekobot,waifuim` y selecciona uno con `NSFW_PROVIDER` o `!proveedor nsfw <nombre>`. Solo se hace una solicitud al proveedor elegido; no existe fallback automático. |
+| `NSFW_PROVIDER` | Proveedor NSFW único y manual: `reddit`, `rule34`, `nekobot` o `waifuim`. Si lo defines, el bot no usa ningún fallback. También puedes cambiarlo durante la ejecución con `!proveedor nsfw <nombre>`. |
+| `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si la usas, ese será el único origen disponible. |
 | `NSFW_API_RETRIES` y `NSFW_IMAGE_RETRIES` | Reintentos adicionales por origen y por descarga, respectivamente. El valor recomendado es `1`; se admiten de `0` a `3` para API y de `0` a `2` para imágenes. |
 | `NSFW_DIRECT_URL` | `false` (recomendado) descarga y valida la imagen antes de enviarla a WhatsApp, por lo que el bot puede informar y reintentar fallos HTTP del CDN. Usa `true` solo si prefieres que WhatsApp descargue la URL directamente. |
 | `NSFW_ALLOW_EXTERNAL_URLS` | Está en `true` para permitir fuentes HTTPS externas por defecto. El bot sigue bloqueando HTTP, credenciales en URL y hosts privados/locales. Usa `false` si quieres limitarlo solo a los CDN de Nekobot y Waifu.im. |
@@ -209,11 +210,11 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 | `AUTH_DIR` | Debe ser `/app/data/auth_info` cuando uses el volumen recomendado. No lo dejes en `auth_info` en producción si quieres conservar la sesión. |
 | `AI_MEMORY_FILE` | Debe ser `/app/data/ai-memory.json` cuando uses memoria de IA persistente. |
 
-### Proveedor NSFW principal y de respaldo
+### Proveedor NSFW manual
 
 El orden configurado es **Reddit (adaptación del flujo de `pvnotpv/wabot`) → Rule34 API → Nekobot (la fuente usada por `Nekros-dsc/Nsfw-Bot`) → Waifu.im**. Reddit consulta únicamente subreddits cerrados para `ass`, `boobs`, `gonewild` y `pussy`; Rule34 usa una lista cerrada de tags y credenciales oficiales; Nekobot conserva sus tipos originales; Waifu.im solo se usa cuando confirma una etiqueta exacta. Los repositorios de bots no se ejecutan como sub-bots: se reutiliza únicamente su patrón de proveedor.
 
-El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra la fuente en el pie de la imagen. Los proveedores sin credenciales se omiten automáticamente. Rule34 exige `rating:explicit`, excluye `loli`, `shota`, `young`, `underage` y `child`, y no permite búsquedas libres. Reddit solo acepta URLs de imagen directa de los subreddits configurados; esto no verifica edad, consentimiento, licencia ni legalidad del contenido y debe usarse únicamente donde sea legal y permitido.
+El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra la fuente en el pie de la imagen. El proveedor seleccionado se usa de forma exclusiva: si no tiene credenciales o falla, el bot informa del error y no cambia de origen. Rule34 exige `rating:explicit`, excluye `loli`, `shota`, `young`, `underage` y `child`, y no permite búsquedas libres. Reddit solo acepta URLs de imagen directa de los subreddits configurados; esto no verifica edad, consentimiento, licencia ni legalidad del contenido y debe usarse únicamente donde sea legal y permitido.
 
 Se investigaron bots y APIs con contenido adulto realista y se incorporó el flujo de `pvnotpv/wabot` como adaptador de Reddit, no el bot completo. Los candidatos no ofrecen garantías verificables de mayoría de edad, consentimiento, derechos, moderación o legalidad; por eso el código usa subreddits y etiquetas cerrados, no búsquedas libres. Esto no reemplaza la verificación de edad, el consentimiento ni el cumplimiento de las políticas de WhatsApp, la legislación local y los términos de cada proveedor.
 
@@ -230,6 +231,7 @@ NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
 NSFW_API_URLS=reddit,rule34,nekobot,waifuim
+NSFW_PROVIDER=reddit
 NSFW_API_RETRIES=1
 NSFW_IMAGE_RETRIES=1
 NSFW_DIRECT_URL=false
@@ -248,6 +250,8 @@ AI_MEMORY_FILE=/app/data/ai-memory.json
 ```
 
 `WHATSAPP_NUMBER` debe contener solo dígitos con código internacional. Con un número configurado, el bot solicita el código de vinculación en los logs de Railway; introdúcelo en WhatsApp desde **Dispositivos vinculados → Vincular con número de teléfono**. Si prefieres QR, deja `WHATSAPP_NUMBER` vacío y revisa los logs del servicio.
+
+Para cambiar el proveedor NSFW sin redeployar, usa `!proveedor nsfw reddit`, `!proveedor nsfw rule34`, `!proveedor nsfw nekobot` o `!proveedor nsfw waifuim`. Consulta el activo con `!proveedor nsfw list`. Para volver al primero configurado, usa `!proveedor nsfw automático`; esto no activa fallback, solo selecciona el primer elemento de `NSFW_API_URLS`. La selección hecha por comando dura hasta reiniciar; para dejarla permanente, configura `NSFW_PROVIDER` en Railway.
 
 El bloque anterior no configura IA. Para habilitar `!ai` en Railway, añade una sola configuración remota, por ejemplo:
 

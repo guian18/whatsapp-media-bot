@@ -1,7 +1,7 @@
 // Lógica de comandos, independiente de WhatsApp: cada uno devuelve texto plano.
 import axios from "axios";
 import { cmdIA, cmdIdioma, cmdProveedor, cmdTono } from "./ai.js";
-import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage } from "./nsfw.js";
+import { NSFW_COMMANDS, nsfwHelp, nsfwProviderCommand, sendNsfwImage } from "./nsfw.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
 const ANIME_API = "https://nekos.best/api/v2/neko?amount=1";
@@ -51,7 +51,7 @@ export function ayuda() {
     `\`${name("ai")} / \`${name("ia")}\` <pregunta> — responde con IA; añade \`fuentes\` si necesitas buscar en Internet`,
     `\`${name("tono")} <estilo>\` — cambia y guarda el tono de la IA`,
     `\`${name("idioma")} <país|código>\` — cambia y guarda el idioma de la IA`,
-    `\`${name("proveedor")} <nombre>\` — cambia la IA y el modelo`,
+    `\`${name("proveedor")} <nombre>\` — cambia la IA; usa \`nsfw <nombre>\` para fijar imágenes NSFW`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
     `\`${name("ayuda")}\` — este mensaje`,
@@ -84,7 +84,7 @@ export async function handleCommand(text, context = {}) {
     case "idioma":
       return cmdIdioma(args);
     case "proveedor":
-      return cmdProveedor(args);
+      return /^nsfw(?:\s|$)/i.test(args) ? nsfwProviderCommand(args) : cmdProveedor(args);
     case "anime":
       return sendSfwAnimeImage(context);
     case "nsfw":
