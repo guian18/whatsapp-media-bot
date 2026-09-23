@@ -183,6 +183,46 @@ WHATSAPP_NUMBER=
 PAIRING_CODE=false
 ```
 
+### Configuración definitiva recomendada para Railway
+
+Copia este bloque en **Service → Variables**. Las claves de Reddit y Rule34 solo son necesarias si vas a seleccionar esos proveedores; no las publiques ni las subas al repositorio.
+
+```env
+WHATSAPP_NUMBER=TU_NUMERO_INTERNACIONAL
+PAIRING_CODE=false
+
+GROUPS_ENABLED=true
+ALLOWED_GROUPS=
+REPLY_IN_PRIVATE=true
+ALLOW_SELF=true
+AUTO_RESET=true
+
+NSFW_ENABLED=true
+NSFW_ALLOW_PRIVATE_CHATS=true
+NSFW_ALLOWED_GROUPS=
+NSFW_API_URLS=reddit,rule34,nekobot,waifuim
+NSFW_PROVIDER=reddit
+NSFW_API_TIMEOUT_MS=10000
+NSFW_IMAGE_TIMEOUT_MS=30000
+NSFW_API_RETRIES=1
+NSFW_IMAGE_RETRIES=1
+NSFW_DIRECT_URL=false
+NSFW_ALLOW_EXTERNAL_URLS=true
+
+AUTH_DIR=/app/data/auth_info
+AI_MEMORY_FILE=/app/data/ai-memory.json
+
+REDDIT_CLIENT_ID=TU_CLIENT_ID
+REDDIT_CLIENT_SECRET=TU_CLIENT_SECRET
+REDDIT_REFRESH_TOKEN=TU_REFRESH_TOKEN
+REDDIT_USER_AGENT=whatsapp-media-bot/1.0
+
+RULE34_USER_ID=TU_USER_ID
+RULE34_API_KEY=TU_API_KEY
+```
+
+`!proveedor` está reservado exclusivamente para la IA. Para NSFW usa `!nsfwproveedor list` o `!nsfwproveedor reddit`, `!nsfwproveedor rule34`, `!nsfwproveedor nekobot` y `!nsfwproveedor waifuim`. No configures `NSFW_API_URL` en instalaciones nuevas: es una variable heredada.
+
 ### Qué colocar en las variables
 
 Estas son las variables que suelen generar dudas en Railway. No copies las comillas y no compartas públicamente ninguna clave API.
