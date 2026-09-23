@@ -232,16 +232,25 @@ Variables recomendadas:
 WHATSAPP_NUMBER=TU_NUMERO_INTERNACIONAL
 PAIRING_CODE=false
 GROUPS_ENABLED=true
+ALLOWED_GROUPS=
 REPLY_IN_PRIVATE=true
 ALLOW_SELF=true
 AUTO_RESET=true
+SFW_PROVIDER=nekosbest
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
 NSFW_API_URLS=nekobot
 NSFW_PROVIDER=nekobot
 NSWFPARSE_ENABLED=true
-NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
+NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm,hentai
+NSWFPARSE_HENTAI_SUBREDDITS=hentai,MonsterGirl,HentaiPetgirls,saohentai,thick_hentai,JerkOffToAnime
+NSFW_API_TIMEOUT_MS=10000
+NSFW_IMAGE_TIMEOUT_MS=30000
+NSFW_API_RETRIES=1
+NSFW_IMAGE_RETRIES=1
+NSFW_DIRECT_URL=false
+NSFW_ALLOW_EXTERNAL_URLS=true
 AUTH_DIR=/app/data/auth_info
 ```
 
