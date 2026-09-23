@@ -129,6 +129,44 @@ test("uses Rule34 only with its closed explicit tag mapping", async (t) => {
   assert.equal(await sendNsfwImage("boobs", { jid: "rule34-test", isGroup: true, sendMessage() {} }), null);
 });
 
+test("uses documented booru APIs with rating and tag validation", async (t) => {
+  const originalGet = axios.get;
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_PROVIDER", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
+  );
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  const calls = [];
+  axios.get = async (url, options) => {
+    calls.push({ url, options });
+    if (url.includes("safebooru.org")) {
+      return { data: [{ rating: "safe", tags: "ass rating:safe", file_url: "https://safebooru.org/images/safe.jpg" }] };
+    }
+    if (url.includes("konachan.com")) {
+      return { data: [{ rating: "safe", tags: "ass rating:safe", file_url: "https://konachan.com/image/safe.jpg" }] };
+    }
+    return { data: [{ rating: "explicit", tags: "ass rating:explicit", file_url: "https://hypnohub.net/images/adult.jpg" }] };
+  };
+  t.after(() => {
+    axios.get = originalGet;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  for (const provider of ["safebooru", "konachan", "hypnohub"]) {
+    process.env.NSFW_API_URLS = provider;
+    process.env.NSFW_PROVIDER = provider;
+    assert.equal(await sendNsfwImage("ass", { jid: `${provider}-test`, isGroup: true, sendMessage() {} }), null);
+  }
+  assert.equal(calls.length, 3);
+  assert.match(String(calls[0].options.params.tags), /rating:safe/);
+  assert.match(String(calls[1].options.params.tags), /rating:safe/);
+  assert.match(String(calls[2].options.params.tags), /rating:explicit/);
+});
+
 test("uses only the first configured provider when credentials are absent", async (t) => {
   const originalGet = axios.get;
   const originalPost = axios.post;

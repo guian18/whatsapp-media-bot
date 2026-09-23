@@ -5,6 +5,11 @@ const NEKOBOT_API_URL = "https://nekobot.xyz/api/image";
 const WAIFU_IM_API_URL = "https://api.waifu.im/images";
 const RULE34_API_URL = "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index";
 const REDDIT_OAUTH_URL = "https://www.reddit.com/api/v1/access_token";
+const BOORU_APIS = Object.freeze({
+  safebooru: "https://safebooru.org/index.php?page=dapi&s=post&q=index",
+  konachan: "https://konachan.com/post.json",
+  hypnohub: "https://hypnohub.net/index.php?page=dapi&s=post&q=index",
+});
 const DEFAULT_API_SOURCES = Object.freeze(["nswfparse"]);
 const NSFWPARSE_REAL_METHODS = Object.freeze({
   ass: "girlAss",
@@ -26,6 +31,23 @@ const NSFWPARSE_SAFE_CATEGORIES = Object.freeze([
 const WAIFU_IM_API_VERSION = "v7";
 const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
 const RULE34_EXCLUDED_TAGS = Object.freeze(["loli", "shota", "young", "underage", "child"]);
+const BOORU_EXCLUDED_TAGS = Object.freeze(["loli", "shota", "young", "underage", "child"]);
+const BOORU_TAGS = Object.freeze({
+  ass: "ass",
+  anal: "anal",
+  boobs: "big_breasts",
+  hboobs: "big_breasts",
+  feet: "feet",
+  hentai: "hentai",
+  lesbian: "lesbian",
+  hyuri: "lesbian",
+  bdsm: "bondage",
+  thigh: "thighs",
+  htigh: "thighs",
+  yaoi: "yaoi",
+  paizuri: "paizuri",
+  tentacle: "tentacles",
+});
 const REDDIT_SUBREDDITS = Object.freeze({
   anal: "ass+assholegonewild",
   ass: "ass+assholegonewild",
@@ -131,6 +153,11 @@ function sourceFromValue(value) {
   if (normalized === "nswfparse" || normalized === "nswf-tg-bot") {
     return { id: "nswfparse", name: "NSWFparse (Reddit real)", url: "nswfparse" };
   }
+  for (const [id, url] of Object.entries(BOORU_APIS)) {
+    if (normalized === id || normalized === url) {
+      return { id, name: id === "safebooru" ? "Safebooru (SFW)" : id[0].toUpperCase() + id.slice(1), url };
+    }
+  }
   return { id: "custom", name: "API configurada", url: raw };
 }
 
@@ -155,7 +182,7 @@ function configuredApiSources() {
 
 export function nsfwProviderCommand(args = "") {
   const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const providers = ["nswfparse", "reddit", "rule34", "nekobot", "waifuim"];
+  const providers = ["nswfparse", "reddit", "rule34", "nekobot", "waifuim", "safebooru", "konachan", "hypnohub"];
   if (!parts.length || parts[0] === "list") {
     const active = String(process.env.NSFW_PROVIDER || "") || "primero configurado";
     return `Proveedor NSFW activo: ${active}\nDisponibles: ${providers.join(", ")}\nUsa: !nsfwproveedor <nombre> o !nsfwproveedor automático`;
@@ -201,7 +228,13 @@ function isTrustedImageHost(hostname) {
   return host === "nekobot.xyz"
     || host.endsWith(".nekobot.xyz")
     || host === "waifu.im"
-    || host.endsWith(".waifu.im");
+    || host.endsWith(".waifu.im")
+    || host === "safebooru.org"
+    || host.endsWith(".safebooru.org")
+    || host === "konachan.com"
+    || host.endsWith(".konachan.com")
+    || host === "hypnohub.net"
+    || host.endsWith(".hypnohub.net");
 }
 
 function isPrivateIpv4(hostname) {
@@ -369,6 +402,24 @@ function rule34ImageFromResponse(data, type) {
   return { url: rule34UrlForPost(post), source: "Rule34 API" };
 }
 
+function booruImageFromResponse(data, type, source) {
+  const posts = Array.isArray(data) ? data : Array.isArray(data?.post) ? data.post : [];
+  const requestedTag = BOORU_TAGS[type] || type;
+  const eligible = posts.filter((post) => {
+    const rating = String(post?.rating || "").toLowerCase();
+    if (source.id === "safebooru" && rating && rating !== "safe" && rating !== "general") return false;
+    if (source.id !== "safebooru" && rating && !["safe", "general", "explicit", "questionable"].includes(rating)) return false;
+    const tags = new Set(String(post?.tags || "").toLowerCase().split(/\s+/).filter(Boolean));
+    if (BOORU_EXCLUDED_TAGS.some((tag) => tags.has(tag))) return false;
+    if (requestedTag && tags.size && !tags.has(requestedTag)) return false;
+    return validImageUrl(post?.file_url || post?.image || post?.jpeg_url || post?.sample_url);
+  });
+  const post = eligible[0];
+  const url = validImageUrl(post?.file_url || post?.image || post?.jpeg_url || post?.sample_url);
+  if (!url) throw providerError(502, `${source.name} no devolvió una imagen válida para ${type}`);
+  return { url, source: source.name };
+}
+
 function redditImageFromResponse(data, type) {
   const posts = Array.isArray(data?.data?.children) ? data.data.children : [];
   const post = posts
@@ -520,6 +571,18 @@ async function requestImageUrl(source, type) {
           timeout,
         });
         return rule34ImageFromResponse(data, type);
+      }
+      if (Object.hasOwn(BOORU_APIS, source.id)) {
+        const tag = BOORU_TAGS[type] || type;
+        const params = source.id === "konachan"
+          ? { limit: 100, tags: `rating:safe ${tag}` }
+          : { limit: 100, json: 1, tags: source.id === "safebooru" ? `rating:safe ${tag}` : `${tag} rating:explicit` };
+        const { data } = await axios.get(source.url, {
+          params,
+          headers: { accept: "application/json", "user-agent": "WhatsAppMediaBot/1.0" },
+          timeout,
+        });
+        return booruImageFromResponse(data, type, source);
       }
       const request = source.id === "waifuim"
         ? {

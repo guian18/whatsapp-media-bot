@@ -109,9 +109,23 @@ NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
 También se pueden configurar proveedores alternativos si tienes sus credenciales:
 
 ```env
-NSFW_API_URLS=reddit,rule34,nekobot,waifuim
+NSFW_API_URLS=nswfparse,reddit,rule34,nekobot,waifuim,safebooru,konachan,hypnohub
 NSFW_PROVIDER=reddit
 ```
+
+Los proveedores nuevos con API documentada son `safebooru`, `konachan` e `hypnohub`. Se consultan mediante GET, usan límites internos, validan el rating y descartan etiquetas de riesgo. Ejemplos:
+
+```env
+# Usa una sola fuente manualmente:
+NSFW_API_URLS=konachan
+NSFW_PROVIDER=konachan
+
+# O selecciona desde WhatsApp:
+!nsfwproveedor safebooru
+!nsfwproveedor hypnohub
+```
+
+`ThePornDude` no publica una API oficial para obtener multimedia; `Booru.org` tampoco documenta una API usable. `Xbooru` documenta endpoints de listado, pero sus términos prohíben procesos automatizados para recuperar o indexar su contenido salvo excepciones concretas. Por eso esos tres sitios **no se integran mediante scraping ni endpoints no documentados**. Para añadirlos legalmente haría falta autorización escrita del operador y una especificación oficial.
 
 Reddit requiere:
 
@@ -143,6 +157,12 @@ No pongas tokens reales en el repositorio ni en el README. Guárdalos únicament
 | Waifu.im | Ninguna | [Documentación](https://docs.waifu.im/) · [Referencia de la API](https://docs.waifu.im/docs/api/) | No |
 | Nekobot | Ninguna | [API](https://nekobot.xyz/api) | No |
 | Nekos.best | Ninguna | [Sitio y documentación](https://nekos.best/) | No |
+| Safebooru | Ninguna | [DAPI oficial](https://safebooru.org/index.php?page=help&topic=dapi) | No |
+| Konachan | Ninguna | [API oficial](https://konachan.com/help/api) | No para lectura pública |
+| HypnoHub | Ninguna | [DAPI oficial](https://hypnohub.net/index.php?page=help&topic=dapi) | No para lectura pública |
+| ThePornDude | No disponible | [Sitio](https://theporndude.com) | No hay API pública documentada |
+| Booru.org | No disponible | [Sitio y términos](https://booru.org/tos) | No hay API pública documentada |
+| Xbooru | No usado | [DAPI](https://xbooru.com/index.php?page=help&topic=dapi) · [Términos](https://xbooru.com/tos.php) | No documentado; automatización restringida |
 | WhatsApp/Baileys | Ninguna | [Baileys en GitHub](https://github.com/WhiskeySockets/Baileys) | No; se vincula mediante QR o código |
 | Railway | Variables privadas del servicio | [Documentación de variables](https://docs.railway.com/variables) · [Volúmenes](https://docs.railway.com/volumes) | No es una API del bot; es el hosting |
 
