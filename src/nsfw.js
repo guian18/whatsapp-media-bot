@@ -10,7 +10,7 @@ const BOORU_APIS = Object.freeze({
   konachan: "https://konachan.com/post.json",
   hypnohub: "https://hypnohub.net/index.php?page=dapi&s=post&q=index",
 });
-const DEFAULT_API_SOURCES = Object.freeze(["nswfparse"]);
+const DEFAULT_API_SOURCES = Object.freeze(["nekobot"]);
 const NSFWPARSE_REAL_METHODS = Object.freeze({
   ass: "girlAss",
   feet: "girlThighs",

@@ -64,8 +64,8 @@ AUTO_RESET=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
-NSFW_API_URLS=nswfparse
-NSFW_PROVIDER=nswfparse
+NSFW_API_URLS=nekobot
+NSFW_PROVIDER=nekobot
 NSWFPARSE_ENABLED=true
 NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
 NSFW_API_TIMEOUT_MS=10000
@@ -99,7 +99,7 @@ Para usar QR, deja `WHATSAPP_NUMBER` vacío y `PAIRING_CODE=false`.
 
 ## Proveedores NSFW
 
-La configuración predeterminada utiliza `nswfparse` para categorías reales de Reddit. Requiere autorización para consultar y redistribuir el contenido, además del cumplimiento de las reglas de Reddit y la legislación aplicable.
+La configuración predeterminada utiliza `nekobot` como proveedor NSFW principal. Su API no requiere token para la mayoría de endpoints; consulta la [documentación oficial de Nekobot](https://docs.nekobot.xyz/) y respeta sus límites y disponibilidad. `nswfparse` queda disponible como proveedor alternativo para categorías configuradas.
 
 ```env
 NSWFPARSE_ENABLED=true
@@ -112,7 +112,7 @@ El comando `!hentai` está disponible con `nswfparse` y usa únicamente la lista
 También se pueden configurar proveedores alternativos si tienes sus credenciales:
 
 ```env
-NSFW_API_URLS=nswfparse,reddit,rule34,nekobot,waifuim,safebooru,konachan,hypnohub
+NSFW_API_URLS=nekobot,nswfparse,reddit,rule34,waifuim,safebooru,konachan,hypnohub
 NSFW_PROVIDER=reddit
 ```
 
@@ -227,8 +227,8 @@ AUTO_RESET=true
 NSFW_ENABLED=true
 NSFW_ALLOW_PRIVATE_CHATS=true
 NSFW_ALLOWED_GROUPS=
-NSFW_API_URLS=nswfparse
-NSFW_PROVIDER=nswfparse
+NSFW_API_URLS=nekobot
+NSFW_PROVIDER=nekobot
 NSWFPARSE_ENABLED=true
 NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
 AUTH_DIR=/app/data/auth_info
