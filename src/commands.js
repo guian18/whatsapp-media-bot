@@ -1,6 +1,6 @@
 // Lógica de comandos, independiente de WhatsApp: cada uno devuelve texto plano.
 import axios from "axios";
-import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage } from "./nsfw.js";
+import { NSFW_COMMANDS, clearNsfwMessages, nsfwHelp, sendNsfwImage } from "./nsfw.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
 const NEKOBOT_SFW_API = "https://nekobot.xyz/api/image";
@@ -42,6 +42,7 @@ export function ayuda() {
     `\`${name("ping")}\` — comprueba que el bot responde`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra los comandos de imágenes NSFW`,
+    `\`${name("clear")}\` — elimina tus imágenes NSFW enviadas por el bot`,
     `\`${name("ayuda")}\` — este mensaje`,
   ].join("\n");
 }
@@ -66,6 +67,8 @@ export async function handleCommand(text, context = {}) {
       return sendSfwAnimeImage(context);
     case "nsfw":
       return nsfwHelp();
+    case "clear":
+      return clearNsfwMessages(context);
     case "ayuda":
     case "help":
       return ayuda();

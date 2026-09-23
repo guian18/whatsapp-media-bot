@@ -58,3 +58,57 @@ test("NSFW image URLs must come from Nekobot HTTPS hosts", async (t) => {
   });
   assert.match(reply, /URL segura/);
 });
+
+
+test("!clear deletes only the requesting user's NSFW messages", async (t) => {
+  const originalGet = axios.get;
+  const deleted = [];
+  let nextId = 0;
+  axios.get = async () => ({ data: { message: "https://cdn.nekobot.xyz/images/clear.jpg" } });
+  t.after(() => { axios.get = originalGet; });
+
+  const sendFor = (requesterId) => async () => ({
+    key: { remoteJid: "clear-group@g.us", fromMe: true, id: `${requesterId}-${++nextId}` },
+  });
+  const deleteFor = async (key) => { deleted.push(key); };
+
+  assert.equal(await handleCommand("!hentai", {
+    jid: "clear-group@g.us",
+    requesterId: "user-a@s.whatsapp.net",
+    isGroup: true,
+    sendMessage: sendFor("user-a"),
+  }), null);
+  assert.equal(await handleCommand("!hentai", {
+    jid: "clear-group@g.us",
+    requesterId: "user-b@s.whatsapp.net",
+    isGroup: true,
+    sendMessage: sendFor("user-b"),
+  }), null);
+
+  assert.match(await handleCommand("!clear", {
+    jid: "clear-group@g.us",
+    requesterId: "user-a@s.whatsapp.net",
+    isGroup: true,
+    deleteMessage: deleteFor,
+  }), /Eliminé 1 mensaje NSFW tuyo/);
+  assert.equal(deleted.length, 1);
+  assert.match(deleted[0].id, /^user-a-/);
+
+  assert.match(await handleCommand("!clear", {
+    jid: "clear-group@g.us",
+    requesterId: "user-b@s.whatsapp.net",
+    isGroup: true,
+    deleteMessage: deleteFor,
+  }), /Eliminé 1 mensaje NSFW tuyo/);
+  assert.equal(deleted.length, 2);
+  assert.match(deleted[1].id, /^user-b-/);
+});
+
+test("!clear reports when the requester has no NSFW messages", async () => {
+  const reply = await handleCommand("!clear", {
+    jid: "empty-clear-chat",
+    requesterId: "new-user",
+    deleteMessage: async () => {},
+  });
+  assert.match(reply, /No tienes imágenes NSFW/);
+});

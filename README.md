@@ -77,9 +77,10 @@ Para usar QR, deja `WHATSAPP_NUMBER` vacío y `PAIRING_CODE=false`.
 - `!ping` — comprueba si el bot responde.
 - `!anime` o `!gatus` — envía una imagen SFW de anime.
 - `!nsfw` — muestra los comandos de imágenes NSFW.
+- `!clear` — elimina las imágenes NSFW que el bot envió por solicitud del usuario actual en ese chat.
 - `!4k`, `!anal`, `!ass`, `!blowjob`, `!boobs`, `!feet`, `!gonewild`, `!hass`, `!hboobs`, `!hentai`, `!hentaianal`, `!hkitsune`, `!hmidriff`, `!htigh`, `!hyuri`, `!kanna`, `!lewd`, `!lewdneko`, `!paizuri`, `!pgif`, `!pussy`, `!tentacle`, `!thigh` y `!yaoi` — solicitan imágenes NSFW.
 
-La fuente SFW y NSFW está fijada permanentemente en `nekobot`. Usa `!anime` o uno de los comandos NSFW para solicitar una imagen; no existe un comando para cambiarla. Cada chat tiene un intervalo de 10 segundos entre solicitudes NSFW.
+La fuente SFW y NSFW está fijada permanentemente en `nekobot`. Usa `!anime` o uno de los comandos NSFW para solicitar una imagen; no existe un comando para cambiarla. Cada usuario tiene un intervalo de 10 segundos entre solicitudes NSFW por chat. `!clear` solo elimina los mensajes NSFW registrados para el usuario que lo ejecuta; no elimina los mensajes solicitados por otros usuarios.
 
 Los comandos NSFW son una adaptación para WhatsApp/Baileys del proyecto [Nekros-dsc/Nsfw-Bot](https://github.com/Nekros-dsc/Nsfw-Bot). Se conserva la atribución solicitada por su README; la implementación original usa Discord y aquí se han reemplazado sus embeds y botones por mensajes multimedia de WhatsApp.
 
