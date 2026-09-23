@@ -8,7 +8,7 @@ import axios from "axios";
 
 import { ayuda, handleCommand } from "../src/commands.js";
 
-test("command dispatcher serves local commands without external services", async () => {
+test("command dispatcher serves retained commands without external services", async () => {
   const previousPingDeadChance = process.env.PING_DEAD_CHANCE;
   const previousPingTripChance = process.env.PING_TRIP_CHANCE;
   process.env.PING_DEAD_CHANCE = "0";
@@ -18,8 +18,7 @@ test("command dispatcher serves local commands without external services", async
   assert.equal(await handleCommand("!desconocido"), null);
   assert.equal(await handleCommand("texto normal"), null);
   const help = await handleCommand("!ayuda");
-  assert.match(help, /!ping.*!anime.*!nsfw/s);
-  assert.equal(await handleCommand("!video"), null);
+  assert.match(help, /!ping.*!anime/s);
   if (previousPingDeadChance === undefined) delete process.env.PING_DEAD_CHANCE;
   else process.env.PING_DEAD_CHANCE = previousPingDeadChance;
   if (previousPingTripChance === undefined) delete process.env.PING_TRIP_CHANCE;
@@ -29,16 +28,19 @@ test("command dispatcher serves local commands without external services", async
 test("help exposes only retained bot commands", () => {
   const text = ayuda();
   assert.match(text, /WhatsApp Media Bot/);
-  assert.match(text, /!nsfwproveedor/);
+  assert.match(text, /!sfwproveedor/);
 });
 
-test("SFW provider selection is separate from NSFW providers", async () => {
+test("SFW provider selection lists only supported sources", async () => {
   const previous = process.env.SFW_PROVIDER;
   delete process.env.SFW_PROVIDER;
-  assert.match(await handleCommand("!sfwproveedor list"), /nekosbest/);
-  assert.match(await handleCommand("!sfwproveedor nekosbest"), /fijado manualmente/);
-  assert.equal(process.env.SFW_PROVIDER, "nekosbest");
-  assert.match(await handleCommand("!sfwproveedor rule34"), /no válido/);
+  assert.equal(
+    await handleCommand("!sfwproveedor list"),
+    "Proveedor SFW activo: nekobot\nDisponibles: nekobot, safebooru, konachan\nUsa: !sfwproveedor <nombre>",
+  );
+  assert.match(await handleCommand("!sfwproveedor safebooru"), /fijado manualmente/);
+  assert.equal(process.env.SFW_PROVIDER, "safebooru");
+  assert.match(await handleCommand("!sfwproveedor invalido"), /no válido/);
   if (previous === undefined) delete process.env.SFW_PROVIDER;
   else process.env.SFW_PROVIDER = previous;
 });

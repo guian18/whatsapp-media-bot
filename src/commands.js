@@ -1,11 +1,9 @@
 // Lógica de comandos, independiente de WhatsApp: cada uno devuelve texto plano.
 import axios from "axios";
-import { NSFW_COMMANDS, nsfwHelp, nsfwProviderCommand, sendNsfwImage } from "./nsfw.js";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
-const ANIME_API = "https://nekos.best/api/v2/neko?amount=1";
 const NEKOBOT_SFW_API = "https://nekobot.xyz/api/image";
-const SFW_PROVIDERS = Object.freeze(["nekobot", "nekosbest", "safebooru", "konachan"]);
+const SFW_PROVIDERS = Object.freeze(["nekobot", "safebooru", "konachan"]);
 const SFW_PROVIDER_URLS = Object.freeze({
   safebooru: "https://safebooru.org/index.php?page=dapi&s=post&q=index",
   konachan: "https://konachan.com/post.json",
@@ -13,7 +11,7 @@ const SFW_PROVIDER_URLS = Object.freeze({
 
 export function sfwProviderCommand(args = "") {
   const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const active = String(process.env.SFW_PROVIDER || "nekosbest").trim().toLowerCase();
+  const active = String(process.env.SFW_PROVIDER || "nekobot").trim().toLowerCase();
   if (!parts.length || parts[0] === "list") {
     return `Proveedor SFW activo: ${active}\nDisponibles: ${SFW_PROVIDERS.join(", ")}\nUsa: !sfwproveedor <nombre>`;
   }
@@ -29,22 +27,18 @@ async function sendSfwAnimeImage(context) {
   if (!context.jid || typeof context.sendMessage !== "function") {
     return "Este comando solo está disponible desde WhatsApp.";
   }
-  const provider = String(process.env.SFW_PROVIDER || "nekosbest").trim().toLowerCase();
+  const provider = String(process.env.SFW_PROVIDER || "nekobot").trim().toLowerCase();
   try {
     const apiUrl = provider === "nekobot"
       ? NEKOBOT_SFW_API
-      : provider === "nekosbest"
-        ? ANIME_API
-        : SFW_PROVIDER_URLS[provider] || null;
+      : SFW_PROVIDER_URLS[provider] || null;
     if (!apiUrl) return `Proveedor SFW no válido: ${provider}`;
     const { data: body } = await axios.get(apiUrl, {
       params: provider === "nekobot"
         ? { type: "neko" }
         : provider === "safebooru"
           ? { limit: 100, json: 1, tags: "rating:safe" }
-          : provider === "konachan"
-            ? { limit: 100, tags: "rating:safe" }
-            : undefined,
+          : { limit: 100, tags: "rating:safe" },
       headers: {
         accept: "application/json",
         "user-agent": "WhatsAppMediaBot/1.0",
@@ -61,9 +55,7 @@ async function sendSfwAnimeImage(context) {
     });
     const imageUrl = provider === "nekobot"
       ? body?.message
-      : provider === "nekosbest"
-        ? body?.results?.[0]?.url
-        : safePost?.file_url || safePost?.image || safePost?.jpeg_url || safePost?.sample_url;
+      : safePost?.file_url || safePost?.image || safePost?.jpeg_url || safePost?.sample_url;
     if (!imageUrl || !/^https:\/\//i.test(imageUrl)) throw new Error("respuesta SFW sin imagen válida");
     await context.sendMessage(context.jid, {
       image: { url: imageUrl },
@@ -86,21 +78,17 @@ function pingResponse() {
   return "Pong! 🏓";
 }
 
-
 export function ayuda() {
   const name = (command) => `!${commandDisplayName(command)}`;
   return [
     "*WhatsApp Media Bot — comandos*",
     "",
     `\`${name("ping")}\` — comprueba que el bot responde`,
-    `\`!nsfwproveedor <nombre>\` — cambia únicamente el proveedor de imágenes NSFW`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     "`!sfwproveedor <nombre>` — cambia el proveedor de imágenes SFW",
-    `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
     `\`${name("ayuda")}\` — este mensaje`,
   ].join("\n");
 }
-
 
 export async function handleCommand(text, context = {}) {
   const rawText = (text || "").trim();
@@ -119,19 +107,14 @@ export async function handleCommand(text, context = {}) {
   switch (cmd) {
     case "ping":
       return pingResponse();
-    case "nsfwproveedor":
-      return nsfwProviderCommand(args);
     case "sfwproveedor":
       return sfwProviderCommand(args);
     case "anime":
       return sendSfwAnimeImage(context);
-    case "nsfw":
-      return nsfwHelp();
     case "ayuda":
     case "help":
       return ayuda();
     default:
-      if (Object.hasOwn(NSFW_COMMANDS, cmd)) return sendNsfwImage(cmd, context);
       return null; // comando desconocido: el bot se queda callado
   }
 }
