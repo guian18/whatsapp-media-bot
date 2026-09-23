@@ -16,6 +16,7 @@ function configuredPrivilegedNumbers() {
 }
 
 export function isPrivilegedUser(context = {}) {
+  if (context.isFromMe && normalizeNumber(process.env.OWNER_NUMBER)) return true;
   const requesters = [
     ...(Array.isArray(context.requesterIds) ? context.requesterIds : []),
     context.requesterId,

@@ -134,3 +134,31 @@ test("owner and admin numbers match device-suffixed WhatsApp JIDs", async (t) =>
     deleteMessage: async () => {},
   }), /No hay mensajes del bot/);
 });
+
+
+test("configured owner is authorized when Baileys marks the message as fromMe", async (t) => {
+  const previousOwner = process.env.OWNER_NUMBER;
+  const previousAdmin = process.env.ADMIN_NUMBER;
+  process.env.OWNER_NUMBER = "393803893208";
+  process.env.ADMIN_NUMBER = "";
+  enableAllCommands();
+  t.after(() => {
+    enableAllCommands();
+    if (previousOwner === undefined) delete process.env.OWNER_NUMBER;
+    else process.env.OWNER_NUMBER = previousOwner;
+    if (previousAdmin === undefined) delete process.env.ADMIN_NUMBER;
+    else process.env.ADMIN_NUMBER = previousAdmin;
+  });
+
+  assert.match(await handleCommand("!admin menu", {
+    jid: "group@g.us",
+    isFromMe: true,
+    requesterId: "group@g.us",
+  }), /Menú de propietario y administrador/);
+  assert.match(await handleCommand("!clear all", {
+    jid: "group@g.us",
+    isFromMe: true,
+    requesterId: "group@g.us",
+    deleteMessage: async () => {},
+  }), /No hay mensajes del bot/);
+});
