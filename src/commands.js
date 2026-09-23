@@ -51,7 +51,8 @@ export function ayuda() {
     `\`${name("ai")} / \`${name("ia")}\` <pregunta> — responde con IA; añade \`fuentes\` si necesitas buscar en Internet`,
     `\`${name("tono")} <estilo>\` — cambia y guarda el tono de la IA`,
     `\`${name("idioma")} <país|código>\` — cambia y guarda el idioma de la IA`,
-    `\`${name("proveedor")} <nombre>\` — cambia la IA; usa \`nsfw <nombre>\` para fijar imágenes NSFW`,
+    `\`${name("proveedor")} <nombre>\` — cambia únicamente el proveedor de IA`,
+    `\`!nsfwproveedor <nombre>\` — cambia únicamente el proveedor de imágenes NSFW`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
     `\`${name("nsfw")}\` — muestra las categorías de imágenes para adultos autorizadas`,
     `\`${name("ayuda")}\` — este mensaje`,
@@ -84,7 +85,9 @@ export async function handleCommand(text, context = {}) {
     case "idioma":
       return cmdIdioma(args);
     case "proveedor":
-      return /^nsfw(?:\s|$)/i.test(args) ? nsfwProviderCommand(args) : cmdProveedor(args);
+      return cmdProveedor(args);
+    case "nsfwproveedor":
+      return nsfwProviderCommand(args);
     case "anime":
       return sendSfwAnimeImage(context);
     case "nsfw":

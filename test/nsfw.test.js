@@ -184,11 +184,11 @@ test("manual provider selection makes one request and never falls back", async (
   assert.deepEqual(calls, ["https://nekobot.xyz/api/image"]);
 });
 
-test("!proveedor nsfw changes the active provider manually", async () => {
+test("!nsfwproveedor changes the active provider manually without conflicting with AI", async () => {
   const previous = process.env.NSFW_PROVIDER;
-  assert.match(await handleCommand("!proveedor nsfw rule34"), /fijado manualmente en: rule34/);
+  assert.match(await handleCommand("!nsfwproveedor rule34"), /fijado manualmente en: rule34/);
   assert.equal(process.env.NSFW_PROVIDER, "rule34");
-  assert.match(await handleCommand("!proveedor nsfw list"), /rule34/);
+  assert.match(await handleCommand("!nsfwproveedor list"), /rule34/);
   if (previous === undefined) delete process.env.NSFW_PROVIDER;
   else process.env.NSFW_PROVIDER = previous;
 });

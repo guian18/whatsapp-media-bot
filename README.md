@@ -191,8 +191,8 @@ Estas son las variables que suelen generar dudas en Railway. No copies las comil
 |---|---|
 | `ENV_FILE` | Ruta a un archivo `.env` alternativo. En Railway normalmente déjala vacía; el bot usa `.env` por defecto y Railway entrega directamente sus variables al proceso. En Termux/Linux puedes usar, por ejemplo, `/home/usuario/whatsapp-media-bot/.env`. |
 | `NSFW_API_KEY` | Déjala vacía. El bot no utiliza esta variable ni necesita una clave para sus proveedores incluidos. |
-| `NSFW_API_URLS` | Lista de proveedores disponibles, separada por comas. Usa `reddit,rule34,nekobot,waifuim` y selecciona uno con `NSFW_PROVIDER` o `!proveedor nsfw <nombre>`. Solo se hace una solicitud al proveedor elegido; no existe fallback automático. |
-| `NSFW_PROVIDER` | Proveedor NSFW único y manual: `reddit`, `rule34`, `nekobot` o `waifuim`. Si lo defines, el bot no usa ningún fallback. También puedes cambiarlo durante la ejecución con `!proveedor nsfw <nombre>`. |
+| `NSFW_API_URLS` | Lista de proveedores disponibles, separada por comas. Usa `reddit,rule34,nekobot,waifuim` y selecciona uno con `NSFW_PROVIDER` o `!nsfwproveedor <nombre>`. Solo se hace una solicitud al proveedor elegido; no existe fallback automático. |
+| `NSFW_PROVIDER` | Proveedor NSFW único y manual: `reddit`, `rule34`, `nekobot` o `waifuim`. Si lo defines, el bot no usa ningún fallback. También puedes cambiarlo durante la ejecución con `!nsfwproveedor <nombre>`. |
 | `NSFW_API_URL` | Variable heredada para una sola URL compatible con Nekobot. Déjala vacía en instalaciones nuevas; si la usas, ese será el único origen disponible. |
 | `NSFW_API_RETRIES` y `NSFW_IMAGE_RETRIES` | Reintentos adicionales por origen y por descarga, respectivamente. El valor recomendado es `1`; se admiten de `0` a `3` para API y de `0` a `2` para imágenes. |
 | `NSFW_DIRECT_URL` | `false` (recomendado) descarga y valida la imagen antes de enviarla a WhatsApp, por lo que el bot puede informar y reintentar fallos HTTP del CDN. Usa `true` solo si prefieres que WhatsApp descargue la URL directamente. |
@@ -251,7 +251,7 @@ AI_MEMORY_FILE=/app/data/ai-memory.json
 
 `WHATSAPP_NUMBER` debe contener solo dígitos con código internacional. Con un número configurado, el bot solicita el código de vinculación en los logs de Railway; introdúcelo en WhatsApp desde **Dispositivos vinculados → Vincular con número de teléfono**. Si prefieres QR, deja `WHATSAPP_NUMBER` vacío y revisa los logs del servicio.
 
-Para cambiar el proveedor NSFW sin redeployar, usa `!proveedor nsfw reddit`, `!proveedor nsfw rule34`, `!proveedor nsfw nekobot` o `!proveedor nsfw waifuim`. Consulta el activo con `!proveedor nsfw list`. Para volver al primero configurado, usa `!proveedor nsfw automático`; esto no activa fallback, solo selecciona el primer elemento de `NSFW_API_URLS`. La selección hecha por comando dura hasta reiniciar; para dejarla permanente, configura `NSFW_PROVIDER` en Railway.
+Para cambiar el proveedor NSFW sin redeployar, usa `!nsfwproveedor reddit`, `!nsfwproveedor rule34`, `!nsfwproveedor nekobot` o `!nsfwproveedor waifuim`. Consulta el activo con `!nsfwproveedor list`. Para volver al primero configurado, usa `!nsfwproveedor automático`; esto no activa fallback, solo selecciona el primer elemento de `NSFW_API_URLS`. La selección hecha por comando dura hasta reiniciar; para dejarla permanente, configura `NSFW_PROVIDER` en Railway. `!proveedor` queda reservado exclusivamente para la IA.
 
 El bloque anterior no configura IA. Para habilitar `!ai` en Railway, añade una sola configuración remota, por ejemplo:
 
