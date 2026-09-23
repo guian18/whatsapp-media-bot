@@ -259,18 +259,6 @@ Para Rule34, inicia sesión y abre directamente [Account → API Access Credenti
 
 ### Proveedor NSFW manual
 
-Para contenido proporcionado directamente por creadores con autorización, usa el proveedor **local**. Este proveedor no consulta Internet ni hace scraping: solo selecciona aleatoriamente imágenes que coloques manualmente en `data/authorized-media/<categoría>/`. Mantén allí únicamente archivos que tengas derecho a enviar y limita el bot a usuarios adultos autorizados.
-
-```env
-NSFW_ENABLED=true
-NSFW_ALLOW_PRIVATE_CHATS=true
-NSFW_API_URLS=local
-NSFW_PROVIDER=local
-NSFW_LOCAL_MEDIA_DIR=/app/data/authorized-media
-```
-
-Ejemplo de carpetas: `data/authorized-media/boobs/`, `data/authorized-media/ass/` o `data/authorized-media/gonewild/`. Se aceptan `.jpg`, `.jpeg`, `.png`, `.gif` y `.webp`; el bot rechaza archivos que no sean imágenes o superen 15 MB. El pie de foto identifica la fuente como **Contenido autorizado local**.
-
 El orden configurado es **Reddit (adaptación del flujo de `pvnotpv/wabot`) → Rule34 API → Nekobot (la fuente usada por `Nekros-dsc/Nsfw-Bot`) → Waifu.im**. Reddit consulta únicamente subreddits cerrados para `ass`, `boobs`, `gonewild` y `pussy`; Rule34 usa una lista cerrada de tags y credenciales oficiales; Nekobot conserva sus tipos originales; Waifu.im solo se usa cuando confirma una etiqueta exacta. Los repositorios de bots no se ejecutan como sub-bots: se reutiliza únicamente su patrón de proveedor.
 
 El bot fija la versión `v7`, solicita únicamente contenido marcado explícitamente como NSFW, excluye las etiquetas `loli` y `shota`, valida la URL/CDN y muestra la fuente en el pie de la imagen. El proveedor seleccionado se usa de forma exclusiva: si no tiene credenciales o falla, el bot informa del error y no cambia de origen. Rule34 exige `rating:explicit`, excluye `loli`, `shota`, `young`, `underage` y `child`, y no permite búsquedas libres. Reddit solo acepta URLs de imagen directa de los subreddits configurados; esto no verifica edad, consentimiento, licencia ni legalidad del contenido y debe usarse únicamente donde sea legal y permitido.

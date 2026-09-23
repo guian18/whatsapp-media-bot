@@ -1,14 +1,10 @@
 import axios from "axios";
-import { readdir, readFile, realpath, stat } from "node:fs/promises";
-import path from "node:path";
 
 const NEKOBOT_API_URL = "https://nekobot.xyz/api/image";
 const WAIFU_IM_API_URL = "https://api.waifu.im/images";
 const RULE34_API_URL = "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index";
 const REDDIT_OAUTH_URL = "https://www.reddit.com/api/v1/access_token";
 const DEFAULT_API_SOURCES = Object.freeze(["reddit", "rule34", "nekobot", "waifuim"]);
-const LOCAL_MEDIA_ROOT = "data/authorized-media";
-const LOCAL_IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
 const WAIFU_IM_API_VERSION = "v7";
 const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
 const RULE34_EXCLUDED_TAGS = Object.freeze(["loli", "shota", "young", "underage", "child"]);
@@ -112,9 +108,6 @@ function sourceFromValue(value) {
   if (normalized === "reddit" || normalized === "pvnotpv/wabot") {
     return { id: "reddit", name: "Reddit (pvnotpv/wabot)", url: REDDIT_OAUTH_URL };
   }
-  if (normalized === "local" || normalized === "authorized-local") {
-    return { id: "local", name: "Contenido autorizado local", url: "local" };
-  }
   return { id: "custom", name: "API configurada", url: raw };
 }
 
@@ -139,7 +132,7 @@ function configuredApiSources() {
 
 export function nsfwProviderCommand(args = "") {
   const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const providers = ["local", "reddit", "rule34", "nekobot", "waifuim"];
+  const providers = ["reddit", "rule34", "nekobot", "waifuim"];
   if (!parts.length || parts[0] === "list") {
     const active = String(process.env.NSFW_PROVIDER || "") || "primero configurado";
     return `Proveedor NSFW activo: ${active}\nDisponibles: ${providers.join(", ")}\nUsa: !nsfwproveedor <nombre> o !nsfwproveedor automático`;
@@ -293,35 +286,6 @@ function providerError(status, message) {
   return error;
 }
 
-async function localAuthorizedImage(type) {
-  const root = path.resolve(process.env.NSFW_LOCAL_MEDIA_DIR || LOCAL_MEDIA_ROOT);
-  let safeRoot;
-  let safeCategory;
-  try {
-    [safeRoot, safeCategory] = await Promise.all([realpath(root), realpath(path.join(root, type))]);
-  } catch {
-    throw providerError(404, `no existe la carpeta local autorizada para ${type}`);
-  }
-  if (safeCategory !== safeRoot && !safeCategory.startsWith(`${safeRoot}${path.sep}`)) {
-    throw providerError(422, "la carpeta local está fuera del directorio autorizado");
-  }
-  const entries = await readdir(safeCategory, { withFileTypes: true });
-  const candidates = [];
-  for (const entry of entries) {
-    if (!entry.isFile() || !LOCAL_IMAGE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) continue;
-    const filename = path.join(safeCategory, entry.name);
-    const resolved = await realpath(filename);
-    if (resolved !== safeRoot && !resolved.startsWith(`${safeRoot}${path.sep}`)) continue;
-    const details = await stat(resolved);
-    if (details.size > 0 && details.size <= MAX_IMAGE_BYTES) candidates.push(resolved);
-  }
-  if (!candidates.length) throw providerError(404, `no hay imágenes autorizadas para ${type}`);
-  const selected = candidates[Math.floor(Math.random() * candidates.length)];
-  const buffer = await readFile(selected);
-  if (!isImagePayload(buffer)) throw providerError(422, "el archivo local no es una imagen válida");
-  return { buffer, source: "Contenido autorizado local" };
-}
-
 function imageUrlFromRedditPost(post) {
   const url = String(post?.url_overridden_by_dest || post?.url || "").trim();
   if (!/\.(?:jpe?g|png|gif|webp)(?:\?.*)?$/i.test(url)) return null;
@@ -433,18 +397,10 @@ function friendlyApiError(error, source) {
 
 async function sendResolvedImage(imageUrl, command, context, sourceName) {
   const sourceCaption = sourceName ? ` · Fuente: ${sourceName}` : "";
-  if (imageUrl?.buffer) {
-    await context.sendMessage(context.jid, {
-      image: imageUrl.buffer,
-      caption: `Contenido para adultos: ${command}${sourceCaption}`,
-    });
-    return;
-  }
-  const resolvedUrl = imageUrl?.url || imageUrl;
   if (sendImageByUrl()) {
     try {
       await context.sendMessage(context.jid, {
-        image: { url: resolvedUrl },
+        image: { url: imageUrl },
         caption: `Contenido para adultos: ${command}${sourceCaption}`,
       });
       return;
@@ -453,7 +409,7 @@ async function sendResolvedImage(imageUrl, command, context, sourceName) {
       // un buffer validado por el bot.
     }
   }
-  const imageBuffer = await downloadImage(resolvedUrl);
+  const imageBuffer = await downloadImage(imageUrl);
   await context.sendMessage(context.jid, {
     image: imageBuffer,
     caption: `Contenido para adultos: ${command}${sourceCaption}`,
@@ -602,7 +558,7 @@ export async function sendNsfwImage(command, context = {}) {
   for (const source of configuredApiSources()) {
     try {
       const image = await requestImageUrl(source, type);
-      await sendResolvedImage(image, command, context, image.source);
+      await sendResolvedImage(image.url, command, context, image.source);
       return null;
     } catch (error) {
       lastFailure = { error, source };
