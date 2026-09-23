@@ -210,3 +210,26 @@ test("clear and clear all remain available in a disabled chat", async (t) => {
   assert.match(await handleCommand("!clear", { ...owner, deleteMessage: async () => {} }), /No tienes imágenes NSFW/);
   assert.match(await handleCommand("!clear all", { ...owner, deleteMessage: async () => {} }), /No hay mensajes del bot/);
 });
+
+
+test("anime and gatus remain available in a disabled chat", async (t) => {
+  const previousOwner = process.env.OWNER_NUMBER;
+  const previousAdmin = process.env.ADMIN_NUMBER;
+  process.env.OWNER_NUMBER = "393803893208";
+  process.env.ADMIN_NUMBER = "";
+  enableAllCommands();
+  t.after(() => {
+    enableAllCommands();
+    if (previousOwner === undefined) delete process.env.OWNER_NUMBER;
+    else process.env.OWNER_NUMBER = previousOwner;
+    if (previousAdmin === undefined) delete process.env.ADMIN_NUMBER;
+    else process.env.ADMIN_NUMBER = previousAdmin;
+  });
+
+  const chat = "disabled-anime@g.us";
+  const owner = { jid: chat, requesterId: "393803893208@s.whatsapp.net" };
+  assert.match(await handleCommand("!desactivar", owner), /desactivados en este chat/);
+  const user = { jid: chat, requesterId: "393999999999@s.whatsapp.net" };
+  assert.match(await handleCommand("!anime", user), /solo puede usarse desde un chat de WhatsApp/);
+  assert.match(await handleCommand("!gatus", user), /solo puede usarse desde un chat de WhatsApp/);
+});

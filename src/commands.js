@@ -104,7 +104,7 @@ export async function handleCommand(text, context = {}) {
     return "Todos los comandos han sido activados nuevamente en este chat.";
   }
 
-  if (!areAllCommandsEnabled(context.jid) && cmd !== "clear") {
+  if (!areAllCommandsEnabled(context.jid) && !["clear", "anime"].includes(cmd)) {
     return "El bot está temporalmente desactivado en este chat por el propietario o el administrador.";
   }
 
