@@ -38,7 +38,7 @@ const AI_PRESETS = {
   },
   hermes: {
     url: "http://127.0.0.1:8642/v1/chat/completions",
-    model: "hermes",
+    model: "hermes-agent",
   },
 };
 const PROVIDER_ALIASES = { local: "local", llamacpp: "llama_cpp", "llama.cpp": "llama_cpp", llama: "llama_cpp", ollama: "ollama", localai: "localai", gemini: "gemini", google: "gemini", groq: "groq", mistral: "mistral", openrouter: "openrouter", hermes: "hermes", "hermes-agent": "hermes" };

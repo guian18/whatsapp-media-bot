@@ -358,7 +358,7 @@ AI_PROVIDER=hermes
 HERMES_URL=http://127.0.0.1:8642/v1/chat/completions
 HERMES_API_KEY=tu_clave_del_api_server
 HERMES_SESSION_ID=whatsapp-media-bot
-AI_MODEL=hermes
+AI_MODEL=hermes-agent
 ```
 
 En Railway, `127.0.0.1` apunta al contenedor del bot. Si Hermes está en otra máquina, usa una URL privada accesible desde Railway y protégela con HTTPS y una clave. Hermes también tiene su propio gateway de WhatsApp; esta integración usa únicamente su API para evitar conectar dos gateways al mismo número.
