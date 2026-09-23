@@ -1,6 +1,6 @@
 # WhatsApp Media Bot
 
-Bot de WhatsApp para imágenes de anime **SFW** mediante proveedores configurables.
+Bot de WhatsApp para imágenes de anime **SFW** mediante Nekobot.
 
 ## Requisitos
 
@@ -62,7 +62,6 @@ AUTO_RESET=true
 AUTH_DIR=auth_info
 PING_DEAD_CHANCE=0.10
 PING_TRIP_CHANCE=0.30
-SFW_PROVIDER=nekobot
 ```
 
 Para vincular por código, usa el número internacional solo con dígitos:
@@ -79,10 +78,8 @@ Para usar QR, deja `WHATSAPP_NUMBER` vacío y `PAIRING_CODE=false`.
 - `!ayuda` — muestra la ayuda.
 - `!ping` — comprueba si el bot responde.
 - `!anime` o `!gatus` — envía una imagen SFW de anime.
-- `!sfwproveedor list` — muestra el proveedor SFW disponible.
-- `!sfwproveedor nekobot` — selecciona Nekobot como proveedor SFW.
 
-El único proveedor SFW disponible es `nekobot`, que también es el proveedor inicial. Usa `!anime` para solicitar una imagen SFW de anime.
+La fuente SFW está fijada permanentemente en `nekobot`. Usa `!anime` para solicitar una imagen SFW de anime; no existe un comando para cambiarla.
 
 ## Deploy en Railway
 
@@ -108,7 +105,6 @@ ALLOWED_GROUPS=
 REPLY_IN_PRIVATE=true
 ALLOW_SELF=true
 AUTO_RESET=true
-SFW_PROVIDER=nekobot
 AUTH_DIR=/app/data/auth_info
 ```
 

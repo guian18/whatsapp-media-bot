@@ -4,8 +4,6 @@ const COMMAND_NAMES = new Set([
   "ia",
   "tono",
   "idioma",
-  "proveedor",
-  "sfwproveedor",
   "anime",
   "ayuda",
   "help",

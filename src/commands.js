@@ -3,28 +3,11 @@ import axios from "axios";
 import { commandDisplayName, resolveCommandAlias } from "./command-aliases.js";
 
 const NEKOBOT_SFW_API = "https://nekobot.xyz/api/image";
-const SFW_PROVIDERS = Object.freeze(["nekobot"]);
-
-export function sfwProviderCommand(args = "") {
-  const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const active = String(process.env.SFW_PROVIDER || "nekobot").trim().toLowerCase();
-  if (!parts.length || parts[0] === "list") {
-    return `Proveedor SFW activo: ${active}\nDisponibles: ${SFW_PROVIDERS.join(", ")}\nUsa: !sfwproveedor <nombre>`;
-  }
-  const requested = parts[0];
-  if (!SFW_PROVIDERS.includes(requested)) {
-    return `Proveedor SFW no válido. Disponibles: ${SFW_PROVIDERS.join(", ")}.`;
-  }
-  process.env.SFW_PROVIDER = requested;
-  return `Proveedor SFW fijado manualmente en: ${requested}.`;
-}
 
 async function sendSfwAnimeImage(context) {
   if (!context.jid || typeof context.sendMessage !== "function") {
     return "Este comando solo está disponible desde WhatsApp.";
   }
-  const provider = String(process.env.SFW_PROVIDER || "nekobot").trim().toLowerCase();
-  if (provider !== "nekobot") return `Proveedor SFW no válido: ${provider}`;
   try {
     const { data: body } = await axios.get(NEKOBOT_SFW_API, {
       params: { type: "neko" },
@@ -64,7 +47,6 @@ export function ayuda() {
     "",
     `\`${name("ping")}\` — comprueba que el bot responde`,
     `\`${name("anime")}\` — envía una imagen SFW de anime`,
-    "`!sfwproveedor <nombre>` — consulta o selecciona el proveedor SFW",
     `\`${name("ayuda")}\` — este mensaje`,
   ].join("\n");
 }
@@ -81,13 +63,10 @@ export async function handleCommand(text, context = {}) {
     // Una configuración inválida no debe detener el bot ni ejecutar un comando inesperado.
   }
   if (!cmd) return null;
-  const args = match[2].trim();
 
   switch (cmd) {
     case "ping":
       return pingResponse();
-    case "sfwproveedor":
-      return sfwProviderCommand(args);
     case "anime":
       return sendSfwAnimeImage(context);
     case "ayuda":

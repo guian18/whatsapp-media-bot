@@ -28,38 +28,17 @@ test("command dispatcher serves retained commands without external services", as
 test("help exposes only retained bot commands", () => {
   const text = ayuda();
   assert.match(text, /WhatsApp Media Bot/);
-  assert.match(text, /!sfwproveedor/);
 });
 
-test("SFW provider selection exposes only Nekobot", async () => {
-  const previous = process.env.SFW_PROVIDER;
-  delete process.env.SFW_PROVIDER;
-  assert.equal(
-    await handleCommand("!sfwproveedor list"),
-    "Proveedor SFW activo: nekobot\nDisponibles: nekobot\nUsa: !sfwproveedor <nombre>",
-  );
-  assert.match(await handleCommand("!sfwproveedor nekobot"), /fijado manualmente/);
-  assert.equal(process.env.SFW_PROVIDER, "nekobot");
-  assert.match(await handleCommand("!sfwproveedor invalido"), /no válido/);
-  if (previous === undefined) delete process.env.SFW_PROVIDER;
-  else process.env.SFW_PROVIDER = previous;
-});
-
-test("SFW anime requests use Nekobot", async (t) => {
+test("SFW anime requests use the fixed Nekobot provider", async (t) => {
   const originalGet = axios.get;
-  const previous = process.env.SFW_PROVIDER;
-  process.env.SFW_PROVIDER = "nekobot";
   const sent = [];
   axios.get = async (url, options) => {
     assert.match(url, /nekobot\.xyz\/api\/image/);
     assert.deepEqual(options.params, { type: "neko" });
     return { data: { success: true, message: "https://nekobot.xyz/api/sfw/neko.jpg" } };
   };
-  t.after(() => {
-    axios.get = originalGet;
-    if (previous === undefined) delete process.env.SFW_PROVIDER;
-    else process.env.SFW_PROVIDER = previous;
-  });
+  t.after(() => { axios.get = originalGet; });
   assert.equal(await handleCommand("!anime", {
     jid: "sfw-nekobot",
     sendMessage: async (_jid, payload) => sent.push(payload),
