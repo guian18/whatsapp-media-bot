@@ -104,7 +104,10 @@ La configuración predeterminada utiliza `nswfparse` para categorías reales de 
 ```env
 NSWFPARSE_ENABLED=true
 NSWFPARSE_CATEGORIES=ass,feet,gonewild,blowjob,pussy,thigh,hyuri,lesbian,bdsm
+NSWFPARSE_HENTAI_SUBREDDITS=hentai,MonsterGirl,HentaiPetgirls,saohentai,thick_hentai,JerkOffToAnime
 ```
+
+El comando `!hentai` está disponible con `nswfparse` y usa únicamente la lista explícita de subreddits configurada en `NSWFPARSE_HENTAI_SUBREDDITS`. No utiliza la lista amplia de categorías del paquete, porque esa lista incluye fuentes que no son adecuadas para una configuración general. Puedes ajustar la lista a tus fuentes de ficción permitidas, respetando las reglas de Reddit y la legalidad aplicable.
 
 También se pueden configurar proveedores alternativos si tienes sus credenciales:
 

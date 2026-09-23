@@ -26,7 +26,10 @@ const NSFWPARSE_REAL_METHODS = Object.freeze({
   bdsm: "bdsm",
 });
 const NSFWPARSE_SAFE_CATEGORIES = Object.freeze([
-  "ass", "feet", "gonewild", "blowjob", "pussy", "thigh", "htigh", "hboobs", "boobs", "hyuri", "lesbian", "bdsm",
+  "ass", "feet", "gonewild", "blowjob", "pussy", "thigh", "htigh", "hboobs", "boobs", "hyuri", "lesbian", "bdsm", "hentai",
+]);
+const NSFWPARSE_HENTAI_SUBREDDITS = Object.freeze([
+  "hentai", "MonsterGirl", "HentaiPetgirls", "saohentai", "thick_hentai", "JerkOffToAnime",
 ]);
 const WAIFU_IM_API_VERSION = "v7";
 const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
@@ -454,6 +457,20 @@ async function nswfparseRealImage(type) {
   return { url, source: "NSWFparse (Reddit real)" };
 }
 
+async function nswfparseHentaiImage() {
+  const configured = String(process.env.NSWFPARSE_HENTAI_SUBREDDITS || NSFWPARSE_HENTAI_SUBREDDITS.join(","))
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (!configured.length) throw providerError(422, "NSWFPARSE_HENTAI_SUBREDDITS está vacío");
+  const method = nswfparse?.redditCustom;
+  if (typeof method !== "function") throw providerError(422, "NSWFparse no expone el lector de Reddit personalizado");
+  const payload = await method(configured);
+  const url = validImageUrl(payload?.url);
+  if (!url || payload?.nsfw !== true) throw providerError(502, "NSWFparse no devolvió una imagen hentai válida");
+  return { url, source: "NSWFparse (hentai de ficción)" };
+}
+
 function cleanup(now) {
   for (const [jid, timestamp] of lastRequestByChat) {
     if (now - timestamp > MIN_INTERVAL_MS * 6) lastRequestByChat.delete(jid);
@@ -559,7 +576,7 @@ async function requestImageUrl(source, type) {
         });
         return redditImageFromResponse(data, type);
       }
-      if (source.id === "nswfparse") return nswfparseRealImage(type);
+      if (source.id === "nswfparse") return type === "hentai" ? nswfparseHentaiImage() : nswfparseRealImage(type);
       if (source.id === "rule34") {
         const userId = String(process.env.RULE34_USER_ID || "").trim();
         const apiKey = String(process.env.RULE34_API_KEY || "").trim();

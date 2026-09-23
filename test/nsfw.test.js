@@ -446,6 +446,42 @@ test("uses only the real-content nswfparse adapter", async (t) => {
   assert.match(sent[0].caption, /NSWFparse/);
 });
 
+test("uses an explicit fictional subreddit allowlist for nswfparse hentai", async (t) => {
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_PROVIDER", "NSWFPARSE_ENABLED", "NSWFPARSE_CATEGORIES", "NSWFPARSE_HENTAI_SUBREDDITS", "NSFW_API_RETRIES", "NSFW_DIRECT_URL"].map((key) => [key, process.env[key]]),
+  );
+  const original = nswfparse.redditCustom;
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "nswfparse";
+  process.env.NSFW_PROVIDER = "nswfparse";
+  process.env.NSWFPARSE_ENABLED = "true";
+  process.env.NSWFPARSE_CATEGORIES = "hentai";
+  process.env.NSWFPARSE_HENTAI_SUBREDDITS = "hentai,MonsterGirl";
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  nswfparse.redditCustom = async (subreddits) => {
+    assert.deepEqual(subreddits, ["hentai", "MonsterGirl"]);
+    return { url: "https://cdn.example.test/hentai.jpg", nsfw: true };
+  };
+  t.after(() => {
+    nswfparse.redditCustom = original;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const sent = [];
+  const reply = await sendNsfwImage("hentai", {
+    jid: "nswfparse-hentai-test",
+    isGroup: false,
+    sendMessage: async (_jid, payload) => sent.push(payload),
+  });
+  assert.equal(reply, null);
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].image.url, /hentai\.jpg/);
+  assert.match(sent[0].caption, /hentai de ficción/);
+});
+
 test("NSWFPARSE_ENABLED disables the provider without calling it", async () => {
   const previous = Object.fromEntries(
     ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_PROVIDER", "NSWFPARSE_ENABLED", "NSFW_API_RETRIES"].map((key) => [key, process.env[key]]),
