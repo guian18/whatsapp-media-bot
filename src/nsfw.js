@@ -1,10 +1,22 @@
 import axios from "axios";
+import nswfparse from "nswfparse";
 
 const NEKOBOT_API_URL = "https://nekobot.xyz/api/image";
 const WAIFU_IM_API_URL = "https://api.waifu.im/images";
 const RULE34_API_URL = "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index";
 const REDDIT_OAUTH_URL = "https://www.reddit.com/api/v1/access_token";
-const DEFAULT_API_SOURCES = Object.freeze(["reddit", "rule34", "nekobot", "waifuim"]);
+const DEFAULT_API_SOURCES = Object.freeze(["nswfparse"]);
+const NSFWPARSE_REAL_METHODS = Object.freeze({
+  ass: "girlAss",
+  feet: "girlThighs",
+  gonewild: "girlAss",
+  blowjob: "cumShot",
+  pussy: "girlAss",
+  thigh: "girlThighs",
+  htigh: "girlThighs",
+  hboobs: "girlAss",
+  boobs: "girlAss",
+});
 const WAIFU_IM_API_VERSION = "v7";
 const WAIFU_IM_EXCLUDED_TAGS = Object.freeze(["loli", "shota"]);
 const RULE34_EXCLUDED_TAGS = Object.freeze(["loli", "shota", "young", "underage", "child"]);
@@ -108,6 +120,9 @@ function sourceFromValue(value) {
   if (normalized === "reddit" || normalized === "pvnotpv/wabot") {
     return { id: "reddit", name: "Reddit (pvnotpv/wabot)", url: REDDIT_OAUTH_URL };
   }
+  if (normalized === "nswfparse" || normalized === "nswf-tg-bot") {
+    return { id: "nswfparse", name: "NSWFparse (Reddit real)", url: "nswfparse" };
+  }
   return { id: "custom", name: "API configurada", url: raw };
 }
 
@@ -132,7 +147,7 @@ function configuredApiSources() {
 
 export function nsfwProviderCommand(args = "") {
   const parts = String(args).trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const providers = ["reddit", "rule34", "nekobot", "waifuim"];
+  const providers = ["nswfparse", "reddit", "rule34", "nekobot", "waifuim"];
   if (!parts.length || parts[0] === "list") {
     const active = String(process.env.NSFW_PROVIDER || "") || "primero configurado";
     return `Proveedor NSFW activo: ${active}\nDisponibles: ${providers.join(", ")}\nUsa: !nsfwproveedor <nombre> o !nsfwproveedor automático`;
@@ -342,6 +357,20 @@ function redditImageFromResponse(data, type) {
   return { url, source: "Reddit (pvnotpv/wabot)" };
 }
 
+async function nswfparseRealImage(type) {
+  const methodName = NSFWPARSE_REAL_METHODS[type];
+  const method = methodName ? nswfparse?.reddit?.real?.[methodName] : null;
+  if (typeof method !== "function") {
+    throw providerError(422, `NSWFparse no tiene una categoría real exacta para ${type}`);
+  }
+  const payload = await method();
+  const url = validImageUrl(payload?.url);
+  if (!url || payload?.nsfw !== true) {
+    throw providerError(502, "NSWFparse no devolvió una imagen real NSFW válida");
+  }
+  return { url, source: "NSWFparse (Reddit real)" };
+}
+
 function cleanup(now) {
   for (const [jid, timestamp] of lastRequestByChat) {
     if (now - timestamp > MIN_INTERVAL_MS * 6) lastRequestByChat.delete(jid);
@@ -445,7 +474,7 @@ async function requestImageUrl(source, type) {
         });
         return redditImageFromResponse(data, type);
       }
-      if (source.id === "local") return localAuthorizedImage(type);
+      if (source.id === "nswfparse") return nswfparseRealImage(type);
       if (source.id === "rule34") {
         const userId = String(process.env.RULE34_USER_ID || "").trim();
         const apiKey = String(process.env.RULE34_API_KEY || "").trim();

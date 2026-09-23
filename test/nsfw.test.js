@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import axios from "axios";
+import nswfparse from "nswfparse";
 import { handleCommand } from "../src/commands.js";
 import { NSFW_COMMANDS, nsfwHelp, sendNsfwImage, validImageUrl } from "../src/nsfw.js";
 
@@ -371,4 +372,38 @@ test("rejects Waifu.im responses without explicit NSFW marking or excluded tags"
       else process.env[key] = value;
     }
   }
+});
+
+test("uses only the real-content nswfparse adapter", async (t) => {
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_PROVIDER", "NSFW_API_RETRIES", "NSFW_DIRECT_URL", "NSFW_ALLOW_PRIVATE_CHATS"].map((key) => [key, process.env[key]]),
+  );
+  const original = nswfparse.reddit.real.girlAss;
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "nswfparse";
+  process.env.NSFW_PROVIDER = "nswfparse";
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  process.env.NSFW_ALLOW_PRIVATE_CHATS = "true";
+  nswfparse.reddit.real.girlAss = async () => ({
+    url: "https://authorized.example.test/creator.jpg",
+    nsfw: true,
+  });
+  t.after(() => {
+    nswfparse.reddit.real.girlAss = original;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const sent = [];
+  const reply = await sendNsfwImage("ass", {
+    jid: "nswfparse-test",
+    isGroup: false,
+    sendMessage: async (_jid, payload) => sent.push(payload),
+  });
+  assert.equal(reply, null);
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].image.url, /authorized\.example\.test/);
+  assert.match(sent[0].caption, /NSWFparse/);
 });
