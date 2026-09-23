@@ -206,6 +206,7 @@ test("clear and clear all remain available in a disabled chat", async (t) => {
   const owner = { jid: chat, requesterId: "393803893208@s.whatsapp.net" };
   assert.match(await handleCommand("!desactivar", owner), /desactivados en este chat/);
   assert.match(await handleCommand("!ping", { jid: chat, requesterId: "393999999999@s.whatsapp.net" }), /desactivado en este chat/);
+  assert.match(await handleCommand("!admin menu", owner), /Menú de propietario y administrador/);
   assert.match(await handleCommand("!clear", { ...owner, deleteMessage: async () => {} }), /No tienes imágenes NSFW/);
   assert.match(await handleCommand("!clear all", { ...owner, deleteMessage: async () => {} }), /No hay mensajes del bot/);
 });
