@@ -260,6 +260,20 @@ function isImagePayload(data, contentType = "") {
   );
 }
 
+function isVideoPayload(data, contentType = "") {
+  if (!data || !Buffer.isBuffer(data) || data.length < 12) return false;
+  if (/^video\//i.test(contentType)) return true;
+  return data.subarray(4, 8).toString("ascii") === "ftyp"
+    || data.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
+}
+
+function mediaKind(url, contentType = "") {
+  const type = String(contentType).toLowerCase().split(";", 1)[0];
+  if (type === "image/gif" || /\.gif(?:$|[?#])/i.test(String(url))) return "gif";
+  if (type.startsWith("video/") || /\.(?:mp4|webm|mov|m4v)(?:$|[?#])/i.test(String(url))) return "video";
+  return "image";
+}
+
 function imageUrlFromApiResponse(data) {
   const candidates = [
     data?.message,
@@ -443,25 +457,26 @@ function friendlyApiError(error, source) {
   return `${provider}: ${String(error?.message || "error de API").slice(0, 160)}`;
 }
 
-async function sendResolvedImage(imageUrl, command, context, sourceName) {
+async function sendResolvedMedia(imageUrl, command, context, sourceName) {
   const sourceCaption = sourceName ? ` · Fuente: ${sourceName}` : "";
+  const kind = mediaKind(imageUrl);
   if (sendImageByUrl()) {
     try {
-      await context.sendMessage(context.jid, {
-        image: { url: imageUrl },
-        caption: `Contenido para adultos: ${command}${sourceCaption}`,
-      });
+      const payload = kind === "video"
+        ? { video: { url: imageUrl }, caption: `Contenido para adultos: ${command}${sourceCaption}` }
+        : { image: { url: imageUrl }, caption: `Contenido para adultos: ${command}${sourceCaption}`, ...(kind === "gif" ? { gifPlayback: true } : {}) };
+      await context.sendMessage(context.jid, payload);
       return;
     } catch {
       // Algunos clientes no pueden descargar determinados CDN; se reintenta con
       // un buffer validado por el bot.
     }
   }
-  const imageBuffer = await downloadImage(imageUrl);
-  await context.sendMessage(context.jid, {
-    image: imageBuffer,
-    caption: `Contenido para adultos: ${command}${sourceCaption}`,
-  });
+  const media = await downloadMedia(imageUrl);
+  const payload = media.kind === "video"
+    ? { video: media.buffer, caption: `Contenido para adultos: ${command}${sourceCaption}` }
+    : { image: media.buffer, caption: `Contenido para adultos: ${command}${sourceCaption}`, ...(media.kind === "gif" ? { gifPlayback: true } : {}) };
+  await context.sendMessage(context.jid, payload);
 }
 
 async function requestImageUrl(source, type) {
@@ -543,7 +558,7 @@ async function requestImageUrl(source, type) {
   throw lastError;
 }
 
-async function downloadImage(imageUrl) {
+async function downloadMedia(imageUrl) {
   const timeout = settingMs("NSFW_IMAGE_TIMEOUT_MS", 30_000, 8_000, 90_000);
   const retries = settingInteger("NSFW_IMAGE_RETRIES", 1, 0, 2);
   let lastError;
@@ -560,10 +575,15 @@ async function downloadImage(imageUrl) {
       const imageBuffer = Buffer.isBuffer(imageResponse.data)
         ? imageResponse.data
         : Buffer.from(imageResponse.data || "");
-      if (!isImagePayload(imageBuffer, imageResponse.headers?.["content-type"] || "")) {
-        throw new Error("la URL no devolvió una imagen válida");
+      const contentType = imageResponse.headers?.["content-type"] || "";
+      const kind = mediaKind(imageUrl, contentType);
+      const valid = kind === "video"
+        ? isVideoPayload(imageBuffer, contentType)
+        : isImagePayload(imageBuffer, contentType);
+      if (!valid) {
+        throw new Error("la URL no devolvió una imagen, GIF o vídeo válido");
       }
-      return imageBuffer;
+      return { buffer: imageBuffer, kind };
     } catch (error) {
       lastError = error;
       if (!transientNetworkError(error) || attempt === retries) break;
@@ -606,7 +626,7 @@ export async function sendNsfwImage(command, context = {}) {
   for (const source of configuredApiSources()) {
     try {
       const image = await requestImageUrl(source, type);
-      await sendResolvedImage(image.url, command, context, image.source);
+      await sendResolvedMedia(image.url, command, context, image.source);
       return null;
     } catch (error) {
       lastFailure = { error, source };

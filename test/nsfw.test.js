@@ -427,3 +427,32 @@ test("NSWFPARSE_ENABLED disables the provider without calling it", async () => {
     }
   }
 });
+
+test("sends provider video and GIF URLs using WhatsApp media types", async (t) => {
+  const previous = Object.fromEntries(
+    ["NSFW_ENABLED", "NSFW_API_URLS", "NSFW_PROVIDER", "NSFW_API_RETRIES", "NSFW_DIRECT_URL", "NSWFPARSE_CATEGORIES"].map((key) => [key, process.env[key]]),
+  );
+  const original = nswfparse.reddit.real.girlAss;
+  process.env.NSFW_ENABLED = "true";
+  process.env.NSFW_API_URLS = "nswfparse";
+  process.env.NSFW_PROVIDER = "nswfparse";
+  process.env.NSFW_API_RETRIES = "0";
+  process.env.NSFW_DIRECT_URL = "true";
+  process.env.NSWFPARSE_CATEGORIES = "ass";
+  const sent = [];
+  let extension = "mp4";
+  nswfparse.reddit.real.girlAss = async () => ({ url: `https://authorized.example.test/creator.${extension}`, nsfw: true });
+  t.after(() => {
+    nswfparse.reddit.real.girlAss = original;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  assert.equal(await sendNsfwImage("ass", { jid: "video-test", isGroup: true, sendMessage: async (_jid, payload) => sent.push(payload) }), null);
+  assert.ok(sent[0].video);
+  extension = "gif";
+  assert.equal(await sendNsfwImage("ass", { jid: "gif-test", isGroup: true, sendMessage: async (_jid, payload) => sent.push(payload) }), null);
+  assert.ok(sent[1].image);
+  assert.equal(sent[1].gifPlayback, true);
+});
