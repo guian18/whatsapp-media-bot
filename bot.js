@@ -383,6 +383,7 @@ async function start() {
           requesterIds: [
             msg.key.participant,
             msg.key.participantAlt,
+            msg.key.participantPn,
             msg.key.senderPn,
             msg.key.remoteJidAlt,
             msg.participant,

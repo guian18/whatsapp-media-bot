@@ -1,7 +1,8 @@
 let allCommandsEnabled = true;
 
 function normalizeNumber(value) {
-  let number = String(value || "").replace(/\D/g, "");
+  const jidUser = String(value || "").trim().split("@", 1)[0].split(":", 1)[0];
+  let number = jidUser.replace(/\D/g, "");
   if (number.startsWith("00")) number = number.slice(2);
   return number;
 }

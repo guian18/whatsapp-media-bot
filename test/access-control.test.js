@@ -107,3 +107,30 @@ test("admin authorization accepts an alternate WhatsApp phone identity in groups
     requesterIds: ["9876543210@lid", "51955555555@s.whatsapp.net"],
   }), /Menú de propietario y administrador/);
 });
+
+
+test("owner and admin numbers match device-suffixed WhatsApp JIDs", async (t) => {
+  const previousOwner = process.env.OWNER_NUMBER;
+  const previousAdmin = process.env.ADMIN_NUMBER;
+  process.env.OWNER_NUMBER = "393803893208";
+  process.env.ADMIN_NUMBER = "393803893208";
+  enableAllCommands();
+  t.after(() => {
+    enableAllCommands();
+    if (previousOwner === undefined) delete process.env.OWNER_NUMBER;
+    else process.env.OWNER_NUMBER = previousOwner;
+    if (previousAdmin === undefined) delete process.env.ADMIN_NUMBER;
+    else process.env.ADMIN_NUMBER = previousAdmin;
+  });
+
+  const context = {
+    jid: "120363000000000000@g.us",
+    requesterId: "393803893208:17@s.whatsapp.net",
+    requesterIds: ["393803893208:17@s.whatsapp.net"],
+  };
+  assert.match(await handleCommand("!admin menu", context), /Menú de propietario y administrador/);
+  assert.match(await handleCommand("!clear all", {
+    ...context,
+    deleteMessage: async () => {},
+  }), /No hay mensajes del bot/);
+});
